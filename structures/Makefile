@@ -1,10 +1,14 @@
-CXXFLAGS += -g -O3 
+CXXFLAGS += -g -O3 -Wall
 
 NAME = structures
 VERSION = 1.1
-TARGETS = TipsyReader.o TipsyFile.o SS.o
+INSTALL_LOCATION = $(HOME)/my_stuff/bin/
+LIBTARGETS = TipsyReader.o TipsyFile.o SS.o
+EXECTARGETS = browse see_header random_sample
 
-all: libTipsy.a($(TARGETS)) SFC.o
+.PHONY: all docs dist clean
+
+all: libTipsy.a($(LIBTARGETS)) SFC.o $(EXECTARGETS)
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
@@ -12,16 +16,10 @@ TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_tem
 
 SS.o: xdr_template.h Vector3D.h
 
-.PHONY: all debug tools docs dist clean
-
-debug:
-	make "CXXFLAGS += -g" clean all
-
 SFC.o: SFC.cpp SFC.h
 	$(CXX) $(CXXFLAGS) -ffloat-store -c SFC.cpp
 
-tools:
-	cd tools && make
+browse see_header random_sample: libTipsy.a
 
 docs:
 	doxygen structures.doxygen
@@ -34,3 +32,6 @@ dist:
 	
 clean:
 	rm -f core* *.o *~ $(TARGETS) libTipsy.a
+
+install: all
+	cp $(EXECTARGETS) $(INSTALL_LOCATION)
