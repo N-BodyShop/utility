@@ -39,7 +39,7 @@ public:
 	Vector3D(const Vector3D<T2>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)), z(static_cast<T>(v.z)) { }
 
 	//nothing to destruct!
-	~Vector3D() { }
+	// ~Vector3D() { }
 
 	/// Casting to a different template class (just casts the components)
 	/*
