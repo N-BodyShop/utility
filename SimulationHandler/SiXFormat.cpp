@@ -6,7 +6,7 @@
  */
 
 #include <fstream>
- 
+
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/sax2/SAX2XMLReader.hpp>
 #include <xercesc/sax2/XMLReaderFactory.hpp>
@@ -98,7 +98,6 @@ void SiXFormatReader::startElement(const XMLCh *const uri, const XMLCh *const lo
 	} else if(currentFamily && XMLString::equals(localname, attributeString)) {
 		const XMLCh* attributeName = attrs.getValue(nameString);
 		if(attributeName) {
-			//cout << "Adding field to family: " << StrX(currentFamily) << ":" << StrX(fieldName) << endl;
 			//get link, open file, allocate and read in
 			const XMLCh* link = attrs.getValue(linkString);
 			if(link) {

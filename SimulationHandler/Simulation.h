@@ -29,6 +29,7 @@ struct ParticleCount {
 };
 
 typedef std::map<std::string, TypedArray> AttributeMap;
+//typedef std::map<std::string, variant_attribute_type> AttributeMap;
 typedef std::vector<u_int64_t> ParticleGroup;
 
 /** A ParticleFamily represents a group of attributes that particles
@@ -53,24 +54,37 @@ public:
 	}
 	
 	void addAttribute(const std::string& attributeName, const TypeHandling::TypedArray& arr) {
+	//template <typename T>
+	//void addAttribute(const std::string& attributeName, const TypeHandling::ArrayWithLimits<T>& arr) {
 		AttributeMap::iterator iter = attributes.find(attributeName);
 		if(iter != attributes.end())
 			iter->second.release();
+			//apply_visitor(Releaser(), iter->second);
 		if(arr.length == count.numParticles)
 			attributes[attributeName] = arr;
 	}
-	
+	/*
+	void addAttribute(const std::string& attributeName, variant_attribute_type& attribute) {
+		AttributeMap::iterator iter = attributes.find(attributeName);
+		if(iter != attributes.end())
+			apply_visitor(Releaser(), iter->second);
+		attributes[attributeName] = attribute;
+	}
+	*/
 	template <typename T>
 	void addAttribute(const std::string& attributeName, T* data) {
 		AttributeMap::iterator iter = attributes.find(attributeName);
 		if(iter != attributes.end())
 			iter->second.release();
+			//apply_visitor(Releaser(), iter->second);
 		TypeHandling::TypedArray& arr = attributes[attributeName];
 		arr.dimensions = Type2Dimensions<T>::dimensions;
 		arr.code = Type2Code<T>::code;
 		arr.length = count.numParticles;
 		arr.data = data;
 		arr.calculateMinMax();
+		
+		//attributes[attributeName] = ArrayWithLimits<T>(data, count.numParticles);
 	}
 	
 	bool releaseAttribute(const std::string& attributeName) {
@@ -78,12 +92,14 @@ public:
 		if(iter == attributes.end())
 			return false;
 		iter->second.release();
+		//apply_visitor(Releaser(), iter->second);
 		return true;
 	}
 	
 	void release() {
 		for(AttributeMap::iterator iter = attributes.begin(); iter != attributes.end(); ++iter)
 			iter->second.release();
+			//apply_visitor(Releaser(), iter->second);
 	}
 	
 	template <typename T>
