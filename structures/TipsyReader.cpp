@@ -4,8 +4,6 @@
  @version 1.0
  */
 
-#include <fstream>
-
 #include "xdr_template.h"
 
 #include "TipsyReader.h"
@@ -80,8 +78,11 @@ bool TipsyReader::loadHeader() {
 		xdrmem_create(&xdrs, reinterpret_cast<char *>(&h), header::sizeBytes, XDR_DECODE);
 		if(!xdr_template(&xdrs, &h) || h.ndim != MAXDIM) { //wasn't xdr format either			
 			h.nbodies = h.nsph = h.ndark = h.nstar = 0;
+			xdr_destroy(&xdrs);
 			return false;
 		}
+		xdr_destroy(&xdrs);
+		
 		native = false;
 		//xdr format has an integer pad in the header, which we don't need, but must skip
 		int pad = 0;
