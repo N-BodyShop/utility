@@ -7,7 +7,7 @@
 #ifndef PROPERTIES_H
 #define PROPERTIES_H
 
-#include <iostream>
+#include <fstream>
 #include <map>
 #include <string>
 #include <sstream>
@@ -15,7 +15,6 @@
 
 using std::string;
 using std::map;
-using std::pair;
 using std::istringstream;
 	
 class Properties {
@@ -57,6 +56,7 @@ private:
 		for(map<string, int>::const_iterator intIter = intProperties.begin(); intIter != intProperties.end(); ++intIter)
 			os << intIter->first << "=" << intIter->second << "\n";
 		os << "#floating point properties\n";
+		os.setf(ios::scientific);
 		for(map<string, double>::const_iterator doubleIter = doubleProperties.begin(); doubleIter != doubleProperties.end(); ++doubleIter)
 			os << doubleIter->first << "=" << doubleIter->second << "\n";
 		os << "#string properties\n";

@@ -10,7 +10,6 @@
 #include <iostream>
 
 #include "Vector3D.h"
-#include "Shape.h"
 #include "PeriodicBoundaryConditions.h"
 
 template <typename T>
@@ -18,7 +17,7 @@ class OrientedBox;
 
 /// A class representing a sphere in three dimensions
 template <typename T = double>
-class Sphere : public Shape<T> {
+class Sphere {
 public:
 	/// The origin of this sphere
 	Vector3D<T> origin;

@@ -9,18 +9,16 @@
 #define ORIENTEDBOX_H
 
 #include <iostream>
-#include <sstream>
 #include <string>
+#include <sstream>
 
 #include "Vector3D.h"
-#include "Shape.h"
 #include "Sphere.h"
-#include "Box.h"
 #include "PeriodicBoundaryConditions.h"
 
 /// A box in three dimensions whose axes are aligned with the coordinate axes
 template <typename T = double>
-class OrientedBox : public Shape<T> {
+class OrientedBox {
 private:
 
 public:
@@ -29,7 +27,12 @@ public:
 	/// The corner with the maximum \c x, \c y, and \c z values
 	Vector3D<T> greater_corner;
 	
-	explicit OrientedBox(const Vector3D<T>& corner1 = Vector3D<T>(-0.5, -0.5, -0.5), const Vector3D<T>& corner2 = Vector3D<T>(0.5, 0.5, 0.5)) {
+	OrientedBox() {
+		lesser_corner = Vector3D<T>(1E100, 1E100, 1E100);
+		greater_corner = Vector3D<T>(-1E100, -1E100, -1E100);
+	}
+	
+	explicit OrientedBox(const Vector3D<T>& corner1, const Vector3D<T>& corner2) {
 		if(corner1.x < corner2.x) {
 			lesser_corner = Vector3D<T>(corner1);
 			if(corner1.y > corner2.y || corner1.z > corner2.z) //malformed box!
@@ -46,32 +49,19 @@ public:
 		
 	}
 	
-	OrientedBox(const Box<T>& b) {
-		lesser_corner = greater_corner = b.vertices[0];
-		for(int i = 0; i < 8; i++) {
-			if(b.vertices[i].x < lesser_corner.x)
-				lesser_corner.x = b.vertices[i].x;
-			if(b.vertices[i].x > greater_corner.x)
-				greater_corner.x = b.vertices[i].x;
-			if(b.vertices[i].y < lesser_corner.y)
-				lesser_corner.y = b.vertices[i].y;
-			if(b.vertices[i].y > greater_corner.y)
-				greater_corner.y = b.vertices[i].y;
-			if(b.vertices[i].z < lesser_corner.z)
-				lesser_corner.z = b.vertices[i].z;
-			if(b.vertices[i].z > greater_corner.z)
-				greater_corner.z = b.vertices[i].z;
-		}
-	}
-	
 	OrientedBox(const OrientedBox<T>& b) : lesser_corner(b.lesser_corner), greater_corner(b.greater_corner) { }
 	
 	~OrientedBox() { }
-
+	
 	OrientedBox<T>& operator=(const OrientedBox<T>& b) {
 		lesser_corner = b.lesser_corner;
 		greater_corner = b.greater_corner;
 		return *this;
+	}
+	
+	template <class T2>
+	operator OrientedBox<T2> () const {
+		return OrientedBox<T2>(static_cast<Vector3D<T2> >(lesser_corner), static_cast<Vector3D<T2> >(greater_corner));
 	}
 	
 	inline bool contains(const Vector3D<T>& point) const {

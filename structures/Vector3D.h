@@ -1,9 +1,9 @@
-/** \file Vector3D.h
+/** @file Vector3D.h
  This file defines a three-dimensional vector in Cartesian coordinates, 
  as well as various vector operations.
- \author Graeme Lufkin (gwl@u.washington.edu)
- \date Created March 29, 2000
- \version 2.0
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @date Created March 29, 2000
+ @version 2.0
  */
 
 #ifndef VECTOR3D_H
@@ -223,13 +223,13 @@ std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
 }
 
 /** Given the spherical coordinates of a vector, return a cartesion version of the same vector. */
-template <class T>
+template <typename T>
 Vector3D<T> fromSpherical(const T r, const T theta, const T phi) {
-	return Vector3D<T>(r * cos(theta) * sin(phi), r * sin(theta) * sin(phi), r * cos(phi));
+	return Vector3D<T>(r * sin(theta) * cos(phi), r * sin(theta) * sin(phi), r * cos(theta));
 }
 
 /** Given the cylindrical coordinates of a vector, return a cartesion version of the same vector. */
-template <class T>
+template <typename T>
 Vector3D<T> fromCylindrical(const T r, const T theta, const T z) {
 	return Vector3D<T>(r * cos(theta), r * sin(theta), z);
 }
@@ -241,13 +241,13 @@ Vector3D<T> fromCylindrical(const T r, const T theta, const T z) {
  Then a rotation of theta about the x axis.  Finally another
  rotation about the z axis of phi.
  */
-template <class T>
+template <typename T = double>
 class RotationMatrix {
 public:
 	T ii, ij, ik, ji, jj, jk, ki, kj, kk; //components of the matrix
 
 	/// Set up the elements of the matrix
-	RotationMatrix(T psi, T theta, T phi) {
+	RotationMatrix(const T psi, const T theta, const T phi) {
 		//calculate sines and cosines first
 		T cpsi = cos(psi), ctheta = cos(theta), cphi = cos(phi);
 		T spsi = sin(psi), stheta = sin(theta), sphi = sin(phi);
@@ -273,7 +273,7 @@ public:
 	}
 };
 
-template <class T>
+template <typename T>
 class SphericalVector3D {
 public:
 	T r, theta, phi;

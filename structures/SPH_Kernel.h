@@ -1,7 +1,7 @@
-/** \file SPH_Kernel.h
- \author Graeme Lufkin (gwl@u.washington.edu)
- \date Created Summer 2002
- \version 1.0
+/** @file SPH_Kernel.h
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @date Created Summer 2002
+ @version 1.0
  */
 
 #ifndef SPH_KERNEL_H

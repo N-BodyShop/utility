@@ -5,7 +5,7 @@ VERSION = 1.1
 TARGETS = TipsyFile.o TipsyFile.debug.o
 all: $(TARGETS) tools
 
-TipsyFile.o: TipsyFile.h TipsyFile.cpp Vector3D.h OrientedBox.h
+TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
 TipsyFile.debug.o: TipsyFile.h TipsyFile.cpp Vector3D.h OrientedBox.h
 	$(CXX) -Wall -g -o TipsyFile.debug.o -c TipsyFile.cpp

@@ -1,194 +1,21 @@
-/** \file TipsyFile.h
- \author Graeme Lufkin (gwl@u.washington.edu)
- \date Created April 30, 2002
- \version 2.0
- \todo Fully document this file
+/** @file TipsyFile.h
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @date Created April 30, 2002
+ @version 2.2
  */
  
 #ifndef TIPSYFILE_H
 #define TIPSYFILE_H
 
-#include <fstream>
 #include <iostream>
-#include <string>
-#include <algorithm>
 #include <vector>
+#include <string>
 
-#include <rpc/xdr.h>
-
+#include "TipsyParticles.h"
 #include "Vector3D.h"
 #include "OrientedBox.h"
 
 namespace Tipsy {
-
-/// The number of dimensions, always 3.
-const int MAXDIM = 3;
-
-/** \deprecated A shorthand for an infinite loop. */
-#define forever for(;;)
-
-typedef float Real;
-
-/** A particle representing a blob of gas, this is used in SPH calculations. */
-class gas_particle {
-public:
-
-	/** The mass of the gas particle. */
-    Real mass;
-	/** The position of this particle. */
-    Vector3D<Real> pos;
-	/** The velocity vector of this particle. */
-    Vector3D<Real> vel;
-	/** The local density of gas at this particle's location. */
-    Real rho;
-	/** The temperature of the gas in this particle. */
-    Real temp;
-	/** The gravitational softening length of this particle. */
-    Real hsmooth;
-	/** The metal content of this gas particle. */
-    Real metals;
-	/** The gravitational potential at this particle. */
-    Real phi;
-
-	/// Default constructor sets all values to zero
-	gas_particle() : mass(0), rho(0), temp(0), hsmooth(0), metals(0), phi(0) { }
-	
-	bool operator==(const gas_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel) && (rho == p.rho)
-				&& (temp == p.temp) && (hsmooth == p.hsmooth) && (metals == p.metals)
-				&& (phi == p.phi);
-	}
-	
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const gas_particle& p) {
-		return os << "Mass: " << p.mass
-			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
-			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
-			<< "\nRho: " << p.rho
-			<< "\nTemperature: " << p.temp
-			<< "\nGravitational Softening: " << p.hsmooth
-			<< "\nMetals: " << p.metals
-			<< "\nPhi: " << p.phi;
-	}
-};
-
-typedef gas_particle* gas_particles;
-
-/** A particle of dark matter, this interacts via gravity only. */
-class dark_particle {
-public:
-	
-	/** The mass of this dark matter particle. */
-    Real mass;
-	/** The position of this particle. */
-    Vector3D<Real> pos;
-	/** The velocity vector of this particle. */
-    Vector3D<Real> vel;
-	/** The gravitational softening length of this particle. */
-    Real eps;
-	/** The gravitational potential at this particle. */
-    Real phi;
-
-	/// Default constructor sets all values to zero
-	dark_particle() : mass(0), eps(0), phi(0) { }
-	
-	bool operator==(const dark_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel)
-				&& (eps == p.eps) && (phi == p.phi);
-	}
-	
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const dark_particle& p) {
-		return os << "Mass: " << p.mass
-			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
-			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
-			<< "\nGravitational Softening: " << p.eps
-			<< "\nPhi: " << p.phi;
-	}
-};
-
-typedef dark_particle* dark_particles;
-
-class star_particle {
-public:
-	
-	/** The mass of this star particle. */
-    Real mass;
-	/** The position of this particle. */
-    Vector3D<Real> pos;
-	/** The velocity vector of this particle. */
-    Vector3D<Real> vel;
-	/** The metallicity of this star particle. */
-    Real metals;
-	/** The time of formation of this star particle. */
-    Real tform;
-	/** The gravitational softening length of this particle. */
-    Real eps;
-	/** The gravitational potential at this particle. */
-    Real phi;
-
-	/// Default constructor sets all values to zero
-	star_particle() : mass(0), metals(0), tform(0), eps(0), phi(0) { }
-	
-	bool operator==(const star_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel)
-				&& (metals == p.metals) && (tform == p.tform) && (eps == p.eps)
-				&& (phi == p.phi);
-	}
-
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const star_particle& p) {
-		return os << "Mass: " << p.mass
-			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
-			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
-			<< "\nMetals: " << p.metals
-			<< "\nFormation Time: " << p.tform
-			<< "\nGravitational Softening: " << p.eps
-			<< "\nPhi: " << p.phi;
-	}
-};
-
-typedef star_particle* star_particles;
-
-/** A particle representing a group of other particles.
- This class is an extension, it is not used in Tipsy.
-*/
-class group_particle {
-public:
-	/** An ID for this group. */
-	int groupNumber;
-	/** The total mass of this group. */
-	Real total_mass;
-	/** The reference vector to a member of the group.  This is present so that periodic boundary conditions can work. */
-	Vector3D<Real> reference;
-	/** The location, relative to the reference, of the center of mass of this group. */
-	Vector3D<Real> cm;
-	/** The center of mass velocity of this group. */
-	Vector3D<Real> cm_velocity;
-	/** The number of particles in this group. */
-	int numMembers;
-	/** The distance from the center of mass to the farthest member of the group. */
-	Real radius;
-	
-	/// Default constructor sets all values to zero
-	group_particle() : groupNumber(0), total_mass(0), numMembers(0), radius(0) { }
-	
-	bool operator==(const group_particle& p) const {
-		return (groupNumber == p.groupNumber) && (total_mass == p.total_mass) && ((cm + reference) == (p.cm + p.reference)) && (cm_velocity == p.cm_velocity)
-				&& (numMembers == p.numMembers) && (radius == p.radius);
-	}
-
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const group_particle& p) {
-		return os << "Group number: " << p.groupNumber
-			<< "\nTotal mass: " << p.total_mass
-			<< "\nCenter of mass: " << (p.cm + p.reference)
-			<< "\nCenter of mass velocity: " << p.cm_velocity << "  Magnitude: " << p.cm_velocity.length()
-			<< "\nNumber of members: " << p.numMembers
-			<< "\nRadius to farthest member: " << p.radius;
-	}
-};
-	
 
 /** The header in a tipsy format file. */
 struct header {
@@ -224,20 +51,11 @@ class TipsyFile {
 private:
 
 	/// Load the file from disk
-	void loadfile(std::istream& in);
-
-protected:
-	//the xdr stream handler
-	XDR xdrs;
-
-	/// XDR function that changes a header structure
-	int xdr_convert_header(header &h);
-	/// XDR function that changes a gas particle
-	int xdr_convert_gas(gas_particle &g);
-	/// XDR function that changes a dark matter particle
-	int xdr_convert_dark(dark_particle &d);
-	/// XDR function that changes a star particle
-	int xdr_convert_star(star_particle &s);
+	bool loadfile(std::istream& in);
+	
+	mutable std::vector<int> markedGas;
+	mutable std::vector<int> markedDarks;
+	mutable std::vector<int> markedStars;
 	
 	bool native;
 
@@ -245,7 +63,7 @@ protected:
 	
 public:
 	/// The filename of this tipsy file
-	string filename;
+	std::string filename;
 
 	/// The header of this tipsy file
 	header h;
@@ -256,37 +74,105 @@ public:
 	std::vector<dark_particle> darks;
 	/// The array of star particles
 	std::vector<star_particle> stars;
-		
+	
+	/// The axis-aligned box that contains all the particles
+	OrientedBox<Real> boundingBox;
+	
 	TipsyFile() : native(true), success(false) { }
 
 	/// Create a blank tipsy file with specified number of particles
-	TipsyFile(const string& fn, int nGas, int nDark = 0, int nStar = 0);
+	TipsyFile(const std::string& fn, int nGas, int nDark = 0, int nStar = 0);
 	
 	/// Load from a file
-	TipsyFile(const string& fn);
+	TipsyFile(const std::string& fn);
 	
 	/// Load from a stream
 	TipsyFile(std::istream& is);
 
 	/// Copy constructor
-	TipsyFile(const TipsyFile& tf) : native(tf.native), success(tf.success), filename(tf.filename), h(tf.h), gas(tf.gas), darks(tf.darks), stars(tf.stars) { }
+	TipsyFile(const TipsyFile& tf) : markedGas(tf.markedGas), markedDarks(tf.markedDarks), markedStars(tf.markedStars), native(tf.native), success(tf.success), filename(tf.filename), h(tf.h), gas(tf.gas), darks(tf.darks), stars(tf.stars), boundingBox(tf.boundingBox) { }
 	
 	~TipsyFile() { }
-
-	/// Save the current state to the given filename
-	void save() const;
-	/// Save the current state to a stream
-	void save(std::ostream& os) const;
 	
-	void reload(const std::string& fn);
-	void reload(std::istream& is);
+	TipsyFile& operator=(const TipsyFile& tf) {
+		markedGas = tf.markedGas;
+		markedDarks = tf.markedDarks;
+		markedStars = tf.markedStars;
+		native = tf.native;
+		success = tf.success;
+		filename = tf.filename;
+		h = tf.h;
+		gas = tf.gas;
+		darks = tf.darks;
+		stars = tf.stars;
+		boundingBox = tf.boundingBox;
+		return *this;
+	}
+	
+	/// Load a new file into this object, destroying the original one
+	bool reload(const std::string& fn);
+	bool reload(std::istream& is);
+	
+	/// Save the current state to the given filename, not writing out particles marked for deletion
+	bool save() const;
+	/// Save the current state to a stream
+	bool save(std::ostream& os) const;
+	
+	bool writeIOrdFile();
+	bool writeIOrdFile(const std::string& fn);
+	bool writeIOrdFile(std::ostream& os);
+	
+	/// Save the current state, including particles marked for deletion
+	bool saveAll() const;
+	bool saveAll(std::ostream& os) const;
+	
+	void addGasParticle(const gas_particle& p = gas_particle()) {
+		gas.push_back(p);
+		boundingBox.grow(p.pos);
+		remakeHeader();
+	}
+	
+	void addDarkParticle(const dark_particle& p = dark_particle()) {
+		darks.push_back(p);
+		boundingBox.grow(p.pos);
+		remakeHeader();
+	}
+	
+	void addStarParticle(const star_particle& p = star_particle()) {
+		stars.push_back(p);
+		boundingBox.grow(p.pos);
+		remakeHeader();
+	}
+	
+	bool markGasForDeletion(const int i) {
+		if(i < 0 || i >= h.nsph)
+			return false;
+		markedGas.push_back(i);
+		return true;
+	}
+	
+	bool markDarkForDeletion(const int i) {
+		if(i < 0 || i >= h.ndark)
+			return false;
+		markedDarks.push_back(i);
+		return true;
+	}
+
+	bool markStarForDeletion(const int i) {
+		if(i < 0 || i >= h.nstar)
+			return false;
+		markedStars.push_back(i);
+		return true;
+	}
 	
 	/// Is this file stored in native byte-order?
 	bool isNative() const { return native; }
 
 	/// Did the file load successfully?
 	bool loadedSuccessfully() const { return success; }
-
+	
+	bool operator!() const { return !success; }
+	
 	void remakeHeader() {
 		h.nsph = gas.size();
 		h.ndark = darks.size();
@@ -297,33 +183,70 @@ public:
 
 /** This class represents part of a tipsy file loaded into memory as if it were
  the whole thing.  It can be used in cases of low memory, or to split up one file
- among several processes. */
-class PartialTipsyFile : public TipsyFile {
+ among several processes.  It is essentially a read-only structure.  i.e., you
+ cannot save, add particles, or remove particles from a PartialTipsyFile.  */
+class PartialTipsyFile {
 private:
 		
-	void loadPartial(std::istream& is);
-
+	bool loadPartial(std::istream& is);
+	bool native;
+	bool success;
+	
 public:
 	
-	//the header for the full file is stored here.  The header h is the 
-	//header structure for the partial file
-	header fullHeader;
+	/// The filename of this tipsy file
+	std::string filename;
 
+	/// The header for the full file
+	header fullHeader;
+	/// The header for the part of the file we hold
+	header h;
+
+	/// The array of gas particles
+	std::vector<gas_particle> gas;
+	/// The array of dark matter particles
+	std::vector<dark_particle> darks;
+	/// The array of star particles
+	std::vector<star_particle> stars;
+	
+	/// The axis-aligned box that contains all the particles
+	OrientedBox<Real> boundingBox;
+	
+	/// The on-disk index of the first particle we hold
 	int beginParticle;
+	/// The on-disk index of one past the last particle we hold
 	int endParticle;
 	
-	PartialTipsyFile() : beginParticle(0), endParticle(0) { }
-	PartialTipsyFile(const string& fn, int begin, int end);
-	PartialTipsyFile(std::istream& is, int begin, int end);
-	PartialTipsyFile(const PartialTipsyFile& ptf) : TipsyFile(ptf), fullHeader(ptf.fullHeader), beginParticle(beginParticle), endParticle(endParticle) { }
-	
-	//saving of partial files not implemented, not sure if meaningful
-	void save() const { }
-	void save(std::ostream& os) const { };
+	PartialTipsyFile() : native(true), success(false), beginParticle(0), endParticle(0) { }
+	PartialTipsyFile(const std::string& fn, int begin = 0, int end = 1);
+	PartialTipsyFile(std::istream& is, int begin = 0, int end = 1);
+	PartialTipsyFile(const PartialTipsyFile& ptf) : native(ptf.native), success(ptf.success), filename(ptf.filename), fullHeader(ptf.fullHeader), h(ptf.h), gas(ptf.gas), darks(ptf.darks), stars(ptf.stars), beginParticle(ptf.beginParticle), endParticle(ptf.endParticle) { }
+		
+	PartialTipsyFile& operator=(const PartialTipsyFile& ptf) {
+		native = ptf.native;
+		success = ptf.success;
+		filename = ptf.filename;
+		fullHeader = ptf.fullHeader;
+		h = ptf.h;
+		gas = ptf.gas;
+		darks = ptf.darks;
+		stars = ptf.stars;
+		beginParticle = ptf.beginParticle;
+		endParticle = ptf.endParticle;
+		return *this;
+	}
 	
 	//reloading a partial file
-	void reload(const std::string& fn);
-	void reload(std::istream& is);
+	bool reload(const std::string& fn);
+	bool reload(std::istream& is);
+	
+	/// Is this file stored in native byte-order?
+	bool isNative() const { return native; }
+
+	/// Did the file load successfully?
+	bool loadedSuccessfully() const { return success; }
+	
+	bool operator!() const { return !success; }
 };
 
 /** This class hold statistics calculated from a tipsy file. */
@@ -378,8 +301,8 @@ public:
 	void outputStats(std::ostream& os);
 };
 
-vector<Real> readTipsyArray(std::istream& is);
-vector<Vector3D<Real> > readTipsyVector(std::istream& is);
+std::vector<Real> readTipsyArray(std::istream& is);
+std::vector<Vector3D<Real> > readTipsyVector(std::istream& is);
 
 } //close namespace Tipsy
 
