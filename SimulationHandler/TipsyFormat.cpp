@@ -141,8 +141,10 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* potentials = new float[numParticles];
 			dark_particle dp;
 			for(u_int64_t i = 0; i < numParticles; ++i) {
-				if(!r.getNextDarkParticle(dp))
+				if(!r.getNextDarkParticle(dp)) {
+					cerr << "BAD READ OF TIPSY FILE" <<endl;
 					return false;
+					}
 				masses[i] = dp.mass;
 				positions[i] = dp.pos;
 				velocities[i] = dp.vel;
