@@ -214,6 +214,7 @@ public:
 	}
 };
 
+static
 boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, std::string const& attributeName, double minValue, double maxValue) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
@@ -347,6 +348,7 @@ public:
 	}
 };
 
+static
 boost::shared_ptr<Group> make_SphericalGroup(Simulation const& sim, std::string const& attributeName, Vector3D<double> centerVector, double radiusValue) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
