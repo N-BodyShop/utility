@@ -6,8 +6,9 @@
 //using namespace boost::python;
 //using namespace Tipsy;
 
+#include "export_Vector3D.h"
+
 void export_CodeUnits();
-void export_Vector3D();
 void export_OrientedBox();
 void export_Sphere();
 void export_TipsyParticles();
@@ -17,7 +18,7 @@ void export_TipsyFile();
 BOOST_PYTHON_MODULE(TipsyFile) {
 	
 	export_CodeUnits();
-	export_Vector3D();
+	export_Vector3D<float>();
 	export_OrientedBox();
 	export_Sphere();
 	export_TipsyParticles();
