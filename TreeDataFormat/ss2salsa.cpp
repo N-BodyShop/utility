@@ -85,7 +85,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = float64;
-	outfile = fopen("ss/Mass", "wb");
+	outfile = fopen("ss/mass", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_mass(&xdrs, fh, &(*particles.begin()), stats.min_mass, stats.max_mass);
 	xdr_destroy(&xdrs);
@@ -114,7 +114,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float64;
-	outfile = fopen("ss/Velocity", "wb");
+	outfile = fopen("ss/velocity", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, &(*particles.begin()), stats.velocityBox.lesser_corner, stats.velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -208,10 +208,10 @@ int main(int argc, const char** argv) {
 	convertParticles(basename, r);
 	xmlfile << "\t<family name=\"ss\">\n";
 	xmlfile << "\t\t<attribute name=\"uid\" link=\"ss/uid\"/>\n";
-	xmlfile << "\t\t<attribute name=\"Mass\" link=\"ss/Mass\"/>\n";
+	xmlfile << "\t\t<attribute name=\"mass\" link=\"ss/mass\"/>\n";
 	xmlfile << "\t\t<attribute name=\"Radius\" link=\"ss/Radius\"/>\n";
 	xmlfile << "\t\t<attribute name=\"position\" link=\"ss/position\"/>\n";
-	xmlfile << "\t\t<attribute name=\"Velocity\" link=\"ss/Velocity\"/>\n";
+	xmlfile << "\t\t<attribute name=\"velocity\" link=\"ss/velocity\"/>\n";
 	xmlfile << "\t\t<attribute name=\"Spin\" link=\"ss/Spin\"/>\n";
 	xmlfile << "\t\t<attribute name=\"Color\" link=\"ss/Color\"/>\n";
 	xmlfile << "\t</family>\n";

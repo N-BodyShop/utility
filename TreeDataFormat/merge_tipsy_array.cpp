@@ -23,6 +23,9 @@ template <typename Iterator>
 bool unique_values(Iterator begin, Iterator end) {
 	if(begin == end)
 		return false;
+	Iterator next(begin);
+	if(++next == end) //a single value is unique
+		return true;
 	typename std::iterator_traits<Iterator>::value_type value = *begin;
 	while(++begin != end) {
 		if(*begin != value)
