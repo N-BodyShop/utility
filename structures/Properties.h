@@ -128,6 +128,7 @@ public:
 		map<string, string> newStringProperties(p.stringProperties);
 		newStringProperties.insert(stringProperties.begin(), stringProperties.end());
 		swap(stringProperties, newStringProperties);
+		return *this;
 	}
 	
 	/// Erase all the key/value pairs

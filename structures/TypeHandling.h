@@ -51,6 +51,71 @@ inline std::ostream& operator<<(std::ostream& os, DataTypeCode code) {
 	}
 }
 
+/** This template not yet complete. 
+template <typename T>
+struct MinMaxValues;
+
+template <>
+struct MinMaxValues<char> {
+	const static char minValue = -128;
+	const static char maxValue = 127;
+};
+
+template <>
+struct MinMaxValues<unsigned char> {
+	const static unsigned char minValue = 0;
+	const static unsigned char maxValue = 255;
+};
+
+template <>
+struct MinMaxValues<short> {
+	const static short minValue = -32768;
+	const static short maxValue = 32767;
+};
+
+template <>
+struct MinMaxValues<unsigned short> {
+	const static unsigned short minValue = 0;
+	const static unsigned short maxValue = 65535;
+};
+
+template <>
+struct MinMaxValues<int> {
+	const static int minValue = -2147483648;
+	const static int maxValue = 2147483647;
+};
+
+template <>
+struct MinMaxValues<unsigned int> {
+	const static char minValue = 0;
+	const static char maxValue = 4294967295;
+};
+
+template <>
+struct MinMaxValues<int64_t> {
+	const static int64_t minValue = -9223372036854775808;
+	const static int64_t maxValue = 9223372036854775807;
+};
+
+template <>
+struct MinMaxValues<u_int64_t> {
+	const static u_int64_t minValue = 0;
+	const static u_int64_t maxValue = 18446744073709551615;
+};
+
+template <>
+struct MinMaxValues<float> {
+	const static float minValue = -128;
+	const static float maxValue = 127;
+};
+
+template <>
+struct MinMaxValues<double> {
+	const static double minValue = 0;
+	const static double maxValue = 255;
+};
+*/
+
 /** This template structure allows you to get the enumeration value when
  you know the type.  To get the value for some type T, use Type2Code<T>::code
  T must be one of the defined types, or you will get an 

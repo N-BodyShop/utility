@@ -6,6 +6,7 @@
 
 #include <fstream>
 #include <algorithm>
+#include <iterator>
 
 #include "TipsyFile.h"
 
@@ -328,7 +329,7 @@ bool TipsyFile::saveAll() const {
 
 template <typename Iterator>
 void write_vector(std::ostream& os, Iterator begin, Iterator end) {
-	std::size_t itemSize = (*begin).sizeBytes;
+	std::size_t itemSize = std::iterator_traits<Iterator>::value_type::sizeBytes;
 	for(Iterator iter = begin; iter != end; ++iter) {
 		os.write(reinterpret_cast<const char *>(&(*iter)), itemSize);
 		if(!os)

@@ -141,7 +141,7 @@ public:
 	}
 
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const star_particle& p) {
+	friend std::ostream& operator<<(std::ostream& os, const star_particle& p) {
 		return os << "Mass: " << p.mass
 			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
 			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()

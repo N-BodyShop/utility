@@ -9,6 +9,8 @@
 
 #include "TypeHandling.h"
 
+#include "OrientedBox.h"
+
 namespace TypeHandling {
 
 //This struct exists only to be a placeholder to allow template functions to be overloaded
@@ -69,10 +71,26 @@ public:
 	TypedArray() : minValue(0), maxValue(0), length(0), data(0) { }	
 
 	template <typename T>
+	TypedArray(T* array, const u_int64_t n) {
+		code = Type2Code<T>::code;
+		dimensions = Type2Dimensions<T>::dimensions;
+		length = n;
+		data = array;
+		minValue = new T;
+		maxValue = new T;
+		if(length > 0)
+			calculateMinMax();
+		else {
+			*static_cast<T *>(minValue) = 0;
+			*static_cast<T *>(maxValue) = 0;
+		}
+	}
+	
+	template <typename T>
 	T* getArray(Type2Type<T>) {
-		//if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code)
+		if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code)
 			//throw TypeMismatchException;
-		//	return 0;
+			return 0;
 		return reinterpret_cast<T *>(data);
 	}
 
@@ -127,6 +145,9 @@ public:
 					//throw UnsupportedTypeException;
 			}
 		}
+	}
+	friend std::ostream& operator<<(std::ostream& os, const TypedArray& arr) {
+		return os << "Array type " << arr.code << ", dimensionality " << arr.dimensions << ", length " << arr.length;
 	}
 };
 
