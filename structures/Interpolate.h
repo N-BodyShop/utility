@@ -105,6 +105,118 @@ public:
 	}
 };
 
+/** Bilinear interpolation.  The independent variables must be equally spaced. */
+template <typename T = double>
+class BilinearInterpolator {
+	bool ready;
+	T min_x, min_y, max_x, max_y;
+	unsigned int num_x, num_y;
+	vector<T> deps;
+	T delta_x, delta_y;
+	mutable int klo_x, khi_x, klo_y, khi_y;
+	
+public:
+	
+	/// Default constructor, is non-working
+	BilinearInterpolator() {
+		ready = false;
+	}
+	
+	template <typename Iterator>
+	BilinearInterpolator(T xmin, T ymin, T xmax, T ymax, 
+			unsigned int nx, unsigned int ny, 
+			Iterator beginDep, Iterator endDep) 
+		: ready(false), min_x(xmin), min_y(ymin), max_x(xmax), max_y(ymax), num_x(nx), num_y(ny), deps(beginDep, endDep) {
+
+		if(num_x < 2 || num_y < 2 || num_x * num_y != deps.size())
+			return;
+		
+		delta_x = (max_x - min_x) / (num_x - 1);
+		delta_y = (max_y - min_y) / (num_y - 1);
+		
+		klo_x = klo_y = 0;
+		khi_x = num_x - 1;
+		khi_y = num_y - 1;
+		
+		ready = true;
+	}
+	
+	T operator()(T x, T y) const {
+		int k;
+		if(x < min_x + klo_x * delta_x) { //lower bracket than last time
+			if(x < min_x) { //out of bounds on the left side
+				klo_x = 0;
+				khi_x = 1;
+				x = min_x;
+			} else if(min_x + (klo_x - 1) * delta_x < x) { //it's the next one down
+				klo_x--;
+				khi_x--;
+			} else //set low location as low as possible
+				klo_x = 0;
+		} else if(min_x + khi_x * delta_x < x) { //greater bracket than last time
+			if(max_x < x) { //out of bounds on the right side
+				klo_x = num_x - 1;
+				khi_x = num_x - 1;
+				x = max_x;
+			} else if(x < min_x + (khi_x + 1) * delta_x) { //it's the next one up
+				khi_x++;
+				klo_x++;
+			} else //set high location as high as possible
+				khi_x = num_x - 1;
+		} //else, it's the same bracket as last time, don't change bounds
+		
+		while(khi_x - klo_x > 1) { //do binary search to find bracket
+			k = (khi_x + klo_x) / 2;
+			if(x < min_x + k * delta_x)
+				khi_x = k;
+			else
+				klo_x = k;
+		}
+		
+		if(y < min_y + klo_y * delta_y) { //lower bracket than last time
+			if(y < min_y) { //out of bounds on the left side
+				klo_y = 0;
+				khi_y = 1;
+				y = min_y;
+			} else if(min_y + (klo_y - 1) * delta_y < y) { //it's the next one down
+				klo_y--;
+				khi_y--;
+			} else //set low location as low as possible
+				klo_y = 0;
+		} else if(min_y + khi_y * delta_y < y) { //greater bracket than last time
+			if(max_y < y) { //out of bounds on the right side
+				klo_y = num_y - 1;
+				khi_y = num_y - 1;
+				y = max_y;
+			} else if(y < min_y + (khi_y + 1) * delta_y) { //it's the next one up
+				khi_y++;
+				klo_y++;
+			} else //set high location as high as possible
+				khi_y = num_y - 1;
+		} //else, it's the same bracket as last time, don't change bounds
+		
+		while(khi_y - klo_y > 1) { //do binary search to find bracket
+			k = (khi_y + klo_y) / 2;
+			if(y < min_y + k * delta_y)
+				khi_y = k;
+			else
+				klo_y = k;
+		}
+		
+		//give f(x,y)
+		T A = (x - min_x) / delta_x - klo_x;
+		T B = (y - min_y) / delta_y - klo_y;
+		return deps[klo_x + num_x * klo_y] * (1 - A - B + A * B)
+				+ deps[khi_x + num_x * klo_y] * (A - A * B)
+				+ deps[klo_x + num_x * khi_y] * (B - A * B)
+				+ deps[khi_x + num_x * khi_y] * A * B;
+	}
+	
+	bool isReady() const {
+		return ready;
+	}
+};
+
 template <typename T>
 class SplineDerivative;
 
