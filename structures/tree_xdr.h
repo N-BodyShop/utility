@@ -146,36 +146,55 @@ inline bool writeField(XDR* xdrs, const u_int64_t N, T* data) {
 	return true;
 }
 
-/** Given the type code in the header, write the correct data type
- for the field.
- */
-inline bool writeField(FieldHeader fh, XDR* xdrs, void* data) {
-	if(!xdr_template(xdrs, &fh))
-		return false;
-	switch(fh.code) {
+/** For three-dimensional types, change cast to a Vector3D of the type. */
+template <typename T>
+inline bool writeField(XDR* xdrs, const unsigned int dimensions, const u_int64_t N, T* data) {
+	if(dimensions == 3)
+		return writeField(xdrs, N, reinterpret_cast<Vector3D<T> * >(data));
+	else
+		return writeField(xdrs, N, data);
+}
+
+/** Given a type-code, cast to the appropriate type of pointer. */
+inline bool writeFieldSwitch(XDR* xdrs, DataTypeCode code, const unsigned int dimensions, const u_int64_t N, void* data) {
+	switch(code) {
 		case int8:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<char *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<char *>(data));
 		case uint8:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<unsigned char *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<unsigned char *>(data));
 		case int16:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<short *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<short *>(data));
 		case uint16:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<unsigned short *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<unsigned short *>(data));
 		case int32:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<int *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<int *>(data));
 		case uint32:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<unsigned int *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<unsigned int *>(data));
 		case int64:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<int64_t *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<int64_t *>(data));
 		case uint64:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<u_int64_t *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<u_int64_t *>(data));
 		case float32:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<float *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<float *>(data));
 		case float64:
-			return writeField(xdrs, fh.dimensions * fh.numParticles, reinterpret_cast<double *>(data));
+			return writeField(xdrs, dimensions, N, reinterpret_cast<double *>(data));
 		default:
 			return false;
 	}
+}
+
+/** Given the type code in the header, write the correct data type
+ for the field.  You need to pass a correctly filled-in header, the array
+ of values, and pointers to the minimum and maximum values.
+ */
+inline bool writeField(FieldHeader fh, XDR* xdrs, void* data, void* minValue, void* maxValue) {
+	if(fh.dimensions != 1 && fh.dimensions != 3)
+		return false;
+	if(!xdr_template(xdrs, &fh))
+		return false;
+	return writeFieldSwitch(xdrs, fh.code, fh.dimensions, 1, minValue)
+			&& writeFieldSwitch(xdrs, fh.code, fh.dimensions, 1, maxValue)
+			&& writeFieldSwitch(xdrs, fh.code, fh.dimensions, fh.numParticles, data);
 }
 
 /** Allocate for and read in a field from an XDR stream.  You need to have
@@ -380,7 +399,11 @@ inline bool_t seekField(const FieldHeader& fh, XDR* xdrs, const u_int64_t index)
  */
 struct BasicTreeNode {
 	u_int64_t numNodesLeft;
-	u_int64_t numParticlesLeft;	
+	u_int64_t numParticlesLeft;
+	
+	bool operator==(const BasicTreeNode& n) const { 
+		return (numNodesLeft == n.numNodesLeft) && (numParticlesLeft == n.numParticlesLeft);
+	}
 };
 
 template <>

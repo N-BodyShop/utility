@@ -14,6 +14,8 @@
 #include "Vector3D.h"
 #include "Sphere.h"
 #include "OrientedBox.h"
+#include "Box.h"
+#include "TypeSelection.h"
 
 template <typename T = double>
 class PeriodicSpace {
@@ -153,9 +155,9 @@ public:
 		return (s.origin - v).length() <= s.radius;
 	}
 
-	template <typename T>
-	static inline bool contains(const SphericalShell<T>& s, const Vector3D<T>& v) {
-		T len = (s.origin - v).length();
+	template <typename T, typename T2>
+	static inline bool contains(const SphericalShell<T>& s, const Vector3D<T2>& v) {
+		typename wider<T, T2>::widerType len = (s.origin - v).length();
 		return (s.radius - s.delta < len) && (len < s.radius + s.delta);
 	}
 
@@ -165,6 +167,19 @@ public:
 		return v.x >= b.lesser_corner.x && v.x <= b.greater_corner.x
 				&& v.y >= b.lesser_corner.y && v.y <= b.greater_corner.y
 				&& v.z >= b.lesser_corner.z && v.z <= b.greater_corner.z;
+	}
+
+	/// Does an unaligned box contain a point
+	template <typename T, typename T2>
+	static inline bool contains(const Box<T>& box, const Vector3D<T2>& v) {
+		typename wider<T, T2>::widerType a, b, c;
+		Vector3D<typename wider<T, T2>::widerType> v_minus_center = v - box.center;
+		a = dot(v_minus_center, box.axis1);
+		b = dot(v_minus_center, box.axis2);
+		c = dot(v_minus_center, box.axis3);
+		return -box.axis1_length <= a && a <= box.axis1_length
+				&& -box.axis2_length <= b && b <= box.axis2_length
+				&& -box.axis3_length <= c && c <= box.axis3_length;
 	}
 
 	/// Do two oriented boxes intersect

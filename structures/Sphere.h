@@ -58,7 +58,7 @@ public:
 
 };
 
-template <typename T>
+template <typename T = double>
 class SphericalShell : public Sphere<T> {
 public:
 	
