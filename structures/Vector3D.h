@@ -13,20 +13,20 @@
 #include <cmath> //for sqrt()
 
 /** A class containing the three cartesian coordinates of a three-dimensional vector. */
-template <class T = double>
+template <typename T = double>
 class Vector3D {
 public:
 	/// The cartesian coordinates of this three-dimensional vector
-	T x, y, z; //the cartesian components
+	T x, y, z;
 
 	/// Standard constructor, initialize all coordinates to one value
-	Vector3D(T a = 0) : x(a), y(a), z(a) { }
+	explicit Vector3D(T a = 0) : x(a), y(a), z(a) { }
 	
 	/// Standard constructor, initialize all components
 	Vector3D(T a, T b, T c) : x(a), y(b), z(c) { }
 
 	/// Constructor from an array (3 elements) of values (of possibly different type!)
-	template <class T2>
+	template <typename T2>
 	Vector3D(T2* arr) : x(*arr), y(*(arr + 1)), z(*(arr + 2)) { }
 
 	/// Copy constructor copies the components
@@ -34,6 +34,12 @@ public:
 
 	//nothing to destruct!
 	~Vector3D() { }
+
+	/// Casting to a different template class (just casts the components)
+	template <class T2>
+	operator Vector3D<T2> () const {
+		return Vector3D<T2>(static_cast<T2>(x), static_cast<T2>(y), static_cast<T2>(z));
+	}
 
 	/* The only innate attribute a vector has is its length, 
 	 given here as a member function. */
@@ -43,11 +49,21 @@ public:
 		return (T) sqrt(x * x + y * y + z * z);
 	}
 
+	/// The length squared of this vector
+	T lengthSquared() const {
+		return x * x + y * y + z * z;
+	}
+
+	/// Make this vector a unit vector (length one)
+	Vector3D<T>& normalize() {
+		return *this /= length();
+	}
+	
 	/* To manipulate Vector3D objects as expected, we need to overload a bunch of operators. */
 
 	/// Allow array subscripting to return the components
-	T& operator[] (int index) {
-		switch(index) { //if index isn't valid, who knows what gets returned
+	T& operator[](int index) {
+		switch(index) { //if index isn't valid, x gets returned
 			case 0: return x;
 			case 1: return y;
 			case 2: return z;
@@ -74,13 +90,7 @@ public:
 		arr[1] = y;
 		arr[2] = z;
 	}
-	
-	/// Casting to a different template class (just casts the components)
-	template <class T2>
-	operator Vector3D<T2> () const {
-		return Vector3D<T2>((T2) x, (T2) y, (T2) z);
-	}
-	
+		
 	/// Equality operator tests all the components for equality
 	bool operator==(const Vector3D<T>& v) const { 
 		return (x == v.x) && (y == v.y) && (z == v.z);
@@ -148,11 +158,6 @@ public:
 		return Vector3D<T>(-x, -y, -z);
 	}
 	
-	/// Make this vector a unit vector (length one)
-	Vector3D<T>& normalize() {
-		return *this /= length();
-	}
-	
 	/// Vector multiplication multiplies the components
 	Vector3D<T> operator*(const Vector3D<T>& v) const {
 		return Vector3D<T>(x * v.x, y * v.y, z * v.z);
@@ -178,44 +183,44 @@ public:
 		z /= v.z;
 		return *this;
 	}
-
-	/* Many other vector operations are best represented as friend functions.
-	 That is, they are not member functions, but are defined as friends here inside
-	 the rest of the class definition. */
-	
-	/// Scalar multiplication on the left
-	friend Vector3D<T> operator* (const T& s, const Vector3D<T>& v) {
-		return Vector3D<T>(v.x * s, v.y * s, v.z * s);
-	}
-	
-	/// The dot product of two vectors
-	friend T dot(const Vector3D<T>& a, const Vector3D<T>& b) {
-		return (a.x * b.x + a.y * b.y + a.z * b.z);
-	}
-
-	/// The cosine of the angle between two vectors
-	friend T costheta(const Vector3D<T>& a, const Vector3D<T>& b) {
-		T length_squared_a = (a.x * a.x + a.y * a.y + a.z * a.z);
-		T length_squared_b = (b.x * b.x + b.y * b.y + b.z * b.z);
-		if(length_squared_a * length_squared_b == 0)
-			return 0;
-		else
-			return dot(a, b) / sqrt(length_squared_a * length_squared_b);
-	}
-	
-	/// The cross product of two vectors (Order is important! a x b == - b x a) */
-	friend Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T>& b) {
-		return Vector3D<T>(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
-	}
-
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
-		os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
-		//os << v.x << delim << v.y << delim << v.z;
-		return os;
-	}
 	
 };
+
+/// Scalar multiplication on the left
+template <typename T, typename T2>
+Vector3D<T> operator*(const T2& s, const Vector3D<T>& v) {
+	return Vector3D<T>(v.x * s, v.y * s, v.z * s);
+}
+
+/// The dot product of two vectors
+template <typename T, typename T2>
+T dot(const Vector3D<T>& a, const Vector3D<T2>& b) {
+	return (a.x * b.x + a.y * b.y + a.z * b.z);
+}
+
+/// The cosine of the angle between two vectors
+template <typename T, typename T2>
+T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
+	T lengths_squared = a.lengthSquared() * b.lengthSquared();
+	if(lengths_squared == 0)
+		return 0;
+	else
+		return dot(a, b) / sqrt(lengths_squared);
+}
+
+/// The cross product of two vectors (Order is important! a x b == - b x a) */
+template <typename T, typename T2>
+Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
+	return Vector3D<T>(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+}
+
+/// Output operator, used for formatted display
+template <typename T>
+std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
+	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
+	//os << v.x << delim << v.y << delim << v.z;
+	return os;
+}
 
 /** Given the spherical coordinates of a vector, return a cartesion version of the same vector. */
 template <class T>

@@ -19,7 +19,7 @@
 #include "PeriodicBoundaryConditions.h"
 
 /// A box in three dimensions whose axes are aligned with the coordinate axes
-template <class T>
+template <typename T = double>
 class OrientedBox : public Shape<T> {
 private:
 
@@ -29,7 +29,7 @@ public:
 	/// The corner with the maximum \c x, \c y, and \c z values
 	Vector3D<T> greater_corner;
 	
-	OrientedBox(const Vector3D<T>& corner1 = Vector3D<T>(-0.5, -0.5, -0.5), const Vector3D<T>& corner2 = Vector3D<T>(0.5, 0.5, 0.5)) {
+	explicit OrientedBox(const Vector3D<T>& corner1 = Vector3D<T>(-0.5, -0.5, -0.5), const Vector3D<T>& corner2 = Vector3D<T>(0.5, 0.5, 0.5)) {
 		if(corner1.x < corner2.x) {
 			lesser_corner = Vector3D<T>(corner1);
 			if(corner1.y > corner2.y || corner1.z > corner2.z) //malformed box!
@@ -64,8 +64,15 @@ public:
 		}
 	}
 	
+	OrientedBox(const OrientedBox<T>& b) : lesser_corner(b.lesser_corner), greater_corner(b.greater_corner) { }
+	
 	~OrientedBox() { }
 
+	OrientedBox<T>& operator=(const OrientedBox<T>& b) {
+		lesser_corner = b.lesser_corner;
+		greater_corner = b.greater_corner;	
+	}
+	
 	inline bool contains(const Vector3D<T>& point) const {
 		return point.x >= lesser_corner.x && point.x <= greater_corner.x
 				&& point.y >= lesser_corner.y && point.y <= greater_corner.y

@@ -24,7 +24,7 @@ using std::copy;
  * at the requested point, based on the surrounding values.  If you ask for
  * a value outside the initially specified range, the end value will be returned.
  */
-template <class T>
+template <typename T = double>
 class LinearInterpolator {
 private:
 	
@@ -105,7 +105,7 @@ public:
 	}
 };
 
-template <class T>
+template <typename T>
 class SplineDerivative;
 
 /**
@@ -118,7 +118,7 @@ class SplineDerivative;
  * the linear extrapolation is returned, using the value of the first 
  * derivative at the end point.
  */
-template <class T>
+template <typename T = double>
 class SplineInterpolator {
 	friend class SplineDerivative<T>;
 private:
@@ -277,7 +277,7 @@ public:
 /**
  * This class represents the derivative of a cubic-spline interpolated function.
  */
-template <class T>
+template <typename T = double>
 class SplineDerivative {
 private:
 	

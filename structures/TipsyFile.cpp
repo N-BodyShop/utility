@@ -7,54 +7,32 @@
 
 #include "TipsyFile.h"
 
+namespace Tipsy {
+
 //create a new tipsy file with the specified numbers of particles
-TipsyFile::TipsyFile(const string& fn, int nGas, int nDark = 0, int nStar = 0) {
-	native = true; //native byte-ordering
-	filename = fn;
-	h.nbodies = nDark + nGas + nStar;
-	h.ndim = MAXDIM;
-	h.time = 0; //default time
-	h.nsph = nGas;
-	h.ndark = nDark;
-	h.nstar = nStar;
-	
-	success = false;
-	
-	//allocate memory for the particles
-	gas = new gas_particle[h.nsph];
-	if(gas == NULL) {
-		cerr << "Could not allocate enough memory for gas.\ntipsy file not created." << endl;
-		return;
-	}
-	darks = new dark_particle[h.ndark];
-	if(darks == NULL) {
-		cerr << "Could not allocate enough memory for darks.\ntipsy file not created." << endl;
-		return;
-	}
-	stars = new star_particle[h.nstar];
-	if(stars == NULL) {
-		cerr << "Could not allocate enough memory for stars.\ntipsy file not created." << endl;
-		return;
-	}
-	
+TipsyFile::TipsyFile(const string& fn, int nGas, int nDark = 0, int nStar = 0) : native(true), success(false), filename(fn), h(nGas, nDark, nStar), gas(nGas), darks(nDark), stars(nStar) {
 	success = true;
 }
 
 //open a tipsyfile from disk
-TipsyFile::TipsyFile(const string& fn) {
-	filename = fn;
-	native = true;  //assume native until we learn otherwise
-	loadfile();
+TipsyFile::TipsyFile(const string& fn) : native(true), success(false), filename(fn) {
+	reload(filename);
 }
 
-//deallocate the memory for the particles
-TipsyFile::~TipsyFile() {
-	if(h.nsph != 0 && gas != NULL)
-		delete[] gas;
-	if(h.ndark != 0 && darks != NULL)
-		delete[] darks;
-	if(h.nstar != 0 && stars != NULL)
-		delete[] stars;
+//open a tipsyfile from a stream
+TipsyFile::TipsyFile(std::istream& is) : native(true), success(false), filename("") {
+	reload(is);
+}
+
+void TipsyFile::reload(const std::string& fn) {
+	filename = fn;
+	ifstream infile(filename.c_str());
+	loadfile(infile);
+	infile.close();
+}
+
+void TipsyFile::reload(std::istream& is) {
+	loadfile(is);
 }
 
 //process xdr versions of the data structures used in tipsy files
@@ -108,30 +86,32 @@ int TipsyFile::xdr_convert_star(star_particle &s) {
 		&& xdr_float(&xdrs, &s.phi));
 }
 
-//write a tipsy file to disk
+//write a TipsyFile to file
 void TipsyFile::save() const {
-	std::ofstream out(filename.c_str()); //open file
-	out.write((char *) &h, sizeof(header)); //write out the header
-	out.write((char *) gas, h.nsph * sizeof(gas_particle)); //write out the particles
-	out.write((char *) darks, h.ndark * sizeof(dark_particle));
-	out.write((char *) stars, h.nstar * sizeof(star_particle));
-	out.close();
+	std::ofstream outfile(filename.c_str()); //open file
+	save(outfile);
+	outfile.close();
 }
 
-void TipsyFile::loadfile() {
-	success = false;
-	std::ifstream in(filename.c_str()); //open the data file
+//write a tipsy file to stream
+void TipsyFile::save(std::ostream& os) const {
+	os.write(reinterpret_cast<const char *>(&h), sizeof(header)); //write out the header
+	os.write(reinterpret_cast<const char *>(gas.begin()), h.nsph * sizeof(gas_particle)); //write out the particles
+	os.write(reinterpret_cast<const char *>(darks.begin()), h.ndark * sizeof(dark_particle));
+	os.write(reinterpret_cast<const char *>(stars.begin()), h.nstar * sizeof(star_particle));
+}
 
-	in.read((char *) &h, sizeof(header)); //read in the header
+void TipsyFile::loadfile(std::istream& in) {
+	success = false;
 	
-	int i = 0;
+	//read in the header
+	in.read(&h, sizeof(header));
 	
 	if(h.ndim != MAXDIM) { //check for validity
 		//try xdr format
 		xdrmem_create(&xdrs, (char *) &h, sizeof(header), XDR_DECODE);
 		if(!xdr_convert_header(h) || h.ndim != MAXDIM) { //wasn't xdr format either			
 			cerr << "Tried to load file " << filename << " which had crazy dimension.\ntipsy file not loaded." << endl;
-			in.close();
 			h.nbodies = h.nsph = h.ndark = h.nstar = 0;
 			return;
 		}
@@ -141,85 +121,80 @@ void TipsyFile::loadfile() {
 		in.read((char *) &pad, sizeof(int));
 	}
 
-	//check and allocate memory for gas
+	//check and allocate memory for gas particles
 	if(h.nsph > 0) {
-		gas = new gas_particle[h.nsph];
-		if(gas == NULL) {
-			cerr << "Could not allocate enough memory for gas.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) gas, h.nsph * sizeof(gas_particle)); //read in the gas particles
+		gas.resize(h.nsph);
+		in.read(gas.begin(), h.nsph * sizeof(gas_particle)); //read in the gas particles
 		if(!native) { //do xdr processing
 			//create an xdr stream in memory
-			xdrmem_create(&xdrs, (char *) gas, h.nsph * sizeof(gas_particle), XDR_DECODE);
-			for(i = 0; i < h.nsph; i++)
-				if(!xdr_convert_gas(gas[i])) //convert each particle and check for validity
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(gas.begin()), h.nsph * sizeof(gas_particle), XDR_DECODE);
+			for(vector<gas_particle>::iterator iter = gas.begin(), end = gas.end(); iter != end; ++iter)
+				if(!xdr_convert_gas(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
-	//check and allocate memory for dark matter
+	//check and allocate memory for dark matter particles
 	if(h.ndark > 0) {
-		darks = new dark_particle[h.ndark];
-		if(darks == NULL) {
-			cerr << "Could not allocate enough memory for dark matter.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) darks, h.ndark * sizeof(dark_particle));
+		darks.resize(h.ndark);
+		in.read(darks.begin(), h.ndark * sizeof(dark_particle));
 		if(!native) {
-			xdrmem_create(&xdrs, (char *) darks, h.ndark * sizeof(dark_particle), XDR_DECODE);
-			for(i = 0; i < h.ndark; i++)
-				if(!xdr_convert_dark(darks[i]))
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(darks.begin()), h.ndark * sizeof(dark_particle), XDR_DECODE);
+			for(vector<dark_particle>::iterator iter = darks.begin(), end = darks.end(); iter != end; ++iter)
+				if(!xdr_convert_dark(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
-	//check and allocate memory for stars
+	//check and allocate memory for star particles
 	if(h.nstar > 0) {
-		stars = new star_particle[h.nstar];
-		if(stars == NULL) {
-			cerr << "Could not allocate enough memory for stars.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) stars, h.nstar * sizeof(star_particle));
+		stars.resize(h.nstar);
+		in.read(stars.begin(), h.nstar * sizeof(star_particle));
 		if(!native) {
-			xdrmem_create(&xdrs, (char *) stars, h.nstar * sizeof(star_particle), XDR_DECODE);
-			for(i = 0; i < h.nstar; i++)
-				if(!xdr_convert_star(stars[i]))
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(stars.begin()), h.nstar * sizeof(star_particle), XDR_DECODE);
+			for(vector<star_particle>::iterator iter = stars.begin(), end = stars.end(); iter != end; ++iter)
+				if(!xdr_convert_star(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
-	in.close(); //close the file
 	success = true;
 }
 
-//read part of a tipsy file from disk
-PartialTipsyFile::PartialTipsyFile(const string& fn, int begin, int end) {
-	filename = fn;
-	beginParticle = begin;
-	endParticle = end;
-	native = true;  //assume native until we learn otherwise
-	loadPartial();	
+//read part of a tipsy file from a file
+PartialTipsyFile::PartialTipsyFile(const string& fn, int begin = 0, int end = 1) : beginParticle(begin), endParticle(end) {
+	reload(fn);
 }
 
-void PartialTipsyFile::loadPartial() {
-	success = false;
-	std::ifstream in(filename.c_str()); //open the data file
+//read part of a tipsy file from a stream
+PartialTipsyFile::PartialTipsyFile(std::istream& is, int begin = 0, int end = 1) : beginParticle(begin), endParticle(end) {
+	reload(is);
+}
 
-	in.read((char *) &fullHeader, sizeof(header)); //read in the header
+void PartialTipsyFile::reload(const std::string& fn) {
+	filename = fn;
+	std::ifstream infile(filename.c_str());
+	if(!infile)
+		return;
+	loadPartial(infile);
+	infile.close();	
+}
+
+void PartialTipsyFile::reload(std::istream& is) {
+	loadPartial(is);
+}
+
+void PartialTipsyFile::loadPartial(std::istream& in) {
+	success = false;
 	
-	int i = 0;
+	//read in the header
+	in.read(&fullHeader, sizeof(header));
 	
 	if(fullHeader.ndim != MAXDIM) { //check for validity
 		//try xdr format
-		xdrmem_create(&xdrs, (char *) &fullHeader, sizeof(header), XDR_DECODE);
+		xdrmem_create(&xdrs, reinterpret_cast<char *>(&fullHeader), sizeof(header), XDR_DECODE);
 		if(!xdr_convert_header(fullHeader) || fullHeader.ndim != MAXDIM) { //wasn't xdr format either			
 			cerr << "Tried to load file " << filename << " which had crazy dimension.\ntipsy file not loaded." << endl;
-			in.close();
 			h.nbodies = h.nsph = h.ndark = h.nstar = 0;
 			fullHeader.nbodies = fullHeader.nsph = fullHeader.ndark = fullHeader.nstar = 0;
 			return;
@@ -262,57 +237,41 @@ void PartialTipsyFile::loadPartial() {
 	
 	//check and allocate memory for gas
 	if(h.nsph > 0) {
-		gas = new gas_particle[h.nsph];
-		if(gas == NULL) {
-			cerr << "Could not allocate enough memory for gas.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) gas, h.nsph * sizeof(gas_particle)); //read in the gas particles
+		gas.resize(h.nsph);
+		in.read(gas.begin(), h.nsph * sizeof(gas_particle)); //read in the gas particles
 		if(!native) { //do xdr processing
 			//create an xdr stream in memory
-			xdrmem_create(&xdrs, (char *) gas, h.nsph * sizeof(gas_particle), XDR_DECODE);
-			for(i = 0; i < h.nsph; i++)
-				if(!xdr_convert_gas(gas[i])) //convert each particle and check for validity
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(gas.begin()), h.nsph * sizeof(gas_particle), XDR_DECODE);
+			for(vector<gas_particle>::iterator iter = gas.begin(), end = gas.end(); iter != end; ++iter)
+				if(!xdr_convert_gas(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
 	//check and allocate memory for dark matter
 	if(h.ndark > 0) {
-		darks = new dark_particle[h.ndark];
-		if(darks == NULL) {
-			cerr << "Could not allocate enough memory for dark matter.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) darks, h.ndark * sizeof(dark_particle));
+		darks.resize(h.ndark);
+		in.read(darks.begin(), h.ndark * sizeof(dark_particle));
 		if(!native) {
-			xdrmem_create(&xdrs, (char *) darks, h.ndark * sizeof(dark_particle), XDR_DECODE);
-			for(i = 0; i < h.ndark; i++)
-				if(!xdr_convert_dark(darks[i]))
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(darks.begin()), h.ndark * sizeof(dark_particle), XDR_DECODE);
+			for(vector<dark_particle>::iterator iter = darks.begin(), end = darks.end(); iter != end; ++iter)
+				if(!xdr_convert_dark(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
 	//check and allocate memory for stars
 	if(h.nstar > 0) {
-		stars = new star_particle[h.nstar];
-		if(stars == NULL) {
-			cerr << "Could not allocate enough memory for stars.\ntipsy file not loaded." << endl;
-			in.close();
-			return;
-		}
-		in.read((char *) stars, h.nstar * sizeof(star_particle));
+		stars.resize(h.nstar);
+		in.read(stars.begin(), h.nstar * sizeof(star_particle));
 		if(!native) {
-			xdrmem_create(&xdrs, (char *) stars, h.nstar * sizeof(star_particle), XDR_DECODE);
-			for(i = 0; i < h.nstar; i++)
-				if(!xdr_convert_star(stars[i]))
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(stars.begin()), h.nstar * sizeof(star_particle), XDR_DECODE);
+			for(vector<star_particle>::iterator iter = stars.begin(), end = stars.end(); iter != end; ++iter)
+				if(!xdr_convert_star(*iter)) //convert each particle and check for validity
 					return;
 		}
 	}
 
-	in.close(); //close the file
 	success = true;
 }
 
@@ -324,16 +283,14 @@ TipsyStats::TipsyStats(TipsyFile* tfile) {
 	volume = density = 0;
 	
 	//set initial value for the bounding box with the first particle we can find
-	if(tf->h.nsph > 0) {
+	if(tf->h.nsph > 0)
 		bounding_box = OrientedBox<double>(Vector(tf->gas[0].pos), Vector(tf->gas[0].pos));
-	} else if(tf->h.ndark > 0) {
+	else if(tf->h.ndark > 0)
 		bounding_box = OrientedBox<double>(tf->darks[0].pos, tf->darks[0].pos);
-	} else if(tf->h.nstar > 0) {
+	else if(tf->h.nstar > 0)
 		bounding_box = OrientedBox<double>(tf->stars[0].pos, tf->stars[0].pos);
-	} else {
-		//no particles in the file, so why did you ask for stats?!
+	else //no particles in the file, so why did you ask for stats?!
 		return;
-	}
 	
 	center = size = Vector(0, 0, 0);
 	
@@ -674,3 +631,5 @@ vector<Vector3D<Real> > readTipsyVector(std::istream& is) {
 	}
 	return vectorvals;
 }
+
+} //close namespace Tipsy

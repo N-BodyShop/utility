@@ -13,23 +13,28 @@
 #include "Shape.h"
 #include "PeriodicBoundaryConditions.h"
 
-template <class T>
+template <typename T>
 class OrientedBox;
 
 /// A class representing a sphere in three dimensions
-template <class T>
+template <typename T = double>
 class Sphere : public Shape<T> {
 public:
 	/// The origin of this sphere
 	Vector3D<T> origin;
 	/// The radius of this sphere
 	T radius;
-public:
-	Sphere(const Vector3D<T> o = Vector3D<T>(), const T r = 1) : origin(o), radius(r) { }
+
+	Sphere(const Vector3D<T>& o = Vector3D<T>(), const T r = 1) : origin(o), radius(r) { }
 	
 	Sphere(const Sphere<T>& s) : origin(s.origin), radius(s.radius) { }
 	
 	~Sphere() { }
+	
+	Sphere<T>& operator=(const Sphere<T>& s) {
+		origin = s.origin;
+		radius = s.radius;
+	}
 	
 	/// A sphere contains a point if the distance between the origin and the point is less than the radius
 	inline bool contains(const Vector3D<T>& point) const {
@@ -90,7 +95,7 @@ public:
 	
 	/// The volume of a sphere is \f$ \frac{4 \pi}{3} r^3 \f$
 	inline T volume() const {
-		return 4.0 * 3.14159265358979323846 / 3.0 * radius * radius;
+		return 4.0 * 3.14159265358979323846 / 3.0 * radius * radius * radius;
 	}
 	
 	/// Two spheres intersect if the distance betweeen their origins is larger than the sum of their radii
@@ -99,8 +104,8 @@ public:
 	}
 	
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const Sphere<T>& s) {
-		os << '{' << s.origin << ',' << s.radius << '}';
+	friend std::ostream& operator<<(std::ostream& os, const Sphere<T>& s) {
+		os << '{' << s.origin << ', ' << s.radius << '}';
 		return os;
 	}
 
