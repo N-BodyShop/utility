@@ -12,13 +12,13 @@
 #include <string>
 #include <sstream>
 
+#include "Shape.h"
 #include "Vector3D.h"
 #include "Sphere.h"
-#include "PeriodicBoundaryConditions.h"
 
 /// A box in three dimensions whose axes are aligned with the coordinate axes
 template <typename T = double>
-class OrientedBox {
+class OrientedBox : public Shape<T> {
 private:
 
 public:
@@ -70,10 +70,6 @@ public:
 				&& point.z >= lesser_corner.z && point.z <= greater_corner.z;
 	}
 	
-	inline Vector3D<T> center() const {
-		return (lesser_corner + greater_corner) / 2.0;
-	}
-	
 	inline void grow(const Vector3D<T>& point) {
 		if(point.x < lesser_corner.x)
 			lesser_corner.x = point.x;
@@ -94,98 +90,18 @@ public:
 		return (greater_corner.x - lesser_corner.x) * (greater_corner.y - lesser_corner.y) * (greater_corner.z - lesser_corner.z);
 	}
 	
-	template <class T2>
-	inline bool encloses(const OrientedBox<T2>& b) const {
-		return lesser_corner.x <= b.lesser_corner.x
-				&& lesser_corner.y <= b.lesser_corner.y
-				&& lesser_corner.z <= b.lesser_corner.z
-				&& greater_corner.x >= b.greater_corner.x
-				&& greater_corner.y >= b.greater_corner.y
-				&& greater_corner.z >= b.greater_corner.z;
+	inline Vector3D<T> center() const {
+		return (lesser_corner + greater_corner) / 2.0;
 	}
 	
-	template <class T2>
-	inline bool intersects(const OrientedBox<T2>& b) const {
-		return !(lesser_corner.x > b.greater_corner.x || greater_corner.x < b.lesser_corner.x
-				|| lesser_corner.y > b.greater_corner.y || greater_corner.y < b.lesser_corner.y
-				|| lesser_corner.z > b.greater_corner.z || greater_corner.z < b.lesser_corner.z);
+	inline Vector3D<T> size() const {
+		return greater_corner - lesser_corner;
 	}
-
-	/// Determine if a sphere and a box intersect
-	template <class T2>
-	inline bool intersects(const Sphere<T2>& s) const {
-		T dsq = 0;
-		T rsq = s.radius * s.radius;
-		T delta;
-		if((delta = lesser_corner.x - s.origin.x) > 0)
-			dsq += delta * delta;
-		else if((delta = s.origin.x - greater_corner.x) > 0)
-			dsq += delta * delta;
-		if(rsq < dsq)
-			return false;
-		if((delta = lesser_corner.y - s.origin.y) > 0)
-			dsq += delta * delta;
-		else if((delta = s.origin.y - greater_corner.y) > 0)
-			dsq += delta * delta;
-		if(rsq < dsq)
-			return false;
-		if((delta = lesser_corner.z - s.origin.z) > 0)
-			dsq += delta * delta;
-		else if((delta = s.origin.z - greater_corner.z) > 0)
-			dsq += delta * delta;
-		return (dsq <= s.radius * s.radius);
-	}
-
-	/// Determine if a sphere and a box intersect, using periodic boundary conditions
-	template <class T2>
-	inline bool intersects(const PeriodicBoundaryConditions<T2>& pbc, const Sphere<T2>& s) const {
-		T dsq = 0;
-		T rsq = s.radius * s.radius;
-		T delta, delta_ghost;
-		if((delta = lesser_corner.x - s.origin.x) > 0) {
-			if(pbc.xPeriod > 0) {
-				delta_ghost = s.origin.x + pbc.xPeriod - greater_corner.x;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		} else if((delta = s.origin.x - greater_corner.x) > 0) {
-			if(pbc.xPeriod > 0) {
-				delta_ghost = lesser_corner.x - s.origin.x + pbc.xPeriod;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		}
-		if(rsq < dsq)
-			return false;
-		if((delta = lesser_corner.y - s.origin.y) > 0) {
-			if(pbc.yPeriod > 0) {
-				delta_ghost = s.origin.y + pbc.yPeriod - greater_corner.y;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		} else if((delta = s.origin.y - greater_corner.y) > 0) {
-			if(pbc.yPeriod > 0) {
-				delta_ghost = lesser_corner.y - s.origin.y + pbc.yPeriod;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		}
-		if(rsq < dsq)
-			return false;
-		if((delta = lesser_corner.z - s.origin.z) > 0) {
-			if(pbc.zPeriod > 0) {
-				delta_ghost = s.origin.z + pbc.zPeriod - greater_corner.z;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		} else if((delta = s.origin.z - greater_corner.z) > 0) {
-			if(pbc.zPeriod > 0) {
-				delta_ghost = lesser_corner.z - s.origin.z + pbc.zPeriod;
-				delta = (delta < delta_ghost ? delta : delta_ghost);
-			}
-			dsq += delta * delta;
-		}
-		return (dsq <= s.radius * s.radius);
+	
+	inline OrientedBox<T>& shift(const Vector3D<T>& v) {
+		lesser_corner += v;
+		greater_corner += v;
+		return *this;
 	}
 	
 	/// Output operator, used for formatted display
@@ -210,5 +126,16 @@ public:
 		return oss.str();
 	}
 };
+
+#ifdef CHARM
+#include "pup.h"
+
+template <typename T>
+inline void operator|(PUP::er& p, OrientedBox<T>& b) {
+	p | b.lesser_corner;
+	p | b.greater_corner;
+}
+
+#endif //CHARM
 
 #endif //ORIENTEDBOX_H

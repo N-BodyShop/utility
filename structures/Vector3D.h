@@ -20,7 +20,7 @@ public:
 	T x, y, z;
 
 	/// Standard constructor, initialize all coordinates to one value
-	explicit Vector3D(T a = 0) : x(a), y(a), z(a) { }
+	Vector3D(T a = 0) : x(a), y(a), z(a) { }
 	
 	/// Standard constructor, initialize all components
 	Vector3D(T a, T b, T c) : x(a), y(b), z(c) { }
@@ -310,5 +310,17 @@ public:
 
 /** A shorthand version, for convenience. */
 typedef Vector3D<double> Vector;
+
+#ifdef CHARM
+#include "pup.h"
+
+template <typename T>
+inline void operator|(PUP::er& p, Vector3D<T>& v) {
+	p | v.x;
+	p | v.y;
+	p | v.z;
+}
+
+#endif //CHARM
 
 #endif //VECTOR3D_H

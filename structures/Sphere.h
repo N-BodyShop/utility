@@ -9,6 +9,8 @@
 
 #include <iostream>
 
+#include "Shape.h"
+
 #include "Vector3D.h"
 #include "PeriodicBoundaryConditions.h"
 
@@ -17,7 +19,7 @@ class OrientedBox;
 
 /// A class representing a sphere in three dimensions
 template <typename T = double>
-class Sphere {
+class Sphere : public Shape<T> {
 public:
 	/// The origin of this sphere
 	Vector3D<T> origin;
@@ -36,56 +38,6 @@ public:
 		return *this;
 	}
 	
-	/// A sphere contains a point if the distance between the origin and the point is less than the radius
-	inline bool contains(const Vector3D<T>& point) const {
-		return (origin - point).length() < radius;
-	}
-
-	/// Does this sphere contain a point, given periodic boundary conditions
-	inline bool contains(const PeriodicBoundaryConditions<T>& pbc, const Vector3D<T>& point) const {
-		T dsq = 0;
-		T rsq = radius * radius;
-		T delta, delta_ghost;
-		delta = origin.x - point.x;
-		if(pbc.xPeriod > 0) {
-			if(delta > 0)
-				delta_ghost = point.x + pbc.xPeriod - origin.x;
-			else {
-				delta *= -1;
-				delta_ghost = origin.x - point.x + pbc.xPeriod;
-			}
-			delta = (delta < delta_ghost ? delta : delta_ghost);
-		}
-		dsq += delta * delta;
-		if(rsq < dsq)
-			return false;
-		delta = origin.y - point.y;
-		if(pbc.yPeriod > 0) {
-			if(delta > 0)
-				delta_ghost = point.y + pbc.yPeriod - origin.y;
-			else {
-				delta *= -1;
-				delta_ghost = origin.y - point.y + pbc.yPeriod;
-			}
-			delta = (delta < delta_ghost ? delta : delta_ghost);
-		}
-		dsq += delta * delta;
-		if(rsq < dsq)
-			return false;
-		delta = origin.z - point.z;
-		if(pbc.zPeriod > 0) {
-			if(delta > 0)
-				delta_ghost = point.z + pbc.zPeriod - origin.z;
-			else {
-				delta *= -1;
-				delta_ghost = origin.z - point.z + pbc.zPeriod;
-			}
-			delta = (delta < delta_ghost ? delta : delta_ghost);
-		}
-		dsq += delta * delta;
-		return (dsq < rsq);
-	}
-
 	/// Growing a sphere keeps the origin fixed and increases the radius
 	inline void grow(const Vector3D<T>& point) {
 		T points_radius = (origin - point).length();
@@ -98,11 +50,6 @@ public:
 		return 4.0 * 3.14159265358979323846 / 3.0 * radius * radius * radius;
 	}
 	
-	/// Two spheres intersect if the distance betweeen their origins is larger than the sum of their radii
-	inline bool intersects(const Sphere<T>& s) const {
-		return (origin - s.origin).length() <= (radius + s.radius);
-	}
-	
 	/// Output operator, used for formatted display
 	friend std::ostream& operator<<(std::ostream& os, const Sphere<T>& s) {
 		os << '{' << s.origin << ", " << s.radius << '}';
@@ -111,6 +58,57 @@ public:
 
 };
 
+template <typename T>
+class SphericalShell : public Sphere<T> {
+public:
+	
+	/// The half-thickness of the shell (shell extends from radius-delta to radius+delta) 
+	T delta;
+
+	SphericalShell(const Vector3D<T>& o = Vector3D<T>(), const T r = 1, const T d = 0) : Sphere<T>(o, r), delta(d) { }
+	
+	SphericalShell(const SphericalShell<T>& s) : Sphere<T>(s.origin, s.r), delta(s.delta) { }
+	
+	~SphericalShell() { }
+	
+	SphericalShell<T>& operator=(const SphericalShell<T>& s) {
+		origin = s.origin;
+		radius = s.radius;
+		delta = s.delta;
+		return *this;
+	}
+	
+	inline T volume() const {
+		T r1 = radius + delta;
+		T r2 = radius - delta;
+		return 4.0 * 3.14159265358979323846 / 3.0 *(r1 * r1 * r1 - r2 * r2 * r2);
+	}
+		
+	/// Output operator, used for formatted display
+	friend std::ostream& operator<<(std::ostream& os, const SphericalShell<T>& s) {
+		os << '{' << s.origin << ", " << s.radius << ", " << s.delta << '}';
+		return os;
+	}
+};
+
 typedef Sphere<double> dSphere;
+
+#ifdef CHARM
+#include "pup.h"
+
+template <typename T>
+inline void operator|(PUP::er& p, Sphere<T>& s) {
+	p | s.origin;
+	p | s.radius;
+}
+
+template <typename T>
+inline void operator|(PUP::er& p, SphericalShell<T>& s) {
+	p | s.origin;
+	p | s.radius;
+	p | s.delta;
+}
+
+#endif //CHARM
 
 #endif //SPHERE_H

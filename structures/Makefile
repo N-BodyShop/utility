@@ -4,7 +4,7 @@ NAME = structures
 VERSION = 1.1
 TARGETS = TipsyReader.o TipsyFile.o
 
-all:: libTipsy.a($(TARGETS))
+all:: libTipsy.a($(TARGETS)) SFC.o
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
@@ -12,6 +12,9 @@ TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h
 
 debug::
 	make "CXXFLAGS += -g" clean all
+
+SFC.o: SFC.cpp SFC.h
+	$(CXX) $(CXXFLAGS) -ffloat-store -c SFC.cpp
 
 tools::
 	cd tools && make

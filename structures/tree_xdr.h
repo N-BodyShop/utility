@@ -17,9 +17,11 @@
  */
 class TreeHeader {
 public:
-	static const unsigned int sizeBytes = 76;
+	static const unsigned int sizeBytes = 84;
 
 	static const int MagicNumber = 3184622;
+	
+	static const u_int64_t PeriodicFlag = static_cast<u_int64_t>(1) << 0;
 
 	int magic;
 	
@@ -27,15 +29,24 @@ public:
 	u_int64_t numNodes;
 	u_int64_t numParticles;
 	OrientedBox<double> boundingBox;
+	u_int64_t flags;
 	
-	TreeHeader() : magic(MagicNumber) { }
+	TreeHeader() : magic(MagicNumber), flags(0) { }
 	
 	/// Output operator, used for formatted display
 	friend std::ostream& operator<< (std::ostream& os, const TreeHeader& h) {
-		return os << "Time: " << h.time
+		os << "Time: " << h.time
 				<< "\nTotal number of particles: " << h.numParticles
 				<< "\nTotal number of nodes: " << h.numNodes
-				<< "\nBounding box: " << h.boundingBox;
+				<< "\nBounding box: " << h.boundingBox
+				<< "\nFlags: ";
+		if(h.flags == 0)
+			os << "None";
+		else {
+			if(h.flags & TreeHeader::PeriodicFlag)
+				os << "Periodic ";
+		}
+		return os;
 	}
 };
 
@@ -45,7 +56,8 @@ inline bool_t xdr_template(XDR* xdrs, TreeHeader* h) {
 			&& xdr_template(xdrs, &(h->time))
 			&& xdr_template(xdrs, &(h->numNodes))
 			&& xdr_template(xdrs, &(h->numParticles))
-			&& xdr_template(xdrs, &(h->boundingBox)));
+			&& xdr_template(xdrs, &(h->boundingBox))
+			&& xdr_template(xdrs, &(h->flags)));
 }
 
 enum DataTypeCode {
@@ -121,11 +133,11 @@ inline bool_t xdr_template(XDR* xdrs, FieldHeader* h) {
 			&& xdr_template(xdrs, reinterpret_cast<enum_t *>(&(h->code))));
 }
 
-/** Write a field to an XDR stream.  You have to write the header yourself
- before you call this if you want to use the result again.
+/** Write a field to an XDR stream.  You have to write the header and min/max 
+ yourself before you call this if you want to use the result again.
  */
 template <typename T>
-bool writeField(XDR* xdrs, const u_int64_t N, T* data) {
+inline bool writeField(XDR* xdrs, const u_int64_t N, T* data) {
 	for(u_int64_t i = 0; i < N; ++i) {
 		if(!xdr_template(xdrs, data + i)) {
 			return false;
@@ -137,7 +149,7 @@ bool writeField(XDR* xdrs, const u_int64_t N, T* data) {
 /** Given the type code in the header, write the correct data type
  for the field.
  */
-bool writeField(FieldHeader fh, XDR* xdrs, void* data) {
+inline bool writeField(FieldHeader fh, XDR* xdrs, void* data) {
 	if(!xdr_template(xdrs, &fh))
 		return false;
 	switch(fh.code) {
@@ -166,51 +178,176 @@ bool writeField(FieldHeader fh, XDR* xdrs, void* data) {
 	}
 }
 
-/** Allocate for and read in a field from an XDR stream.
+/** Allocate for and read in a field from an XDR stream.  You need to have
+ read the header already.  The min/max pair are put at the end of the array.
  */
 template <typename T>
-T* readField(XDR* xdrs, const u_int64_t N) {
-	T* data = new T[N];
-	for(u_int64_t i = 0; i < N; ++i) {
-		if(!xdr_template(xdrs, data + i)) {
-			delete[] data;
-			return 0;
+inline T* readField(XDR* xdrs, const u_int64_t N) {
+	T* data = new T[N + 2];
+	//put min/max at the end
+	if(!xdr_template(xdrs, data + N) || !xdr_template(xdrs, data + N + 1)) {
+		delete[] data;
+		return 0;
+	}
+	if(data[N] == data[N + 1]) { 
+		//if all elements are the same, just copy the value into the array
+		for(u_int64_t i = 0; i < N; ++i)
+			data[i] = data[N];
+	} else {
+		for(u_int64_t i = 0; i < N; ++i) {
+			if(!xdr_template(xdrs, data + i)) {
+				delete[] data;
+				return 0;
+			}
 		}
 	}
 	return data;
 }
 
+template <typename T>
+inline void* readField(XDR* xdrs, const unsigned int dimensions, const u_int64_t N) {
+	if(dimensions == 3)
+		return readField<Vector3D<T> >(xdrs, N);
+	else
+		return readField<T>(xdrs, N);
+}
+
 /** Given the type code in the header, reads in the correct type of data.
  */
-void* readField(const FieldHeader& fh, XDR* xdrs) {
+inline void* readField(const FieldHeader& fh, XDR* xdrs) {
+	if(fh.dimensions != 1 && fh.dimensions != 3)
+		return 0;
 	switch(fh.code) {
 		case int8:
-			return readField<char>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<char>(xdrs, fh.dimensions, fh.numParticles);
 		case uint8:
-			return readField<unsigned char>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<unsigned char>(xdrs, fh.dimensions, fh.numParticles);
 		case int16:
-			return readField<short>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<short>(xdrs, fh.dimensions, fh.numParticles);
 		case uint16:
-			return readField<unsigned short>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<unsigned short>(xdrs, fh.dimensions, fh.numParticles);
 		case int32:
-			return readField<int>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<int>(xdrs, fh.dimensions, fh.numParticles);
 		case uint32:
-			return readField<unsigned int>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<unsigned int>(xdrs, fh.dimensions, fh.numParticles);
 		case int64:
-			return readField<int64_t>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<int64_t>(xdrs, fh.dimensions, fh.numParticles);
 		case uint64:
-			return readField<u_int64_t>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<u_int64_t>(xdrs, fh.dimensions, fh.numParticles);
 		case float32:
-			return readField<float>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<float>(xdrs, fh.dimensions, fh.numParticles);
 		case float64:
-			return readField<double>(xdrs, fh.dimensions * fh.numParticles);
+			return readField<double>(xdrs, fh.dimensions, fh.numParticles);
 		default:
 			return 0;
 	}
 }
 
+/** Using an array of original indices, allocate for and read in a field,
+ putting the elements back in the original order. 
+ */
+template <typename T>
+inline T* readField_reorder(XDR* xdrs, const u_int64_t N, const unsigned int* uids) {
+	T* data = new T[N + 2];
+	//put min/max at the end
+	if(!xdr_template(xdrs, data + N) || !xdr_template(xdrs, data + N + 1)) {
+		delete[] data;
+		return 0;
+	}
+	if(data[N] == data[N + 1]) { 
+		//if all elements are the same, just copy the value into the array
+		for(u_int64_t i = 0; i < N; ++i)
+			data[i] = data[N];
+	} else {
+		for(u_int64_t i = 0; i < N; ++i) {
+			if(uids[i] < 0 || uids[i] >= N || !xdr_template(xdrs, data + uids[i])) {
+				delete[] data;
+				return 0;
+			}
+		}
+	}
+	return data;
+}
+
+template <typename T>
+inline void* readField_reorder(XDR* xdrs, const unsigned int dimensions, const u_int64_t N, const unsigned int* uids) {
+	if(dimensions == 3)
+		return readField_reorder<Vector3D<T> >(xdrs, N, uids);
+	else
+		return readField_reorder<T>(xdrs, N, uids);
+}
+
+/** Using the type code in the header, read in and reorder a field. 
+ */
+inline void* readField_reorder(const FieldHeader& fh, XDR* xdrs, const unsigned int* uids) {
+	if(fh.dimensions != 1 && fh.dimensions != 3)
+		return 0;
+	switch(fh.code) {
+		case int8:
+			return readField_reorder<char>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case uint8:
+			return readField_reorder<unsigned char>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case int16:
+			return readField_reorder<short>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case uint16:
+			return readField_reorder<unsigned short>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case int32:
+			return readField_reorder<int>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case uint32:
+			return readField_reorder<unsigned int>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case int64:
+			return readField_reorder<int64_t>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case uint64:
+			return readField_reorder<u_int64_t>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case float32:
+			return readField_reorder<float>(xdrs, fh.dimensions, fh.numParticles, uids);
+		case float64:
+			return readField_reorder<double>(xdrs, fh.dimensions, fh.numParticles, uids);
+		default:
+			return 0;
+	}
+}
+
+template <typename T>
+inline bool deleteField(const unsigned int dimensions, void* data) {
+	if(dimensions == 3)
+		delete[] reinterpret_cast<Vector3D<T> *>(data);
+	else
+		delete[] reinterpret_cast<T *>(data);
+	return true;
+}
+
+inline bool deleteField(const FieldHeader& fh, void* data) {
+	if(fh.dimensions != 1 && fh.dimensions != 3)
+		return false;
+	switch(fh.code) {
+		case int8:
+			return deleteField<char>(fh.dimensions, data);
+		case uint8:
+			return deleteField<unsigned char>(fh.dimensions, data);
+		case int16:
+			return deleteField<short>(fh.dimensions, data);
+		case uint16:
+			return deleteField<unsigned short>(fh.dimensions, data);
+		case int32:
+			return deleteField<int>(fh.dimensions, data);
+		case uint32:
+			return deleteField<unsigned int>(fh.dimensions, data);
+		case int64:
+			return deleteField<int64_t>(fh.dimensions, data);
+		case uint64:
+			return deleteField<u_int64_t>(fh.dimensions, data);
+		case float32:
+			return deleteField<float>(fh.dimensions, data);
+		case float64:
+			return deleteField<double>(fh.dimensions, data);
+		default:
+			return false;
+	}
+}
+
 // XDR has a minimum size of 4 bytes.
-unsigned int mySizeof(DataTypeCode code) {
+inline unsigned int mySizeof(DataTypeCode code) {
 	switch(code) {
 		case int8:
 		case uint8:
@@ -234,7 +371,7 @@ unsigned int mySizeof(DataTypeCode code) {
 /** Given a header and a stream, seek to the desired location in the field stream.
  */
 inline bool_t seekField(const FieldHeader& fh, XDR* xdrs, const u_int64_t index) {
-	return xdr_setpos(xdrs, fh.sizeBytes + index * fh.dimensions * mySizeof(fh.code));
+	return xdr_setpos(xdrs, FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code));
 }
 
 /** The tree file contains these structures.  With the total number of
@@ -251,6 +388,38 @@ inline bool_t xdr_template(XDR* xdrs, BasicTreeNode* node) {
 	return xdr_template(xdrs, &(node->numNodesLeft)) 
 			&& xdr_template(xdrs, &(node->numParticlesLeft));
 }
+
+#ifdef CHARM
+#include "pup.h"
+
+inline void operator|(PUP::er& p, TreeHeader& h) {
+	p | h.magic;
+	p | h.time;
+	p | h.numNodes;
+	p | h.numParticles;
+	p | h.boundingBox;
+	p | h.flags;
+}
+
+inline void operator|(PUP::er& p, FieldHeader& h) {
+	p | h.magic;
+	p | h.time;
+	p | h.numParticles;
+	p | h.dimensions;
+	if(p.isUnpacking()) {
+		int enum_int;
+		p | enum_int;
+		h.code = DataTypeCode(enum_int);
+	} else
+		p | static_cast<int>(h.code);
+}
+
+inline void operator|(PUP::er& p, BasicTreeNode& n) {
+	p | n.numNodesLeft;
+	p | n.numParticlesLeft;
+}
+
+#endif //CHARM
 
 
 #endif //TREE_XDR_H

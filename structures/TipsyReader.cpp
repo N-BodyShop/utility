@@ -25,23 +25,15 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::header* val) {
 template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::simple_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
-		&& xdr_template(xdrs, &(p->pos[0]))
-		&& xdr_template(xdrs, &(p->pos[1]))
-		&& xdr_template(xdrs, &(p->pos[2]))
-		&& xdr_template(xdrs, &(p->vel[0]))
-		&& xdr_template(xdrs, &(p->vel[1]))
-		&& xdr_template(xdrs, &(p->vel[2])));
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel)));
 }
 
 template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
-		&& xdr_template(xdrs, &(p->pos[0]))
-		&& xdr_template(xdrs, &(p->pos[1]))
-		&& xdr_template(xdrs, &(p->pos[2]))
-		&& xdr_template(xdrs, &(p->vel[0]))
-		&& xdr_template(xdrs, &(p->vel[1]))
-		&& xdr_template(xdrs, &(p->vel[2]))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
 		&& xdr_template(xdrs, &(p->rho))
 		&& xdr_template(xdrs, &(p->temp))
 		&& xdr_template(xdrs, &(p->hsmooth))
@@ -52,12 +44,8 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
 template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
-		&& xdr_template(xdrs, &(p->pos[0]))
-		&& xdr_template(xdrs, &(p->pos[1]))
-		&& xdr_template(xdrs, &(p->pos[2]))
-		&& xdr_template(xdrs, &(p->vel[0]))
-		&& xdr_template(xdrs, &(p->vel[1]))
-		&& xdr_template(xdrs, &(p->vel[2]))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
 		&& xdr_template(xdrs, &(p->eps))
 		&& xdr_template(xdrs, &(p->phi)));
 }
@@ -65,12 +53,8 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
 template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::star_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
-		&& xdr_template(xdrs, &(p->pos[0]))
-		&& xdr_template(xdrs, &(p->pos[1]))
-		&& xdr_template(xdrs, &(p->pos[2]))
-		&& xdr_template(xdrs, &(p->vel[0]))
-		&& xdr_template(xdrs, &(p->vel[1]))
-		&& xdr_template(xdrs, &(p->vel[2]))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
 		&& xdr_template(xdrs, &(p->metals))
 		&& xdr_template(xdrs, &(p->tform))
 		&& xdr_template(xdrs, &(p->eps))
@@ -174,7 +158,7 @@ bool TipsyReader::getNextGasParticle(gas_particle& p) {
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),  gas_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), gas_particle::sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -200,12 +184,12 @@ bool TipsyReader::getNextDarkParticle(dark_particle& p) {
 	
 	if(numDarksRead < h.ndark) {
 		++numDarksRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p),  dark_particle::sizeBytes);
+		tipsyStream->read(reinterpret_cast<char *>(&p), dark_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),  dark_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), dark_particle::sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -232,12 +216,12 @@ bool TipsyReader::getNextStarParticle(star_particle& p) {
 	
 	if(numStarsRead < h.nstar) {
 		++numStarsRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p),  star_particle::sizeBytes);
+		tipsyStream->read(reinterpret_cast<char *>(&p), star_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),  star_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), star_particle::sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -317,18 +301,18 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 	unsigned int bob = 3;
 	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
 	if(c[3] == bob || !native) //we're big-endian, can't do xdr from little-endian
-		padSize = 1;
+		padSize = 4;
 
 	unsigned int preface = header::sizeBytes + padSize;
 	if(num < h.nsph) {
-		tipsyStream->seekg(preface + num *  gas_particle::sizeBytes);
+		tipsyStream->seekg(preface + num * gas_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = num;
 		numDarksRead = 0;
 		numStarsRead = 0;
 	} else if(num < h.nsph + h.ndark) {
-		tipsyStream->seekg(preface + h.nsph *  gas_particle::sizeBytes + (num - h.nsph) *  dark_particle::sizeBytes);
+		tipsyStream->seekg(preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = h.nsph;

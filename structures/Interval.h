@@ -7,6 +7,7 @@
 #define INTERVAL_H
 
 #include <iostream>
+#include <cmath>
 
 //this class represents a closed interval in one dimension
 template <class T>
@@ -15,7 +16,7 @@ public:
 	T min;
 	T max;
 	
-	Interval() : min(1), max(-1) { }
+	Interval() : min(HUGE_VAL), max(-HUGE_VAL) { }
 	
 	Interval(const T& minimum) : min(minimum), max(minimum) { }
 
@@ -32,11 +33,9 @@ public:
 	}
 	
 	inline void grow(const T& point) {
-		if(min > max) //this interval has not been properly initialized yet
-			max = min = point;
-		else if(point < min)
+		if(point < min)
 			min = point;
-		else if(point > max)
+		if(point > max)
 			max = point;
 	}
 	
@@ -51,5 +50,16 @@ public:
 	}
 	
 };
+
+#ifdef CHARM
+#include "pup.h"
+
+template <typename T>
+inline void operator|(PUP::er& p, Interval<T>& v) {
+	p | v.min;
+	p | v.max;
+}
+
+#endif //CHARM
 
 #endif //INTERVAL_H

@@ -112,7 +112,7 @@ public:
 			delete tipsyStream;
 		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
 		responsible = true;
-		return loadHeader();		
+		return loadHeader();
 	}
 	
 	/** Reload from a stream.

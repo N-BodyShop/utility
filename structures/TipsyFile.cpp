@@ -14,17 +14,293 @@ namespace Tipsy {
 using std::sort;
 using std::unique;
 
-//create a new tipsy file with the specified numbers of particles
+TipsyStats::TipsyStats() {
+	clear();
+}
+
+void TipsyStats::clear() {
+	nsph = ndark = nstar = 0;
+	total_mass = gas_mass = dark_mass = star_mass = 0;
+	volume = density = 0;
+	bounding_box = OrientedBox<double>();
+	center = size = center_of_mass = gas_com = dark_com = star_com \
+			= center_of_mass_velocity = gas_com_vel = dark_com_vel = star_com_vel \
+			= angular_momentum = gas_ang_mom = dark_ang_mom = star_ang_mom \
+			= Vector3D<double>();
+	min_mass = gas_min_mass = dark_min_mass = star_min_mass = min_radius \
+			= gas_min_radius = dark_min_radius = star_min_radius \
+			= min_velocity = gas_min_velocity = dark_min_velocity \
+			= star_min_velocity = dark_min_eps = star_min_eps = min_phi \
+			= gas_min_phi = dark_min_phi = star_min_phi = gas_min_rho \
+			= gas_min_temp = gas_min_hsmooth  = gas_min_metals = star_min_metals \
+			= star_min_tform = HUGE_VAL;
+	max_mass = gas_max_mass = dark_max_mass = star_max_mass = max_radius \
+			= gas_max_radius = dark_max_radius = star_max_radius \
+			= max_velocity = gas_max_velocity = dark_max_velocity \
+			= star_max_velocity = dark_max_eps = star_max_eps = max_phi \
+			= gas_max_phi = dark_max_phi = star_max_phi = gas_max_rho \
+			= gas_max_temp = gas_max_hsmooth  = gas_max_metals = star_max_metals \
+			= star_max_tform = -HUGE_VAL;
+}
+
+void TipsyStats::contribute(const gas_particle& p) {
+	nsph++;
+	gas_mass += p.mass;
+	bounding_box.grow(p.pos);
+	double poslen = p.pos.length();
+	double vellen = p.vel.length();
+
+	gas_com += p.mass * p.pos;
+	gas_com_vel += p.mass * p.vel;
+	gas_ang_mom += p.mass * cross(p.pos, p.vel);
+
+	if(p.mass < gas_min_mass)
+		gas_min_mass = p.mass;
+	if(p.mass > gas_max_mass)
+		gas_max_mass = p.mass;
+	if(poslen < gas_min_radius)
+		gas_min_radius = poslen;
+	if(poslen > gas_max_radius)
+		gas_max_radius = poslen;
+	if(vellen < gas_min_velocity)
+		gas_min_velocity = vellen;
+	if(vellen > gas_max_velocity)
+		gas_max_velocity = vellen;
+	if(p.phi < gas_min_phi)
+		gas_min_phi = p.phi;
+	if(p.phi > gas_max_phi)
+		gas_max_phi = p.phi;
+	if(p.hsmooth < gas_min_hsmooth)
+		gas_min_hsmooth = p.hsmooth;
+	if(p.hsmooth > gas_max_hsmooth)
+		gas_max_hsmooth = p.hsmooth;
+	if(p.rho < gas_min_rho)
+		gas_min_rho = p.rho;
+	if(p.rho > gas_max_rho)
+		gas_max_rho = p.rho;
+	if(p.temp < gas_min_temp)
+		gas_min_temp = p.temp;
+	if(p.temp > gas_max_temp)
+		gas_max_temp = p.temp;
+	if(p.metals < gas_min_metals)
+		gas_min_metals = p.metals;
+	if(p.metals > gas_max_metals)
+		gas_max_metals = p.metals;
+}
+
+void TipsyStats::contribute(const dark_particle& p) {
+	ndark++;
+	dark_mass += p.mass;
+	bounding_box.grow(p.pos);
+	double poslen = p.pos.length();
+	double vellen = p.vel.length();
+
+	dark_com += p.mass * p.pos;
+	dark_com_vel += p.mass * p.vel;
+	dark_ang_mom += p.mass * cross(p.pos, p.vel);
+
+	if(p.mass < dark_min_mass)
+		dark_min_mass = p.mass;
+	if(p.mass > dark_max_mass)
+		dark_max_mass = p.mass;
+	if(poslen < dark_min_radius)
+		dark_min_radius = poslen;
+	if(poslen > dark_max_radius)
+		dark_max_radius = poslen;
+	if(vellen < dark_min_velocity)
+		dark_min_velocity = vellen;
+	if(vellen > dark_max_velocity)
+		dark_max_velocity = vellen;
+	if(p.eps < dark_min_eps)
+		dark_min_eps = p.eps;
+	if(p.eps > dark_max_eps)
+		dark_max_eps = p.eps;
+	if(p.phi < dark_min_phi)
+		dark_min_phi = p.phi;
+	if(p.phi > dark_max_phi)
+		dark_max_phi = p.phi;
+}
+
+void TipsyStats::contribute(const star_particle& p) {
+	nstar++;
+	star_mass += p.mass;
+	bounding_box.grow(p.pos);
+	double poslen = p.pos.length();
+	double vellen = p.vel.length();
+
+	star_com += p.mass * p.pos;
+	star_com_vel += p.mass * p.vel;
+	star_ang_mom += p.mass * cross(p.pos, p.vel);
+
+	if(p.mass < star_min_mass)
+		star_min_mass = p.mass;
+	if(p.mass > star_max_mass)
+		star_max_mass = p.mass;
+	if(poslen < star_min_radius)
+		star_min_radius = poslen;
+	if(poslen > star_max_radius)
+		star_max_radius = poslen;
+	if(vellen < star_min_velocity)
+		star_min_velocity = vellen;
+	if(vellen > star_max_velocity)
+		star_max_velocity = vellen;
+	if(p.metals < star_min_metals)
+		star_min_metals = p.metals;
+	if(p.metals > star_max_metals)
+		star_max_metals = p.metals;
+	if(p.tform < star_min_metals)
+		star_min_metals = p.metals;
+	if(p.metals > star_max_metals)
+		star_max_metals = p.metals;
+	if(p.eps < star_min_eps)
+		star_min_eps = p.eps;
+	if(p.eps > star_max_eps)
+		star_max_eps = p.eps;
+	if(p.phi < star_min_phi)
+		star_min_phi = p.phi;
+	if(p.phi > star_max_phi)
+		star_max_phi = p.phi;
+}
+
+/// Calculate the aggregate statistics
+void TipsyStats::finalize() {
+	//get the total mass of the system
+	total_mass = gas_mass + dark_mass + star_mass;
+	
+	//get the total center of mass position and velocity
+	if(total_mass != 0) {
+		center_of_mass = (gas_com + dark_com + star_com) / total_mass;
+		center_of_mass_velocity = (gas_com_vel + dark_com_vel + star_com_vel) / total_mass;
+	}
+	
+	//get total angular momentum about the origin
+	angular_momentum = gas_ang_mom + dark_ang_mom + star_ang_mom;
+	//make specific (divide by total mass)
+	angular_momentum /= total_mass;
+	//subtract off the angular momentum of the center of mass
+	angular_momentum -= cross(center_of_mass, center_of_mass_velocity);
+
+	//sort out the individual centers of mass and angular momenta
+	if(gas_mass != 0) {
+		gas_com /= gas_mass;
+		gas_com_vel /= gas_mass;
+		gas_ang_mom /= gas_mass;
+		gas_ang_mom -= cross(gas_com, gas_com_vel);
+	}
+	if(dark_mass != 0) {
+		dark_com /= dark_mass;
+		dark_com_vel /= dark_mass;
+		dark_ang_mom /= dark_mass;
+		dark_ang_mom -= cross(dark_com, dark_com_vel);
+	}
+	if(star_mass != 0) {
+		star_com /= star_mass;
+		star_com_vel /= star_mass;
+		star_ang_mom /= star_mass;
+		star_ang_mom -= cross(star_com, star_com_vel);
+	}
+		
+	//get position stats
+	center = bounding_box.center();
+	size = bounding_box.greater_corner - bounding_box.lesser_corner;
+	volume = bounding_box.volume();
+	if(volume > 0)
+		density = total_mass / volume;
+	
+	//figure out aggregate ranges
+	min_mass = (gas_min_mass < dark_min_mass ? gas_min_mass : dark_min_mass);
+	min_mass = (min_mass < star_min_mass ? min_mass : star_min_mass);
+	max_mass = (gas_max_mass > dark_max_mass ? gas_max_mass : dark_max_mass);
+	max_mass = (max_mass > star_max_mass ? max_mass : star_max_mass);
+	min_radius = (gas_min_radius < dark_min_radius ? gas_min_radius : dark_min_radius);
+	min_radius = (min_radius < star_min_radius ? min_radius : star_min_radius);
+	max_radius = (gas_max_radius > dark_max_radius ? gas_max_radius : dark_max_radius);
+	max_radius = (max_radius > star_max_radius ? max_radius : star_max_radius);
+	min_velocity = (gas_min_velocity < dark_min_velocity ? gas_min_velocity : dark_min_velocity);
+	min_velocity = (min_velocity < star_min_velocity ? min_velocity : star_min_velocity);
+	max_velocity = (gas_max_velocity > dark_max_velocity ? gas_max_velocity : dark_max_velocity);
+	max_velocity = (max_velocity > star_max_velocity ? max_velocity : star_max_velocity);
+	min_phi = (gas_min_phi < dark_min_phi ? gas_min_phi : dark_min_phi);
+	min_phi = (min_phi < star_min_phi ? min_phi : star_min_phi);
+	max_phi = (gas_max_phi > dark_max_phi ? gas_max_phi : dark_max_phi);
+	max_phi = (max_phi > star_max_phi ? max_phi : star_max_phi);	
+}
+
+std::ostream& operator<<(std::ostream& os, const TipsyStats& s) {
+	os << "Bounding box: " << s.bounding_box;
+	os << "\nBox center: " << s.center;
+	os << "\nBox volume: " << s.volume;
+	os << "\nBox size: " << s.size;
+	os << "\nDensity: " << s.density;
+	os << "\nTotal mass: " << s.total_mass;
+	os << "\nTotal center of mass: " << s.center_of_mass;
+	os << "\nTotal center of mass velocity: " << s.center_of_mass_velocity;
+	os << "\nTotal angular momentum: " << s.angular_momentum;
+	
+	if(s.nsph) {
+		os << "\nGas Stats: (" << s.nsph << " particle" << (s.nsph > 1 ? "s)" : ")");
+		os << "\nGas mass: " << s.gas_mass;
+		os << "\nGas center of mass: " << s.gas_com;
+		os << "\nGas center of mass velocity: " << s.gas_com_vel;
+		os << "\nGas angular momentum: " << s.gas_ang_mom;
+		os << "\nRange of gas masses: (" << s.gas_min_mass << " <=> " << s.gas_max_mass << ")";
+		os << "\nRange of gas radii: (" << s.gas_min_radius << " <=> " << s.gas_max_radius << ")";
+		os << "\nRange of gas velocities: (" << s.gas_min_velocity << " <=> " << s.gas_max_velocity << ")";
+		os << "\nRange of gas rho: (" << s.gas_min_rho << " <=> " << s.gas_max_rho << ")";
+		os << "\nRange of gas temperature: (" << s.gas_min_temp << " <=> " << s.gas_max_temp << ")";
+		os << "\nRange of gas hsmooth: (" << s.gas_min_hsmooth << " <=> " << s.gas_max_hsmooth << ")";
+		os << "\nRange of gas metals: (" << s.gas_min_metals << " <=> " << s.gas_max_metals << ")";
+		os << "\nRange of gas phi: (" << s.gas_min_phi << " <=> " << s.gas_max_phi << ")";
+	} else
+		os << "\nNo gas particles.";
+	
+	if(s.ndark) {
+		os << "\nDark Stats: (" << s.ndark << " particle" << (s.ndark > 1 ? "s)" : ")");
+		os << "\nDark mass: " << s.dark_mass;
+		os << "\nDark center of mass: " << s.dark_com;
+		os << "\nDark center of mass velocity: " << s.dark_com_vel;
+		os << "\nDark angular momentum: " << s.dark_ang_mom;
+		os << "\nRange of dark masses: (" << s.dark_min_mass << " <=> " << s.dark_max_mass << ")";
+		os << "\nRange of dark radii: (" << s.dark_min_radius << " <=> " << s.dark_max_radius << ")";
+		os << "\nRange of dark velocities: (" << s.dark_min_velocity << " <=> " << s.dark_max_velocity << ")";
+		os << "\nRange of eps: (" << s.dark_min_eps << " <=> " << s.dark_max_eps << ")";
+		os << "\nRange of dark phi: (" << s.dark_min_phi << " <=> " << s.dark_max_phi;
+	} else
+		os << "\nNo dark particles.";
+	
+	if(s.nstar) {
+		os << "\nStar Stats: (" << s.nstar << " particle" << (s.nstar > 1 ? "s)" : ")");
+		os << "\nStar mass: " << s.star_mass;
+		os << "\nStar center of mass: " << s.star_com;
+		os << "\nStar center of mass velocity: " << s.star_com_vel;
+		os << "\nStar angular momentum: " << s.star_ang_mom;
+		os << "\nRange of star masses: (" << s.star_min_mass << " <=> " << s.star_max_mass << ")";
+		os << "\nRange of star radii: (" << s.star_min_radius << " <=> " << s.star_max_radius << ")";
+		os << "\nRange of star velocities: (" << s.star_min_velocity << " <=> " << s.star_max_velocity << ")";
+		os << "\nRange of star metals: (" << s.star_min_metals << " <=> " << s.star_max_metals << ")";
+		os << "\nRange of star formation time: (" << s.star_min_tform << " <=> " << s.star_max_tform << ")";
+		os << "\nRange of star eps: (" << s.star_min_eps << " <=> " << s.star_max_eps << ")";
+		os << "\nRange of star phi: (" << s.star_min_phi << " <=> " << s.star_max_phi << ")";
+	} else
+		os << "\nNo star particles.";
+	
+	os << "\nAggregate Stats:";
+	os << "\nRange of masses: (" << s.min_mass << " <=> " << s.max_mass << ")";
+	os << "\nRange of radii: (" << s.min_radius << " <=> " << s.max_radius << ")";
+	os << "\nRange of velocities: (" << s.min_velocity << " <=> " << s.max_velocity << ")";
+	os << "\nRange of phi: (" << s.min_phi << " <=> " << s.max_phi << ")";
+	
+	return os;
+}
+
 TipsyFile::TipsyFile(const std::string& fn, int nGas, int nDark, int nStar) : native(true), success(false), filename(fn), h(nGas, nDark, nStar), gas(nGas), darks(nDark), stars(nStar) {
 	success = true;
 }
 
-//open a tipsyfile from disk
 TipsyFile::TipsyFile(const std::string& fn) : native(true), success(false), myReader(fn), filename(fn) {
 	loadfile();
 }
 
-//open a tipsyfile from a stream
 TipsyFile::TipsyFile(std::istream& is) : native(true), success(false), myReader(is), filename("") {
 	loadfile();
 }
@@ -282,52 +558,52 @@ bool TipsyFile::loadfile() {
 	h = myReader.getHeader();
 	native = myReader.isNative();
 	
+	stats.clear();
+	
 	gas.resize(h.nsph);
 	for(int i = 0; i < h.nsph; ++i) {
 		if(!myReader.getNextGasParticle(gas[i]))
 			return false;
-		boundingBox.grow(gas[i].pos);
+		stats.contribute(gas[i]);
 	}
 	darks.resize(h.ndark);
 	for(int i = 0; i < h.ndark; ++i) {
 		if(!myReader.getNextDarkParticle(darks[i]))
 			return false;
-		boundingBox.grow(darks[i].pos);
+		stats.contribute(darks[i]);
 	}
 	stars.resize(h.nstar);
 	for(int i = 0; i < h.nstar; ++i) {
 		if(!myReader.getNextStarParticle(stars[i]))
 			return false;
-		boundingBox.grow(stars[i].pos);
+		stats.contribute(stars[i]);
 	}
+	
+	stats.finalize();
 	
 	success = true;
 	return true;
 }
 
-//read part of a tipsy file from a file
-PartialTipsyFile::PartialTipsyFile(const std::string& fn, int begin, int end) : myReader(fn), filename(fn), beginParticle(begin), endParticle(end) {
-	loadPartial();
+PartialTipsyFile::PartialTipsyFile(const std::string& fn, const int begin, const int end) : myReader(fn) {
+	loadPartial(begin, end);
 }
 
-//read part of a tipsy file from a stream
-PartialTipsyFile::PartialTipsyFile(std::istream& is, int begin, int end) : myReader(is), filename(""), beginParticle(begin), endParticle(end) {
-	loadPartial();
+PartialTipsyFile::PartialTipsyFile(std::istream& is, const int begin, const int end) : myReader(is) {
+	loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::reload(const std::string& fn) {
-	filename = fn;
-	myReader.reload(filename);
-	return loadPartial();
+bool PartialTipsyFile::reloadIndex(const std::string& fn, const int begin, const int end) {
+	myReader.reload(fn);
+	return loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::reload(std::istream& is) {
-	filename = "";
+bool PartialTipsyFile::reloadIndex(std::istream& is, const int begin, const int end) {
 	myReader.reload(is);
-	return loadPartial();
+	return loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::loadPartial() {
+bool PartialTipsyFile::loadPartial(const int beginParticle, int endParticle) {
 	success = false;
 	
 	if(!myReader.status())
@@ -335,6 +611,7 @@ bool PartialTipsyFile::loadPartial() {
 	
 	fullHeader = myReader.getHeader();
 	native = myReader.isNative();
+	stats.clear();
 	
 	//check that the range of particles asked for is reasonable
 	if(beginParticle < 0 || beginParticle > fullHeader.nbodies) {
@@ -364,337 +641,123 @@ bool PartialTipsyFile::loadPartial() {
 	for(int i = 0; i < h.nsph; ++i) {
 		if(!myReader.getNextGasParticle(gas[i]))
 			return false;
+		stats.contribute(gas[i]);
 	}
 	darks.resize(h.ndark);
 	for(int i = 0; i < h.ndark; ++i) {
 		if(!myReader.getNextDarkParticle(darks[i]))
 			return false;
+		stats.contribute(darks[i]);
 	}
 	stars.resize(h.nstar);
 	for(int i = 0; i < h.nstar; ++i) {
 		if(!myReader.getNextStarParticle(stars[i]))
 			return false;
+		stats.contribute(stars[i]);
 	}
 
+	stats.finalize();
+	
 	success = true;
 	return true;
 }
 
-TipsyStats::TipsyStats(TipsyFile* tfile) {
-	tf = tfile;
-	
-	total_mass = gas_mass = dark_mass = star_mass = 0;
-	
-	volume = density = 0;
-	
-	//set initial value for the bounding box with the first particle we can find
-	if(tf->h.nsph > 0)
-		bounding_box = OrientedBox<double>(Vector(tf->gas[0].pos), Vector(tf->gas[0].pos));
-	else if(tf->h.ndark > 0)
-		bounding_box = OrientedBox<double>(tf->darks[0].pos, tf->darks[0].pos);
-	else if(tf->h.nstar > 0)
-		bounding_box = OrientedBox<double>(tf->stars[0].pos, tf->stars[0].pos);
-	else //no particles in the file, so why did you ask for stats?!
-		return;
-	
-	center = size = Vector(0, 0, 0);
-	
-	center_of_mass = gas_com = dark_com = star_com = Vector(0, 0, 0);
-	center_of_mass_velocity = gas_com_vel = dark_com_vel = star_com_vel = Vector(0, 0, 0);
-	angular_momentum = gas_ang_mom = dark_ang_mom = star_ang_mom = Vector(0, 0, 0);
-
-	min_mass = gas_min_mass = dark_min_mass = star_min_mass = min_radius \
-			= gas_min_radius = dark_min_radius = star_min_radius \
-			= min_velocity = gas_min_velocity = dark_min_velocity \
-			= star_min_velocity = dark_min_eps = star_min_eps = min_phi \
-			= gas_min_phi = dark_min_phi = star_min_phi = gas_min_rho \
-			= gas_min_temp = gas_min_hsmooth  = gas_min_metals = star_min_metals \
-			= star_min_tform = HUGE_VAL;
-	max_mass = gas_max_mass = dark_max_mass = star_max_mass = max_radius \
-			= gas_max_radius = dark_max_radius = star_max_radius \
-			= max_velocity = gas_max_velocity = dark_max_velocity \
-			= star_max_velocity = dark_max_eps = star_max_eps = max_phi \
-			= gas_max_phi = dark_max_phi = star_max_phi = gas_max_rho \
-			= gas_max_temp = gas_max_hsmooth  = gas_max_metals = star_max_metals \
-			= star_max_tform = -HUGE_VAL;
-	
-	int i;
-	Vector position, velocity;
-
-	//collect stats on gas particles
-	for(i = 0; i < tf->h.nsph; ++i) {
-		gas_mass += tf->gas[i].mass;
-		position = tf->gas[i].pos;
-		velocity = tf->gas[i].vel;
-		bounding_box.grow(position);
-		
-		gas_com += tf->gas[i].mass * position;
-		gas_com_vel += tf->gas[i].mass * velocity;
-		gas_ang_mom += tf->gas[i].mass * cross(position, velocity);
-		
-		if(tf->gas[i].mass < gas_min_mass)
-			gas_min_mass = tf->gas[i].mass;
-		if(tf->gas[i].mass > gas_max_mass)
-			gas_max_mass = tf->gas[i].mass;
-		if(position.length() < gas_min_radius)
-			gas_min_radius = position.length();
-		if(position.length() > gas_max_radius)
-			gas_max_radius = position.length();
-		if(velocity.length() < gas_min_velocity)
-			gas_min_velocity = velocity.length();
-		if(velocity.length() > gas_max_velocity)
-			gas_max_velocity = velocity.length();
-		if(tf->gas[i].phi < gas_min_phi)
-			gas_min_phi = tf->gas[i].phi;
-		if(tf->gas[i].phi > gas_max_phi)
-			gas_max_phi = tf->gas[i].phi;
-		if(tf->gas[i].hsmooth < gas_min_hsmooth)
-			gas_min_hsmooth = tf->gas[i].hsmooth;
-		if(tf->gas[i].hsmooth > gas_max_hsmooth)
-			gas_max_hsmooth = tf->gas[i].hsmooth;
-		if(tf->gas[i].rho < gas_min_rho)
-			gas_min_rho = tf->gas[i].rho;
-		if(tf->gas[i].rho > gas_max_rho)
-			gas_max_rho = tf->gas[i].rho;
-		if(tf->gas[i].temp < gas_min_temp)
-			gas_min_temp = tf->gas[i].temp;
-		if(tf->gas[i].temp > gas_max_temp)
-			gas_max_temp = tf->gas[i].temp;
-		if(tf->gas[i].metals < gas_min_metals)
-			gas_min_metals = tf->gas[i].metals;
-		if(tf->gas[i].metals > gas_max_metals)
-			gas_max_metals = tf->gas[i].metals;
-	}
-	
-	//collect stats on dark particles
-	for(i = 0; i < tf->h.ndark; ++i) {
-		dark_mass += tf->darks[i].mass;
-		position = tf->darks[i].pos;
-		velocity = tf->darks[i].vel;
-		bounding_box.grow(position);
-		
-		dark_com += tf->darks[i].mass * position;
-		dark_com_vel += tf->darks[i].mass * velocity;
-		dark_ang_mom += tf->darks[i].mass * cross(position, velocity);
-		
-		if(tf->darks[i].mass < dark_min_mass)
-			dark_min_mass = tf->darks[i].mass;
-		if(tf->darks[i].mass > dark_max_mass)
-			dark_max_mass = tf->darks[i].mass;
-		if(position.length() < dark_min_radius)
-			dark_min_radius = position.length();
-		if(position.length() > dark_max_radius)
-			dark_max_radius = position.length();
-		if(velocity.length() < dark_min_velocity)
-			dark_min_velocity = velocity.length();
-		if(velocity.length() > dark_max_velocity)
-			dark_max_velocity = velocity.length();
-		if(tf->darks[i].phi < dark_min_phi)
-			dark_min_phi = tf->darks[i].phi;
-		if(tf->darks[i].phi > dark_max_phi)
-			dark_max_phi = tf->darks[i].phi;
-		if(tf->darks[i].eps < dark_min_eps)
-			dark_min_eps = tf->darks[i].eps;
-		if(tf->darks[i].eps > dark_max_eps)
-			dark_max_eps = tf->darks[i].eps;
-	}
-
-	//collect stats on star particles
-	for(i = 0; i < tf->h.nstar; ++i) {
-		star_mass += tf->stars[i].mass;
-		position = tf->stars[i].pos;
-		velocity = tf->stars[i].vel;
-		bounding_box.grow(position);
-		
-		star_com += tf->stars[i].mass * position;
-		star_com_vel += tf->stars[i].mass * velocity;
-		star_ang_mom += tf->stars[i].mass * cross(position, velocity);
-		
-		if(tf->stars[i].mass < star_min_mass)
-			star_min_mass = tf->stars[i].mass;
-		if(tf->stars[i].mass > star_max_mass)
-			star_max_mass = tf->stars[i].mass;
-		if(position.length() < star_min_radius)
-			star_min_radius = position.length();
-		if(position.length() > star_max_radius)
-			star_max_radius = position.length();
-		if(velocity.length() < star_min_velocity)
-			star_min_velocity = velocity.length();
-		if(velocity.length() > star_max_velocity)
-			star_max_velocity = velocity.length();
-		if(tf->stars[i].phi < star_min_phi)
-			star_min_phi = tf->stars[i].phi;
-		if(tf->stars[i].phi > star_max_phi)
-			star_max_phi = tf->stars[i].phi;
-		if(tf->stars[i].eps < star_min_eps)
-			star_min_eps = tf->stars[i].eps;
-		if(tf->stars[i].eps > star_max_eps)
-			star_max_eps = tf->stars[i].eps;
-		if(tf->stars[i].metals < star_min_metals)
-			star_min_metals = tf->stars[i].metals;
-		if(tf->stars[i].metals > star_max_metals)
-			star_max_metals = tf->stars[i].metals;
-		if(tf->stars[i].tform < star_min_tform)
-			star_min_tform = tf->stars[i].tform;
-		if(tf->stars[i].tform > star_max_tform)
-			star_max_tform = tf->stars[i].tform;
-	}
-	
-	//get the total mass of the system
-	total_mass = gas_mass + dark_mass + star_mass;
-	
-	//get the total center of mass position and velocity
-	if(total_mass != 0) {
-		center_of_mass = (gas_com + dark_com + star_com) / total_mass;
-		center_of_mass_velocity = (gas_com_vel + dark_com_vel + star_com_vel) / total_mass;
-	}
-	
-	//get total angular momentum about the origin
-	angular_momentum = gas_ang_mom + dark_ang_mom + star_ang_mom;
-	//make specific (divide by total mass)
-	angular_momentum /= total_mass;
-	//subtract off the angular momentum of the center of mass
-	angular_momentum -= cross(center_of_mass, center_of_mass_velocity);
-
-	//sort out the individual centers of mass and angular momenta
-	if(gas_mass != 0) {
-		gas_com /= gas_mass;
-		gas_com_vel /= gas_mass;
-		gas_ang_mom /= gas_mass;
-		gas_ang_mom -= cross(gas_com, gas_com_vel);
-	}
-	if(dark_mass != 0) {
-		dark_com /= dark_mass;
-		dark_com_vel /= dark_mass;
-		dark_ang_mom /= dark_mass;
-		dark_ang_mom -= cross(dark_com, dark_com_vel);
-	}
-	if(star_mass != 0) {
-		star_com /= star_mass;
-		star_com_vel /= star_mass;
-		star_ang_mom /= star_mass;
-		star_ang_mom -= cross(star_com, star_com_vel);
-	}
-		
-	//get position stats
-	center = bounding_box.center();
-	size = bounding_box.greater_corner - bounding_box.lesser_corner;
-	volume = bounding_box.volume();
-	if(volume > 0)
-		density = total_mass / volume;
-	
-	//figure out aggregate ranges
-	min_mass = (gas_min_mass < dark_min_mass ? gas_min_mass : dark_min_mass);
-	min_mass = (min_mass < star_min_mass ? min_mass : star_min_mass);
-	max_mass = (gas_max_mass > dark_max_mass ? gas_max_mass : dark_max_mass);
-	max_mass = (max_mass > star_max_mass ? max_mass : star_max_mass);
-	min_radius = (gas_min_radius < dark_min_radius ? gas_min_radius : dark_min_radius);
-	min_radius = (min_radius < star_min_radius ? min_radius : star_min_radius);
-	max_radius = (gas_max_radius > dark_max_radius ? gas_max_radius : dark_max_radius);
-	max_radius = (max_radius > star_max_radius ? max_radius : star_max_radius);
-	min_velocity = (gas_min_velocity < dark_min_velocity ? gas_min_velocity : dark_min_velocity);
-	min_velocity = (min_velocity < star_min_velocity ? min_velocity : star_min_velocity);
-	max_velocity = (gas_max_velocity > dark_max_velocity ? gas_max_velocity : dark_max_velocity);
-	max_velocity = (max_velocity > star_max_velocity ? max_velocity : star_max_velocity);
-	min_phi = (gas_min_phi < dark_min_phi ? gas_min_phi : dark_min_phi);
-	min_phi = (min_phi < star_min_phi ? min_phi : star_min_phi);
-	max_phi = (gas_max_phi > dark_max_phi ? gas_max_phi : dark_max_phi);
-	max_phi = (max_phi > star_max_phi ? max_phi : star_max_phi);	
+PartialTipsyFile::PartialTipsyFile(const std::string& fn, const std::string& markfilename) : myReader(fn) {
+	std::ifstream markfile(markfilename.c_str());
+	loadMark(markfile);
 }
 
-void TipsyStats::outputStats(std::ostream& os) {
-	using std::endl;
-	os << "Info on tipsy file " << tf->filename << endl;
-	if(tf->isNative())
-		os << "x86 file format (little-endian)" << endl;
-	else
-		os << "SGI file format (big-endian)" << endl;
-	os << "Simulation time: " << tf->h.time << endl;
-	os << "NBodies: " << tf->h.nbodies << " (" << tf->h.nsph << " gas, " << tf->h.ndark << " dark, " << tf->h.nstar << " star)" << endl;
-	os << "Bounding box: " << bounding_box << endl;
-	os << "Box center: " << center << endl;
-	os << "Box volume: " << volume << " Box size: " << size << endl;
-	os << "Density: " << density << " Total mass: " << total_mass << endl;
-	os << "Total center of mass: " << center_of_mass << endl;
-	os << "Total center of mass velocity: " << center_of_mass_velocity << endl;
-	os << "Total angular momentum: " << angular_momentum << endl;
-	
-	if(tf->h.nsph) {
-		os << "Gas Stats: (" << tf->h.nsph << " particles)" << endl;
-		os << "Gas mass: " << gas_mass << endl;
-		os << "Gas center of mass: " << gas_com << endl;
-		os << "Gas center of mass velocity: " << gas_com_vel << endl;
-		os << "Gas angular momentum: " << gas_ang_mom << endl;
-		os << "Range of gas masses: (" << gas_min_mass << " <=> " << gas_max_mass << ")" << endl;
-		os << "Range of gas radii: (" << gas_min_radius << " <=> " << gas_max_radius << ")" << endl;
-		os << "Range of gas velocities: (" << gas_min_velocity << " <=> " << gas_max_velocity << ")" << endl;
-		os << "Range of gas rho: (" << gas_min_rho << " <=> " << gas_max_rho << ")" << endl;
-		os << "Range of gas temperature: (" << gas_min_temp << " <=> " << gas_max_temp << ")" << endl;
-		os << "Range of gas hsmooth: (" << gas_min_hsmooth << " <=> " << gas_max_hsmooth << ")" << endl;
-		os << "Range of gas metals: (" << gas_min_metals << " <=> " << gas_max_metals << ")" << endl;
-		os << "Range of gas phi: (" << gas_min_phi << " <=> " << gas_max_phi << ")" << endl;
-	} else
-		os << "No gas particles." << endl;
-	
-	if(tf->h.ndark) {
-		os << "Dark Stats: (" << tf->h.ndark << " particles)" << endl;
-		os << "Dark mass: " << dark_mass << endl;
-		os << "Dark center of mass: " << dark_com << endl;
-		os << "Dark center of mass velocity: " << dark_com_vel << endl;
-		os << "Dark angular momentum: " << dark_ang_mom << endl;
-		os << "Range of dark masses: (" << dark_min_mass << " <=> " << dark_max_mass << ")" << endl;
-		os << "Range of dark radii: (" << dark_min_radius << " <=> " << dark_max_radius << ")" << endl;
-		os << "Range of dark velocities: (" << dark_min_velocity << " <=> " << dark_max_velocity << ")" << endl;
-		os << "Range of eps: (" << dark_min_eps << " <=> " << dark_max_eps << ")" << endl;
-		os << "Range of dark phi: (" << dark_min_phi << " <=> " << dark_max_phi << endl;
-	} else
-		os << "No dark particles." << endl;
-	
-	if(tf->h.nstar) {
-		os << "Star Stats: (" << tf->h.nstar << " particles)" << endl;
-		os << "Star mass: " << star_mass << endl;
-		os << "Star center of mass: " << star_com << endl;
-		os << "Star center of mass velocity: " << star_com_vel << endl;
-		os << "Star angular momentum: " << star_ang_mom << endl;
-		os << "Range of star masses: (" << star_min_mass << " <=> " << star_max_mass << ")" << endl;
-		os << "Range of star radii: (" << star_min_radius << " <=> " << star_max_radius << ")" << endl;
-		os << "Range of star velocities: (" << star_min_velocity << " <=> " << star_max_velocity << ")" << endl;
-		os << "Range of star metals: (" << star_min_metals << " <=> " << star_max_metals << ")" << endl;
-		os << "Range of star formation time: (" << star_min_tform << " <=> " << star_max_tform << ")" << endl;
-		os << "Range of star eps: (" << star_min_eps << " <=> " << star_max_eps << ")" << endl;
-		os << "Range of star phi: (" << star_min_phi << " <=> " << star_max_phi << ")" << endl;
-	} else
-		os << "No star particles." << endl;
-	
-	os << "Aggregate Stats:" << endl;
-	os << "Range of masses: (" << min_mass << " <=> " << max_mass << ")" << endl;
-	os << "Range of radii: (" << min_radius << " <=> " << max_radius << ")" << endl;
-	os << "Range of velocities: (" << min_velocity << " <=> " << max_velocity << ")" << endl;
-	os << "Range of phi: (" << min_phi << " <=> " << max_phi << ")" << endl;
+PartialTipsyFile::PartialTipsyFile(std::istream& is, std::istream& markstream) : myReader(is) {
+	loadMark(markstream);
 }
 
-void TipsyStats::relocate_center_of_mass(const Vector& new_com) {
-	int i;
-	for(i = 0; i < tf->h.nsph; ++i)
-		tf->gas[i].pos -= new_com;
-	
-	for(i = 0; i < tf->h.ndark; ++i)
-		tf->darks[i].pos -= new_com;
-	
-	for(i = 0; i < tf->h.nstar; ++i)
-		tf->stars[i].pos -= new_com;
+bool PartialTipsyFile::reloadMark(const std::string& fn, const std::string& markfilename) {
+	myReader.reload(fn);
+	std::ifstream markstream(markfilename.c_str());
+	return loadMark(markstream);
 }
 
-void TipsyStats::set_center_of_mass_velocity(const Vector& new_com_vel) {
-	int i;
-	for(i = 0; i < tf->h.nsph; ++i)
-		tf->gas[i].vel -= new_com_vel;
-	
-	for(i = 0; i < tf->h.ndark; ++i)
-		tf->darks[i].vel -= new_com_vel;
+bool PartialTipsyFile::reloadMark(std::istream& is, std::istream& markstream) {
+	myReader.reload(is);
+	return loadMark(markstream);
+}
 
-	for(i = 0; i < tf->h.nstar; ++i)
-		tf->stars[i].vel -= new_com_vel;
+bool PartialTipsyFile::loadMark(std::istream& markstream) {
+	success = false;
+	
+	if(!myReader.status())
+		return false;
+	
+	fullHeader = myReader.getHeader();
+	native = myReader.isNative();
+	stats.clear();
+	
+	h.ndim = fullHeader.ndim;
+	h.time = fullHeader.time;
+	
+	markstream >> h.nbodies;
+	if(h.nbodies != fullHeader.nbodies)
+		return false;
+	markstream >> h.nsph;
+	if(h.nsph != fullHeader.nsph)
+		return false;
+	markstream >> h.nstar;
+	if(h.nstar != fullHeader.nstar)
+		return false;
+	
+	h.nsph = h.ndark = h.nstar = 0;
+	vector<int> marks;
+	int markIndex;
+	while(markstream >> markIndex) {
+		markIndex--; //mark inidices start at 1
+		if(markIndex < 0 || markIndex >= h.nbodies)
+			return false;
+		marks.push_back(markIndex);
+		if(markIndex < fullHeader.nsph)
+			h.nsph++;
+		else if(markIndex < fullHeader.nsph + fullHeader.ndark)
+			h.ndark++;
+		else
+			h.nstar++;
+	}
+		
+	h.nbodies = h.nsph + h.ndark + h.nstar;
+	gas.clear();
+	darks.clear();
+	stars.clear();
+	gas.reserve(h.nsph);
+	darks.reserve(h.ndark);
+	stars.reserve(h.nstar);
+	
+	gas_particle gp;
+	dark_particle dp;
+	star_particle sp;
+	
+	for(vector<int>::iterator iter = marks.begin(); iter != marks.end(); ++iter) {
+		if(!myReader.seekParticleNum(*iter))
+			return false;
+		if(*iter < fullHeader.nsph) {
+			if(!myReader.getNextGasParticle(gp))
+				return false;
+			stats.contribute(gp);
+			gas.push_back(gp);
+		} else if(*iter < fullHeader.nsph + fullHeader.ndark) {
+			if(!myReader.getNextDarkParticle(dp))
+				return false;
+			stats.contribute(dp);
+			darks.push_back(dp);
+		} else {
+			if(!myReader.getNextStarParticle(sp))
+				return false;
+			stats.contribute(sp);
+			stars.push_back(sp);
+		}
+	}
+	
+	stats.finalize();
+	
+	success = true;
+	return true;
 }
 
 std::vector<Real> readTipsyArray(std::istream& is) {
