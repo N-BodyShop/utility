@@ -30,6 +30,10 @@ private:
 		string trimmed(s);
 		trimmed.erase(0, trimmed.find_first_not_of(" \t\r\n"));
 		trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
+		if(trimmed[trimmed.length() - 1] == ';') {
+			trimmed.erase(trimmed.length() - 1);
+			trimmed.erase(trimmed.find_last_not_of(" \t\r\n") + 1);
+		}
 		return trimmed;
 	}
 	
@@ -211,13 +215,19 @@ public:
 				|| eraseStringProperty(key);
 	}
 	
+	void load(const std::string& s) {
+		std::ifstream infile(s.c_str());
+		if(infile)
+			load(infile);
+		infile.close();	
+	}
+	
 	/// Read in a set of key/value pairs from a stream, recognizing types and skipping '#' comments
 	void load(std::istream& in) {
 		string line, key, value;
 		std::size_t equalsPos, commentPos;
 		double doubleVal;
 		int intVal;
-		
 		for(;;) {
 			getline(in, line); //read in a line
 			if(!in) //check if we're done
@@ -232,12 +242,12 @@ public:
 					value = trim(line.substr(equalsPos + 1, commentPos - equalsPos - 1));
 					istringstream intIn(value);
 					intIn >> intVal;
-					if(intIn.eof()) //it was an int
+					if(intIn && (intIn.get() == -1))
 						intProperties[key] = intVal;
-					else { //try a double
+					else {
 						istringstream doubleIn(value);
 						doubleIn >> doubleVal;
-						if(doubleIn.eof()) //successful extraction of double
+						if(doubleIn && (doubleIn.get() == -1)) //successful extraction of double
 							doubleProperties[key] = doubleVal;
 						else { //it's not an int or double
 							//look for boolean values
@@ -251,7 +261,7 @@ public:
 								stringProperties[key] = removeQuotes(value);
 						}
 					}
-				}			
+				}
 			}
 		}
 	}

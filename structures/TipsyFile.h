@@ -269,15 +269,7 @@ public:
 	TipsyFile(std::istream& is);
 
 	/// Copy constructor
-	TipsyFile(const TipsyFile& tf) { 
-		h = tf.h;
-		native = tf.native;
-		success = tf.success;
-		filename = tf.filename;
-		gas = tf.gas;
-		darks = tf.darks;
-		stars = tf.stars;
-	}
+	TipsyFile(const TipsyFile& tf) : native(tf.native), success(tf.success), filename(tf.filename), h(tf.h), gas(tf.gas), darks(tf.darks), stars(tf.stars) { }
 	
 	~TipsyFile() { }
 
@@ -295,6 +287,12 @@ public:
 	/// Did the file load successfully?
 	bool loadedSuccessfully() const { return success; }
 
+	void remakeHeader() {
+		h.nsph = gas.size();
+		h.ndark = darks.size();
+		h.nstar = stars.size();
+		h.nbodies = h.nsph + h.ndark + h.nstar;
+	}
 };
 
 /** This class represents part of a tipsy file loaded into memory as if it were
@@ -317,9 +315,11 @@ public:
 	PartialTipsyFile() : beginParticle(0), endParticle(0) { }
 	PartialTipsyFile(const string& fn, int begin, int end);
 	PartialTipsyFile(std::istream& is, int begin, int end);
+	PartialTipsyFile(const PartialTipsyFile& ptf) : TipsyFile(ptf), fullHeader(ptf.fullHeader), beginParticle(beginParticle), endParticle(endParticle) { }
 	
 	//saving of partial files not implemented, not sure if meaningful
 	void save() const { }
+	void save(std::ostream& os) const { };
 	
 	//reloading a partial file
 	void reload(const std::string& fn);

@@ -70,7 +70,8 @@ public:
 
 	OrientedBox<T>& operator=(const OrientedBox<T>& b) {
 		lesser_corner = b.lesser_corner;
-		greater_corner = b.greater_corner;	
+		greater_corner = b.greater_corner;
+		return *this;
 	}
 	
 	inline bool contains(const Vector3D<T>& point) const {

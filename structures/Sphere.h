@@ -34,6 +34,7 @@ public:
 	Sphere<T>& operator=(const Sphere<T>& s) {
 		origin = s.origin;
 		radius = s.radius;
+		return *this;
 	}
 	
 	/// A sphere contains a point if the distance between the origin and the point is less than the radius
@@ -105,7 +106,7 @@ public:
 	
 	/// Output operator, used for formatted display
 	friend std::ostream& operator<<(std::ostream& os, const Sphere<T>& s) {
-		os << '{' << s.origin << ', ' << s.radius << '}';
+		os << '{' << s.origin << ", " << s.radius << '}';
 		return os;
 	}
 
