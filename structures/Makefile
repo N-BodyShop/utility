@@ -2,14 +2,15 @@ CXXFLAGS += -g -O3
 
 NAME = structures
 VERSION = 1.1
-TARGETS = TipsyReader.o TipsyFile.o
+TARGETS = TipsyReader.o TipsyFile.o SS.o
 
 all:: libTipsy.a($(TARGETS)) SFC.o
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
-TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h
+TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_template.h
 
+SS.o: xdr_template.h Vector3D.h
 debug::
 	make "CXXFLAGS += -g" clean all
 
