@@ -80,6 +80,7 @@ private:
 	/// Load the file from disk
 	bool loadfile();
 	
+	//must be mutable so they can be sorted in save(), a const function
 	mutable std::vector<int> markedGas;
 	mutable std::vector<int> markedDarks;
 	mutable std::vector<int> markedStars;

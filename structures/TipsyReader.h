@@ -18,8 +18,8 @@
 namespace Tipsy {
 
 /** The header in a tipsy format file. */
-struct header {
-	
+class header {
+public:	
 	static const unsigned int sizeBytes = 28;
 	
 	/// The time of the output
