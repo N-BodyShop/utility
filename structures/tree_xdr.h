@@ -389,7 +389,7 @@ inline bool_t xdr_template(XDR* xdrs, BasicTreeNode* node) {
 			&& xdr_template(xdrs, &(node->numParticlesLeft));
 }
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 inline void operator|(PUP::er& p, TreeHeader& h) {
@@ -419,7 +419,7 @@ inline void operator|(PUP::er& p, BasicTreeNode& n) {
 	p | n.numParticlesLeft;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 
 #endif //TREE_XDR_H

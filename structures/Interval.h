@@ -51,7 +51,7 @@ public:
 	
 };
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 template <typename T>
@@ -60,6 +60,6 @@ inline void operator|(PUP::er& p, Interval<T>& v) {
 	p | v.max;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 #endif //INTERVAL_H

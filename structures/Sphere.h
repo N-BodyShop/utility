@@ -93,7 +93,7 @@ public:
 
 typedef Sphere<double> dSphere;
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 template <typename T>
@@ -109,6 +109,6 @@ inline void operator|(PUP::er& p, SphericalShell<T>& s) {
 	p | s.delta;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 #endif //SPHERE_H

@@ -148,8 +148,8 @@ public:
 		return (p - q).length();
 	}
 
-	template <typename T>
-	static inline bool contains(const Sphere<T>& s, const Vector3D<T>& v) {
+	template <typename T, typename T2>
+	static inline bool contains(const Sphere<T>& s, const Vector3D<T2>& v) {
 		return (s.origin - v).length() <= s.radius;
 	}
 
@@ -177,25 +177,25 @@ public:
 	
 	/// Do an oriented box and a sphere intersect
 	template <typename T, typename T2>
-	static bool intersect(const OrientedBox<T>& box1, const Sphere<T2>& s) {
+	static bool intersect(const OrientedBox<T>& b, const Sphere<T2>& s) {
 		T dsq = 0;
 		T rsq = s.radius * s.radius;
 		T delta;
-		if((delta = lesser_corner.x - s.origin.x) > 0)
+		if((delta = b.lesser_corner.x - s.origin.x) > 0)
 			dsq += delta * delta;
-		else if((delta = s.origin.x - greater_corner.x) > 0)
-			dsq += delta * delta;
-		if(rsq < dsq)
-			return false;
-		if((delta = lesser_corner.y - s.origin.y) > 0)
-			dsq += delta * delta;
-		else if((delta = s.origin.y - greater_corner.y) > 0)
+		else if((delta = s.origin.x - b.greater_corner.x) > 0)
 			dsq += delta * delta;
 		if(rsq < dsq)
 			return false;
-		if((delta = lesser_corner.z - s.origin.z) > 0)
+		if((delta = b.lesser_corner.y - s.origin.y) > 0)
 			dsq += delta * delta;
-		else if((delta = s.origin.z - greater_corner.z) > 0)
+		else if((delta = s.origin.y - b.greater_corner.y) > 0)
+			dsq += delta * delta;
+		if(rsq < dsq)
+			return false;
+		if((delta = b.lesser_corner.z - s.origin.z) > 0)
+			dsq += delta * delta;
+		else if((delta = s.origin.z - b.greater_corner.z) > 0)
 			dsq += delta * delta;
 		return (dsq <= s.radius * s.radius);
 	}
@@ -419,7 +419,7 @@ public:
 	}
 };
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 template <typename T>
@@ -429,6 +429,6 @@ inline void operator|(PUP::er& p, Space3D<T>& s) {
 	p | s.zPeriod;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 #endif //SPACE_H

@@ -47,20 +47,20 @@ public:
 	Vector3D<double> dark_ang_mom;
 	Vector3D<double> star_ang_mom;
 	
-	double min_mass, max_mass;
-	double gas_min_mass, gas_max_mass, dark_min_mass, dark_max_mass, star_min_mass, star_max_mass;
+	float min_mass, max_mass;
+	float gas_min_mass, gas_max_mass, dark_min_mass, dark_max_mass, star_min_mass, star_max_mass;
 	double min_radius, max_radius;
 	double gas_min_radius, gas_max_radius, dark_min_radius, dark_max_radius, star_min_radius, star_max_radius;
 	double min_velocity, max_velocity;
 	double gas_min_velocity, gas_max_velocity, dark_min_velocity, dark_max_velocity, star_min_velocity, star_max_velocity;
-	double dark_min_eps, dark_max_eps, star_min_eps, star_max_eps;
-	double min_phi, max_phi;
-	double gas_min_phi, gas_max_phi, dark_min_phi, dark_max_phi, star_min_phi, star_max_phi;
-	double gas_min_rho, gas_max_rho;
-	double gas_min_temp, gas_max_temp;
-	double gas_min_hsmooth, gas_max_hsmooth;
-	double gas_min_metals, gas_max_metals, star_min_metals, star_max_metals;
-	double star_min_tform, star_max_tform;
+	float dark_min_eps, dark_max_eps, star_min_eps, star_max_eps;
+	float min_phi, max_phi;
+	float gas_min_phi, gas_max_phi, dark_min_phi, dark_max_phi, star_min_phi, star_max_phi;
+	float gas_min_rho, gas_max_rho;
+	float gas_min_temp, gas_max_temp;
+	float gas_min_hsmooth, gas_max_hsmooth;
+	float gas_min_metals, gas_max_metals, star_min_metals, star_max_metals;
+	float star_min_tform, star_max_tform;
 	
 	void clear();
 	void contribute(const gas_particle& p);

@@ -127,7 +127,7 @@ public:
 	}
 };
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 template <typename T>
@@ -136,6 +136,6 @@ inline void operator|(PUP::er& p, OrientedBox<T>& b) {
 	p | b.greater_corner;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 #endif //ORIENTEDBOX_H

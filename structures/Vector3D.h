@@ -311,7 +311,7 @@ public:
 /** A shorthand version, for convenience. */
 typedef Vector3D<double> Vector;
 
-#ifdef CHARM
+#ifdef __CHARMC__
 #include "pup.h"
 
 template <typename T>
@@ -321,6 +321,6 @@ inline void operator|(PUP::er& p, Vector3D<T>& v) {
 	p | v.z;
 }
 
-#endif //CHARM
+#endif //__CHARMC__
 
 #endif //VECTOR3D_H
