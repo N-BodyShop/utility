@@ -6,58 +6,39 @@
 #include <fstream>
 #include <vector>
 
+#include "Vector3D.h"
 #include "tree_xdr.h"
 
 using namespace std;
+using namespace TypeHandling;
 
 template <typename T>
-void printFieldValue(ostream& os, T* data, int i) {
-	os << data[i];
-}
+void printValueLoop_typed(TypedArray& arr) {
+	cout << "Minimum: " << arr.getMinValue(Type2Type<T>()) << endl;
+	cout << "Maximum: " << arr.getMaxValue(Type2Type<T>()) << endl;
 
-template <typename T>
-void printFieldValue(ostream& os, const unsigned int dimensions, T* data, int i) {
-	if(dimensions == 3)
-		printFieldValue(os, reinterpret_cast<Vector3D<T> *>(data), i);
-	else
-		printFieldValue(os, data, i);
-}
-
-void printFieldValue(ostream& os, const FieldHeader& fh, void* data, int i) {
-	switch(fh.code) {
-		case int8:
-			printFieldValue(os, fh.dimensions, static_cast<char *>(data), i);
-			break;
-		case uint8:
-			printFieldValue(os, fh.dimensions, static_cast<unsigned char *>(data), i);
-			break;
-		case int16:
-			printFieldValue(os, fh.dimensions, static_cast<short *>(data), i);
-			break;
-		case uint16:
-			printFieldValue(os, fh.dimensions, static_cast<unsigned short *>(data), i);
-			break;
-		case int32:
-			printFieldValue(os, fh.dimensions, static_cast<int *>(data), i);
-			break;
-		case uint32:
-			printFieldValue(os, fh.dimensions, static_cast<unsigned int *>(data), i);
-			break;
-		case int64:
-			printFieldValue(os, fh.dimensions, static_cast<int64_t *>(data), i);
-			break;
-		case uint64:
-			printFieldValue(os, fh.dimensions, static_cast<u_int64_t *>(data), i);
-			break;
-		case float32:
-			printFieldValue(os, fh.dimensions, static_cast<float *>(data), i);
-			break;
-		case float64:
-			printFieldValue(os, fh.dimensions, static_cast<double *>(data), i);
-			break;
-		default:
-			os << "I don't recognize the type of this field!";
+	T* array = arr.getArray(Type2Type<T>());
+	
+	u_int64_t i;
+	cout << "\nWhich index do you want to see? ";
+	while((cin >> i) && (i >= 0)) {
+		if(i >= arr.length)
+			cout << "Index too high, must be between 0 and " << (arr.length - 1);
+		else
+			cout << "Value: " << array[i];
+		cout << "\nWhich index do you want to see? ";
+		cout.flush();
 	}
+}
+
+template <typename T>
+void printValueLoop_dimensions(TypedArray& arr) {
+	if(arr.dimensions == 1)
+		printValueLoop_typed<T>(arr);
+	else if(arr.dimensions == 3)
+		printValueLoop_typed<Vector3D<T> >(arr);
+	//else
+		//throw UnsupportedDimensionalityException;
 }
 
 int main(int argc, char** argv) {
@@ -84,8 +65,10 @@ int main(int argc, char** argv) {
 		return 4;
 	}
 	
-	void* data = readField(fh, &xdrs);
-	if(data == 0) {
+	TypedArray arr;
+	arr.dimensions = fh.dimensions;
+	arr.code = fh.code;
+	if(!readAttributes(&xdrs, arr, fh.numParticles)) {
 		cerr << "Had problems reading in the field" << endl;
 		return 5;
 	}
@@ -93,26 +76,44 @@ int main(int argc, char** argv) {
 	xdr_destroy(&xdrs);
 	fclose(infile);
 	
-	cout << "File \"" << argv[1] << "\" contains a field.  Header:\n" << fh << endl;
-	cout << "Minimum: ";
-	printFieldValue(cout, fh, data, fh.numParticles);
-	cout << "\nMaximum: ";
-	printFieldValue(cout, fh, data, fh.numParticles + 1);
-		
-	int i;
-	cout << "\nWhich index do you want to see? ";
-	while((cin >> i) && (i >= 0)) {
-		if(i >= fh.numParticles)
-			cout << "Index too high, must be between 0 and " << (fh.numParticles - 1);
-		else {
-			cout << "Value: ";
-			printFieldValue(cout, fh, data, i);
-		}
-		cout << "\nWhich index do you want to see? ";
-		cout.flush();
+	cout << "File " << argv[1] << " contains an attribute.\nHeader:\n" << fh << endl;
+	
+	switch(arr.code) {
+		case int8:
+			printValueLoop_dimensions<char>(arr);
+			break;
+		case uint8:
+			printValueLoop_dimensions<unsigned char>(arr);
+			break;
+		case int16:
+			printValueLoop_dimensions<short>(arr);
+			break;
+		case uint16:
+			printValueLoop_dimensions<unsigned short>(arr);
+			break;
+		case int32:
+			printValueLoop_dimensions<int>(arr);
+			break;
+		case uint32:
+			printValueLoop_dimensions<unsigned int>(arr);
+			break;
+		case int64:
+			printValueLoop_dimensions<int64_t>(arr);
+			break;
+		case uint64:
+			printValueLoop_dimensions<u_int64_t>(arr);
+			break;
+		case float32:
+			printValueLoop_dimensions<float>(arr);
+			break;
+		case float64:
+			printValueLoop_dimensions<double>(arr);
+			break;
+		default:
+			cout << "Unknown data type!";
 	}
 	
-	deleteField(fh, data);
+	arr.release();
 	
 	cerr << "Done." << endl;
 }

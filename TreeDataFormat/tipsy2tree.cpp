@@ -28,6 +28,7 @@
 using namespace std;
 using namespace Tipsy;
 using namespace SFC;
+using namespace TypeHandling;
 
 int verbosity;
 int bucketSize;
@@ -321,7 +322,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	createAndWriteTree("gas/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
-	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	//write out uid, mass, pos, vel, rho, temp, metals, eps, phi
 	FILE* outfile;
 	XDR xdrs;
 	
@@ -373,7 +374,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".temp").c_str(), "wb");
+	outfile = fopen(("gas/" + filenamePrefix + ".temperature").c_str(), "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_temp(&xdrs, fh, particles + 1, stats.gas_min_temp, stats.gas_max_temp);
 	xdr_destroy(&xdrs);
@@ -442,7 +443,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	createAndWriteTree("dark/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
-	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	//write out uid, mass, pos, vel, eps, phi
 	FILE* outfile;
 	XDR xdrs;
 	
@@ -539,7 +540,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	createAndWriteTree("star/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
-	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	//write out uid, mass, pos, vel, metals, tform, eps, phi
 	FILE* outfile;
 	XDR xdrs;
 	
@@ -681,7 +682,7 @@ int main(int argc, const char** argv) {
 	
 	//write xml
 	ofstream xmlfile("description.xml");
-	xmlfile << "<xml fakery>\n<simulation>\n";
+	xmlfile << "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n<simulation>\n";
 
 	header h = r.getHeader();
 	if(verbosity > 2)
@@ -689,42 +690,45 @@ int main(int argc, const char** argv) {
 	
 	if(h.nsph > 0) {
 		convertGasParticles(basename, r);
-		xmlfile << "\t<family type=\"gas\">\n";
-		xmlfile << "\t\t<tree filename=\"gas/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<mass filename=\"gas/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<pos filename=\"gas/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<vel filename=\"gas/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<softening filename=\"gas/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<potential filename=\"gas/" << basename << ".potential\"/>\n";
-		xmlfile << "\t\t<density filename=\"gas/" << basename << ".density\"/>\n";
-		xmlfile << "\t\t<temp filename=\"gas/" << basename << ".temp\"/>\n";
-		xmlfile << "\t\t<metals filename=\"gas/" << basename << ".metals\"/>\n";
+		xmlfile << "\t<family name=\"gas\">\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"gas/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"gas/" << basename << ".uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"gas/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"gas/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"gas/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"gas/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"gas/" << basename << ".potential\"/>\n";
+		xmlfile << "\t\t<attribute name=\"density\" link=\"gas/" << basename << ".density\"/>\n";
+		xmlfile << "\t\t<attribute name=\"temperature\" link=\"gas/" << basename << ".temperature\"/>\n";
+		xmlfile << "\t\t<attribute name=\"metals\" link=\"gas/" << basename << ".metals\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
 	if(h.ndark > 0) {
 		convertDarkParticles(basename, r);
-		xmlfile << "\t<family type=\"dark\">\n";
-		xmlfile << "\t\t<tree filename=\"dark/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<mass filename=\"dark/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<pos filename=\"dark/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<vel filename=\"dark/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<softening filename=\"dark/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<potential filename=\"dark/" << basename << ".potential\"/>\n";
+		xmlfile << "\t<family name=\"dark\">\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"dark/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"dark/" << basename << ".uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"dark/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"dark/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"dark/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"dark/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"dark/" << basename << ".potential\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
 	if(h.nstar > 0) {
 		convertStarParticles(basename, r);
-		xmlfile << "\t<family type=\"star\">\n";
-		xmlfile << "\t\t<tree filename=\"star/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<mass filename=\"star/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<pos filename=\"star/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<vel filename=\"star/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<softening filename=\"star/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<potential filename=\"star/" << basename << ".potential\"/>\n";
-		xmlfile << "\t\t<metals filename=\"star/" << basename << ".metals\"/>\n";
-		xmlfile << "\t\t<tform filename=\"star/" << basename << ".tform\"/>\n";
+		xmlfile << "\t<family name=\"star\">\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"star/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"star/" << basename << ".uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"star/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"star/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"star/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"star/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"star/" << basename << ".potential\"/>\n";
+		xmlfile << "\t\t<attribute name=\"metals\" link=\"star/" << basename << ".metals\"/>\n";
+		xmlfile << "\t\t<attribute name=\"formationtime\" link=\"star/" << basename << ".tform\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
