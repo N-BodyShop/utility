@@ -27,11 +27,16 @@ bool mergeAttribute(Simulation* sim, const string& familyName, const string& att
 	if(iter != sim->end()) { //there are some gas particles
 		ParticleFamily& family = iter->second;
 		sim->loadAttribute(iter->first, "uid", family.count.totalNumParticles);
-		unsigned int* uids = family.getAttribute<unsigned int>("uid");
+		TypedArray& arr = family.attributes["uid"]; 
+		unsigned int* uids = arr.getArray(Type2Type<unsigned int>());
 		if(!uids) {
 			cerr << "SiX format did not contain Tipsy-order uids!" << endl;
 			return false;
 		}
+		unsigned int minIndex = arr.getMinValue(Type2Type<unsigned int>());
+		for(u_int64_t i = 0; i < family.count.totalNumParticles; ++i)
+			uids[i] -= minIndex;
+		
 		float* values = new float[family.count.totalNumParticles];
 		for(unsigned int i = 0; i < family.count.totalNumParticles; ++i) {
 			infile >> values[i];
