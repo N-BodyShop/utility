@@ -57,6 +57,7 @@ private:
 			os << intIter->first << "=" << intIter->second << "\n";
 		os << "#floating point properties\n";
 		os.setf(std::ios_base::scientific);
+		os.setf(std::ios_base::showpoint);
 		for(map<string, double>::const_iterator doubleIter = doubleProperties.begin(); doubleIter != doubleProperties.end(); ++doubleIter)
 			os << doubleIter->first << "=" << doubleIter->second << "\n";
 		os << "#string properties\n";
