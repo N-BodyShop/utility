@@ -16,6 +16,9 @@
 template <typename T = double>
 class Vector3D {
 public:
+	//expose the type of the coordinates
+	typedef T componentType;
+
 	/// The cartesian coordinates of this three-dimensional vector
 	T x, y, z;
 
@@ -31,7 +34,7 @@ public:
 
 	/// Copy constructor copies the components
 	template <typename T2>
-	Vector3D(const Vector3D<T2>& v) : x(v.x), y(v.y), z(v.z) { }
+	Vector3D(const Vector3D<T2>& v) : x(static_cast<T>(v.x)), y(static_cast<T>(v.y)), z(static_cast<T>(v.z)) { }
 
 	//nothing to destruct!
 	~Vector3D() { }
@@ -220,10 +223,19 @@ inline Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
 
 /// Output operator, used for formatted display
 template <typename T>
-inline std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
+inline std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v) {
 	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
 	//os << v.x << delim << v.y << delim << v.z;
 	return os;
+}
+
+template <typename T>
+inline std::istream& operator>>(std::istream& is, Vector3D<T>& v) {
+	T x, y, z;
+	is >> x >> y >> z;
+	if(is)
+		v = Vector3D<T>(x, y, z);
+	return is;
 }
 
 /** Given the spherical coordinates of a vector, return a cartesion version of the same vector. */
