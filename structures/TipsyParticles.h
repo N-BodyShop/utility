@@ -24,6 +24,8 @@ typedef float Real;
 
 class simple_particle {
 public:
+	static const unsigned int sizeBytes = 28;
+	
 	/** The mass of the particle. */
     Real mass;
 	/** The position of this particle. */
@@ -43,12 +45,15 @@ public:
 				<< "\nPosition: " << p.pos
 				<< "\nVelocity: " << p.vel;
 	}
+	
 };
 
 /** A particle representing a blob of gas, this is used in SPH calculations. */
 class gas_particle : public simple_particle {
 public:
 
+	static const unsigned int sizeBytes = 48;
+	
 	/** The local density of gas at this particle's location. */
     Real rho;
 	/** The temperature of the gas in this particle. */
@@ -86,6 +91,8 @@ public:
 class dark_particle : public simple_particle {
 public:
 	
+	static const unsigned int sizeBytes = 36;
+	
 	/** The gravitational softening length of this particle. */
     Real eps;
 	/** The gravitational potential at this particle. */
@@ -112,6 +119,8 @@ public:
 /** A star particle interacts via gravity, and has some extra properties. */
 class star_particle : public simple_particle {
 public:
+	
+	static const unsigned int sizeBytes = 44;
 	
 	/** The metallicity of this star particle. */
     Real metals;
@@ -180,7 +189,7 @@ public:
 			<< "\nNumber of members: " << p.numMembers
 			<< "\nRadius to farthest member: " << p.radius;
 	}
-};
+};		
 
 } //close namespace Tipsy
 

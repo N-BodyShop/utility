@@ -138,36 +138,36 @@ public:
 		stringProperties.clear();
 	}
 	
-	bool getBoolProperty(const string& key) const {
+	bool getBoolProperty(const string& key, const bool fallback = false) const {
 		map<string, bool>::const_iterator iter = boolProperties.find(key);
 		if(iter != boolProperties.end())
 			return iter->second;
 		else
-			return false;
+			return fallback;
 	}
 	
-	int getIntProperty(const string& key) const {
+	int getIntProperty(const string& key, const int fallback = 0) const {
 		map<string, int>::const_iterator iter = intProperties.find(key);
 		if(iter != intProperties.end())
 			return iter->second;
 		else
-			return 0;
+			return fallback;
 	}
 	
-	double getDoubleProperty(const string& key) const {
+	double getDoubleProperty(const string& key, const double fallback = 0.0) const {
 		map<string, double>::const_iterator iter = doubleProperties.find(key);
 		if(iter != doubleProperties.end())
 			return iter->second;
 		else
-			return 0.0;
+			return fallback;
 	}
 	
-	string getStringProperty(const string& key) const {
+	string getStringProperty(const string& key, const string fallback = "") const {
 		map<string, string>::const_iterator iter = stringProperties.find(key);
 		if(iter != stringProperties.end())
 			return iter->second;
 		else
-			return "";
+			return fallback;
 	}
 	
 	void setProperty(const string& key, const bool val) {

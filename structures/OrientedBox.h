@@ -1,8 +1,8 @@
-/** \file OrientedBox.h
- \author Graeme Lufkin (gwl@u.washington.edu)
- \date Created October 22, 2001
- \version 1.0
- \todo Fully document this class
+/** @file OrientedBox.h
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @date Created October 22, 2001
+ @version 1.0
+ @todo Fully document this class
  */
 
 #ifndef ORIENTEDBOX_H
@@ -28,8 +28,8 @@ public:
 	Vector3D<T> greater_corner;
 	
 	OrientedBox() {
-		lesser_corner = Vector3D<T>(1E100, 1E100, 1E100);
-		greater_corner = Vector3D<T>(-1E100, -1E100, -1E100);
+		lesser_corner = Vector3D<T>(HUGE_VAL, HUGE_VAL, HUGE_VAL);
+		greater_corner = Vector3D<T>(-HUGE_VAL, -HUGE_VAL, -HUGE_VAL);
 	}
 	
 	explicit OrientedBox(const Vector3D<T>& corner1, const Vector3D<T>& corner2) {

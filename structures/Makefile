@@ -1,26 +1,29 @@
-CXXFLAGS = -O3 -Wall
+CXXFLAGS += -O3 -Wall
 
 NAME = structures
 VERSION = 1.1
-TARGETS = TipsyFile.o TipsyFile.debug.o
-all: $(TARGETS)
+TARGETS = TipsyReader.o TipsyFile.o
+
+all:: libTipsy.a($(TARGETS))
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
-TipsyFile.debug.o: TipsyFile.h TipsyFile.cpp Vector3D.h OrientedBox.h
-	$(CXX) -Wall -g -o TipsyFile.debug.o -c TipsyFile.cpp
+TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h
+
+debug::
+	make "CXXFLAGS += -g" clean all
 
 tools::
 	cd tools && make
 
-docs:
+docs::
 	doxygen structures.doxygen
 
-dist:
+dist::
 	mkdir $(NAME)-$(VERSION)
-	cp Makefile *.h TipsyFile.cpp structures.doxygen $(NAME)-$(VERSION)/
+	cp Makefile *.h *.cpp structures.doxygen $(NAME)-$(VERSION)/
 	tar zcf $(NAME)-$(VERSION).tar.gz $(NAME)-$(VERSION)
 	rm -Rf $(NAME)-$(VERSION)
 	
-clean:
-	rm -f core* *.o *~ $(TARGETS)
+clean::
+	rm -f core* *.o *~ $(TARGETS) libTipsy.a

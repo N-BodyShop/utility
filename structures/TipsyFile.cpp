@@ -7,12 +7,12 @@
 #include <fstream>
 #include <algorithm>
 
-#include <rpc/types.h>
-#include <rpc/xdr.h>
-
 #include "TipsyFile.h"
 
 namespace Tipsy {
+
+using std::sort;
+using std::unique;
 
 //create a new tipsy file with the specified numbers of particles
 TipsyFile::TipsyFile(const std::string& fn, int nGas, int nDark, int nStar) : native(true), success(false), filename(fn), h(nGas, nDark, nStar), gas(nGas), darks(nDark), stars(nStar) {
@@ -20,27 +20,27 @@ TipsyFile::TipsyFile(const std::string& fn, int nGas, int nDark, int nStar) : na
 }
 
 //open a tipsyfile from disk
-TipsyFile::TipsyFile(const std::string& fn) : native(true), success(false), filename(fn) {
-	reload(filename);
+TipsyFile::TipsyFile(const std::string& fn) : native(true), success(false), myReader(fn), filename(fn) {
+	loadfile();
 }
 
 //open a tipsyfile from a stream
-TipsyFile::TipsyFile(std::istream& is) : native(true), success(false), filename("") {
-	reload(is);
+TipsyFile::TipsyFile(std::istream& is) : native(true), success(false), myReader(is), filename("") {
+	loadfile();
 }
 
 bool TipsyFile::reload(const std::string& fn) {
 	filename = fn;
-	std::ifstream infile(filename.c_str());
-	if(!infile)
-		return false;
-	bool result = loadfile(infile);
-	infile.close();
-	return result;
+	TipsyReader r(filename);
+	myReader.takeOverStream(r);
+	return loadfile();
 }
 
 bool TipsyFile::reload(std::istream& is) {
-	return loadfile(is);
+	filename = "";
+	TipsyReader r(is);
+	myReader.takeOverStream(r);
+	return loadfile();
 }
 
 bool TipsyFile::saveAll() const {
@@ -54,7 +54,7 @@ bool TipsyFile::saveAll() const {
 
 template <typename Iterator>
 void write_vector(std::ostream& os, Iterator begin, Iterator end) {
-	std::size_t itemSize = sizeof(*begin);
+	std::size_t itemSize = (*begin).sizeBytes;
 	for(Iterator iter = begin; iter != end; ++iter) {
 		os.write(reinterpret_cast<const char *>(&(*iter)), itemSize);
 		if(!os)
@@ -65,9 +65,20 @@ void write_vector(std::ostream& os, Iterator begin, Iterator end) {
 bool TipsyFile::saveAll(std::ostream& os) const {
 	if(!os)
 		return false;
-	os.write(reinterpret_cast<const char *>(&h), sizeof(header)); //write out the header
+	os.write(reinterpret_cast<const char *>(&h), header::sizeBytes); //write out the header
 	if(!os)
 		return false;
+	
+	//endian-ness check
+	unsigned int bob = 3;
+	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
+	if(c[3] == bob) { //we're big-endian, write the pad
+		bob = 0;
+		os.write(reinterpret_cast<const char *>(&bob), 4);
+		if(!os)
+			return false;
+	}
+	
 	write_vector(os, gas.begin(), gas.end());
 	if(!os)
 		return false;
@@ -107,9 +118,19 @@ bool TipsyFile::save(std::ostream& os) const {
 
 	if(!os)
 		return false;
-	os.write(reinterpret_cast<const char *>(&newh), sizeof(header)); //write out the header
+	os.write(reinterpret_cast<const char *>(&newh), header::sizeBytes); //write out the header
 	if(!os)
 		return false;
+	
+	//endian-ness check
+	unsigned int bob = 3;
+	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
+	if(c[3] == bob) { //we're big-endian, write the pad
+		bob = 0;
+		os.write(reinterpret_cast<const char *>(&bob), 4);
+		if(!os)
+			return false;
+	}
 
 	int n;
 	if(markedGas.size() == 0) {
@@ -255,217 +276,69 @@ bool TipsyFile::writeIOrdFile(std::ostream& os) {
 	return true;
 }
 
-//process xdr versions of the data structures used in tipsy files
-int xdr_convert_header(XDR xdrs, header& h) {
-	return (xdr_double(&xdrs, &h.time) 
-		&& xdr_int(&xdrs, &h.nbodies)
-		&& xdr_int(&xdrs, &h.ndim) 
-		&& xdr_int(&xdrs, &h.nsph)
-		&& xdr_int(&xdrs, &h.ndark)
-		&& xdr_int(&xdrs, &h.nstar));
-}
-
-int xdr_convert_gas(XDR xdrs, gas_particle& g) {
-	return (xdr_float(&xdrs, &g.mass)
-		&& xdr_float(&xdrs, &g.pos[0])
-		&& xdr_float(&xdrs, &g.pos[1])
-		&& xdr_float(&xdrs, &g.pos[2])
-		&& xdr_float(&xdrs, &g.vel[0])
-		&& xdr_float(&xdrs, &g.vel[1])
-		&& xdr_float(&xdrs, &g.vel[2])
-		&& xdr_float(&xdrs, &g.rho)
-		&& xdr_float(&xdrs, &g.temp)
-		&& xdr_float(&xdrs, &g.hsmooth)
-		&& xdr_float(&xdrs, &g.metals)
-		&& xdr_float(&xdrs, &g.phi));
-}
-
-int xdr_convert_dark(XDR xdrs, dark_particle& d) {
-	return (xdr_float(&xdrs, &d.mass)
-		&& xdr_float(&xdrs, &d.pos[0])
-		&& xdr_float(&xdrs, &d.pos[1])
-		&& xdr_float(&xdrs, &d.pos[2])
-		&& xdr_float(&xdrs, &d.vel[0])
-		&& xdr_float(&xdrs, &d.vel[1])
-		&& xdr_float(&xdrs, &d.vel[2])
-		&& xdr_float(&xdrs, &d.eps)
-		&& xdr_float(&xdrs, &d.phi));
-}
-
-int xdr_convert_star(XDR xdrs, star_particle& s) {
-	return (xdr_float(&xdrs, &s.mass)
-		&& xdr_float(&xdrs, &s.pos[0])
-		&& xdr_float(&xdrs, &s.pos[1])
-		&& xdr_float(&xdrs, &s.pos[2])
-		&& xdr_float(&xdrs, &s.vel[0])
-		&& xdr_float(&xdrs, &s.vel[1])
-		&& xdr_float(&xdrs, &s.vel[2])
-		&& xdr_float(&xdrs, &s.metals)
-		&& xdr_float(&xdrs, &s.tform)
-		&& xdr_float(&xdrs, &s.eps)
-		&& xdr_float(&xdrs, &s.phi));
-}
-
-template <typename T>
-void read_vector(std::istream& is, std::vector<T>& v, int n, OrientedBox<Real>& boundingBox) {
-	T dummy;
-	for(int i = 0; i < n; ++i) {
-		is.read(reinterpret_cast<char *>(&dummy), sizeof(T));
-		if(!is)
-			return;
-		boundingBox.grow(dummy.pos);
-		v.push_back(dummy);
-	}
-}
-
-bool TipsyFile::loadfile(std::istream& in) {
+bool TipsyFile::loadfile() {
 	success = false;
 	
-	if(!in)
+	if(!myReader.status())
 		return false;
-	//read in the header
-	in.read(reinterpret_cast<char *>(&h), sizeof(header));
-	if(!in)
-		return false;
+	h = myReader.getHeader();
+	native = myReader.isNative();
 	
-	XDR xdrs;
+	gas.resize(h.nsph);
+	for(int i = 0; i < h.nsph; ++i) {
+		if(!myReader.getNextGasParticle(gas[i]))
+			return false;
+		boundingBox.grow(gas[i].pos);
+	}
+	darks.resize(h.ndark);
+	for(int i = 0; i < h.ndark; ++i) {
+		if(!myReader.getNextDarkParticle(darks[i]))
+			return false;
+		boundingBox.grow(darks[i].pos);
+	}
+	stars.resize(h.nstar);
+	for(int i = 0; i < h.nstar; ++i) {
+		if(!myReader.getNextStarParticle(stars[i]))
+			return false;
+		boundingBox.grow(stars[i].pos);
+	}
 	
-	if(h.ndim != MAXDIM) { //check for validity
-		//try xdr format
-		xdrmem_create(&xdrs, reinterpret_cast<char *>(&h), sizeof(header), XDR_DECODE);
-		if(!xdr_convert_header(xdrs, h) || h.ndim != MAXDIM) { //wasn't xdr format either			
-			h.nbodies = h.nsph = h.ndark = h.nstar = 0;
-			return false;
-		}
-		native = false;
-		//xdr format has an integer pad in the header, which we don't need, but must skip
-		int pad = 0;
-		in.read(reinterpret_cast<char *>(&pad), sizeof(int));
-		if(!in)
-			return false;
-	}
-
-	//read in any gas particles
-	if(h.nsph > 0) {
-		if(native) {
-			gas.reserve(h.nsph);
-			read_vector(in, gas, h.nsph, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			gas.resize(h.nsph);
-			gas_particle dummy;
-			for(int i = 0; i < h.nsph; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_gas(xdrs, gas[i]))
-					return false;
-				boundingBox.grow(gas[i].pos);
-			}
-		}
-	}
-
-	//read in any dark matter particles
-	if(h.ndark > 0) {
-		if(native) {
-			darks.reserve(h.ndark);
-			read_vector(in, darks, h.ndark, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			darks.resize(h.ndark);
-			dark_particle dummy;
-			for(int i = 0; i < h.ndark; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_dark(xdrs, darks[i]))
-					return false;
-				boundingBox.grow(darks[i].pos);
-			}
-		}
-	}
-
-	//read in any star particles
-	if(h.nstar > 0) {
-		if(native) {
-			stars.reserve(h.nstar);
-			read_vector(in, stars, h.nstar, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			stars.resize(h.nstar);
-			star_particle dummy;
-			for(int i = 0; i < h.nstar; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_star(xdrs, stars[i]))
-					return false;
-				boundingBox.grow(stars[i].pos);
-			}
-		}
-	}
-
 	success = true;
 	return true;
 }
 
 //read part of a tipsy file from a file
-PartialTipsyFile::PartialTipsyFile(const std::string& fn, int begin, int end) : beginParticle(begin), endParticle(end) {
-	reload(fn);
+PartialTipsyFile::PartialTipsyFile(const std::string& fn, int begin, int end) : myReader(fn), filename(fn), beginParticle(begin), endParticle(end) {
+	loadPartial();
 }
 
 //read part of a tipsy file from a stream
-PartialTipsyFile::PartialTipsyFile(std::istream& is, int begin, int end) : beginParticle(begin), endParticle(end) {
-	reload(is);
+PartialTipsyFile::PartialTipsyFile(std::istream& is, int begin, int end) : myReader(is), filename(""), beginParticle(begin), endParticle(end) {
+	loadPartial();
 }
 
 bool PartialTipsyFile::reload(const std::string& fn) {
 	filename = fn;
-	std::ifstream infile(filename.c_str());
-	if(!infile)
-		return false;
-	bool result = loadPartial(infile);
-	infile.close();
-	return result;
+	TipsyReader r(filename);
+	myReader.takeOverStream(r);
+	return loadPartial();
 }
 
 bool PartialTipsyFile::reload(std::istream& is) {
-	return loadPartial(is);
+	filename = "";
+	TipsyReader r(is);
+	myReader.takeOverStream(r);
+	return loadPartial();
 }
 
-bool PartialTipsyFile::loadPartial(std::istream& in) {
+bool PartialTipsyFile::loadPartial() {
 	success = false;
 	
-	if(!in)
-		return false;
-	//read in the full file header
-	in.read(reinterpret_cast<char *>(&fullHeader), sizeof(header));
-	if(!in)
+	if(!myReader.status())
 		return false;
 	
-	XDR xdrs;
-	
-	if(fullHeader.ndim != MAXDIM) { //check for validity
-		//try xdr format
-		xdrmem_create(&xdrs, reinterpret_cast<char *>(&fullHeader), sizeof(header), XDR_DECODE);
-		if(!xdr_convert_header(xdrs, fullHeader) || fullHeader.ndim != MAXDIM) { //wasn't xdr format either			
-			h.nbodies = h.nsph = h.ndark = h.nstar = 0;
-			fullHeader.nbodies = fullHeader.nsph = fullHeader.ndark = fullHeader.nstar = 0;
-			return false;
-		}
-		native = false;
-		//xdr format has an integer pad in the header, which we don't need, but must skip
-		int pad = 0;
-		in.read(reinterpret_cast<char *>(&pad), sizeof(int));
-		if(!in)
-			return false;
-	}
+	fullHeader = myReader.getHeader();
+	native = myReader.isNative();
 	
 	//check that the range of particles asked for is reasonable
 	if(beginParticle < 0 || beginParticle > fullHeader.nbodies) {
@@ -477,7 +350,7 @@ bool PartialTipsyFile::loadPartial(std::istream& in) {
 		endParticle = fullHeader.nbodies;
 	
 	//we will need to seek at least this far in the file
-	int seekPosition = sizeof(header) + (native ? 0 : sizeof(int));
+	//int seekPosition = headerSizeBytes + (native ? 0 : sizeof(int));
 	
 	//fill in the header for our part
 	h.nbodies = endParticle - beginParticle;
@@ -487,81 +360,24 @@ bool PartialTipsyFile::loadPartial(std::istream& in) {
 	h.nsph = std::max(std::min(fullHeader.nsph, endParticle) - beginParticle, 0);
 	h.ndark = std::max(std::min(endParticle, fullHeader.nsph + fullHeader.ndark) - std::max(fullHeader.nsph, beginParticle), 0);
 	h.nstar = std::max(endParticle - std::max(fullHeader.nsph + fullHeader.ndark, beginParticle), 0);
-
-	//determine how many bytes we need to seek
-	if(beginParticle < fullHeader.nsph)
-		seekPosition += beginParticle * sizeof(gas_particle);
-	else if(beginParticle < fullHeader.nsph + fullHeader.ndark)
-		seekPosition += fullHeader.nsph * sizeof(gas_particle) + (beginParticle - fullHeader.nsph) * sizeof(dark_particle);
-	else
-		seekPosition += fullHeader.nsph * sizeof(gas_particle) + fullHeader.ndark * sizeof(dark_particle) + (beginParticle - fullHeader.nsph - fullHeader.ndark) * sizeof(star_particle);
 	
-	in.seekg(seekPosition);
+	if(!myReader.seekParticleNum(beginParticle))
+		return false;
 	
-	//read in any gas particles
-	if(h.nsph > 0) {
-		if(native) {
-			gas.reserve(h.nsph);
-			read_vector(in, gas, h.nsph, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			gas.resize(h.nsph);
-			gas_particle dummy;
-			for(int i = 0; i < h.nsph; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_gas(xdrs, gas[i]))
-					return false;
-				boundingBox.grow(gas[i].pos);
-			}
-		}
+	gas.resize(h.nsph);
+	for(int i = 0; i < h.nsph; ++i) {
+		if(!myReader.getNextGasParticle(gas[i]))
+			return false;
 	}
-
-	//read in any dark matter particles
-	if(h.ndark > 0) {
-		if(native) {
-			darks.reserve(h.ndark);
-			read_vector(in, darks, h.ndark, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			darks.resize(h.ndark);
-			dark_particle dummy;
-			for(int i = 0; i < h.ndark; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_dark(xdrs, darks[i]))
-					return false;
-				boundingBox.grow(darks[i].pos);
-			}
-		}
+	darks.resize(h.ndark);
+	for(int i = 0; i < h.ndark; ++i) {
+		if(!myReader.getNextDarkParticle(darks[i]))
+			return false;
 	}
-
-	//read in any star particles
-	if(h.nstar > 0) {
-		if(native) {
-			stars.reserve(h.nstar);
-			read_vector(in, stars, h.nstar, boundingBox);
-			if(!in)
-				return false;
-		} else {
-			stars.resize(h.nstar);
-			star_particle dummy;
-			for(int i = 0; i < h.nstar; ++i) {
-				in.read(reinterpret_cast<char *>(&dummy), sizeof(dummy));
-				if(!in)
-					return false;
-				xdrmem_create(&xdrs, reinterpret_cast<char *>(&dummy), sizeof(dummy), XDR_DECODE);
-				if(!xdr_convert_star(xdrs, stars[i]))
-					return false;
-				boundingBox.grow(stars[i].pos);
-			}
-		}
+	stars.resize(h.nstar);
+	for(int i = 0; i < h.nstar; ++i) {
+		if(!myReader.getNextStarParticle(stars[i]))
+			return false;
 	}
 
 	success = true;
@@ -597,14 +413,14 @@ TipsyStats::TipsyStats(TipsyFile* tfile) {
 			= star_min_velocity = dark_min_eps = star_min_eps = min_phi \
 			= gas_min_phi = dark_min_phi = star_min_phi = gas_min_rho \
 			= gas_min_temp = gas_min_hsmooth  = gas_min_metals = star_min_metals \
-			= star_min_tform = 1E1024;
+			= star_min_tform = HUGE_VAL;
 	max_mass = gas_max_mass = dark_max_mass = star_max_mass = max_radius \
 			= gas_max_radius = dark_max_radius = star_max_radius \
 			= max_velocity = gas_max_velocity = dark_max_velocity \
 			= star_max_velocity = dark_max_eps = star_max_eps = max_phi \
 			= gas_max_phi = dark_max_phi = star_max_phi = gas_max_rho \
 			= gas_max_temp = gas_max_hsmooth  = gas_max_metals = star_max_metals \
-			= star_max_tform = -1E1024;
+			= star_max_tform = -HUGE_VAL;
 	
 	int i;
 	Vector position, velocity;

@@ -30,23 +30,26 @@ public:
 	Vector3D(T2* arr) : x(*arr), y(*(arr + 1)), z(*(arr + 2)) { }
 
 	/// Copy constructor copies the components
-	Vector3D(const Vector3D<T>& v) : x(v.x), y(v.y), z(v.z) { }
+	template <typename T2>
+	Vector3D(const Vector3D<T2>& v) : x(v.x), y(v.y), z(v.z) { }
 
 	//nothing to destruct!
 	~Vector3D() { }
 
 	/// Casting to a different template class (just casts the components)
+	/*
 	template <class T2>
 	operator Vector3D<T2> () const {
-		return Vector3D<T2>(static_cast<T2>(x), static_cast<T2>(y), static_cast<T2>(z));
+		return Vector3D<T2>(x, y, z);
 	}
-
+	*/
+			
 	/* The only innate attribute a vector has is its length, 
 	 given here as a member function. */
 	
 	/// The length of this vector
 	T length() const {
-		return (T) sqrt(x * x + y * y + z * z);
+		return (T) std::sqrt(x * x + y * y + z * z);
 	}
 
 	/// The length squared of this vector
@@ -72,7 +75,8 @@ public:
 	}
 	
 	/// Assignment operator copies the components
-	Vector3D<T>& operator=(const Vector3D<T>& v) {
+	template <typename T2>
+	Vector3D<T>& operator=(const Vector3D<T2>& v) {
 		x = v.x;
 		y = v.y;
 		z = v.z;
@@ -205,7 +209,7 @@ T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
 	if(lengths_squared == 0)
 		return 0;
 	else
-		return dot(a, b) / sqrt(lengths_squared);
+		return dot(a, b) / std::sqrt(lengths_squared);
 }
 
 /// The cross product of two vectors (Order is important! a x b == - b x a) */

@@ -1,0 +1,154 @@
+/** @file TipsyReader.h
+ A class that reads a tipsy format file from a stream.
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @date Created February 12, 2003
+ @version 1.0
+ */
+
+#ifndef TIPSYREADER_H
+#define TIPSYREADER_H
+
+#include <fstream>
+#include <string>
+#include <vector>
+
+#include "TipsyParticles.h"
+#include "Vector3D.h"
+
+namespace Tipsy {
+
+/** The header in a tipsy format file. */
+struct header {
+	
+	static const unsigned int sizeBytes = 28;
+	
+	/// The time of the output
+    double time;
+	/// The number of particles of all types in this file
+    int nbodies;
+	/// The number of dimensions, must be equal to MAXDIM
+    int ndim;
+	/// The number of SPH (gas) particles in this file
+    int nsph;
+	/// The number of dark matter particles in this file
+    int ndark;
+	/// The number of star particles in this file
+    int nstar;
+    //int pad; //unused on x86
+	
+	header(int nGas = 0, int nDark = 0, int nStar = 0) : time(0), nbodies(nGas + nDark + nStar), ndim(MAXDIM), nsph(nGas), ndark(nDark), nstar(nStar) { }
+	
+	/// Output operator, used for formatted display
+	friend std::ostream& operator<<(std::ostream& os, const header& h) {
+		return os << "Time: " << h.time
+			<< "\nnBodies: " << h.nbodies
+			<< "\nnDim: " << h.ndim
+			<< "\nnSPH: " << h.nsph
+			<< "\nnDark: " << h.ndark
+			<< "\nnStar: " << h.nstar;
+	}
+};
+
+class TipsyReader {
+	bool native;
+	bool ok;
+	
+	int numGasRead, numDarksRead, numStarsRead;
+	
+	header h;
+	
+	bool responsible;
+	std::istream* tipsyStream;
+	
+	bool loadHeader();
+	
+	//copy constructor and equals operator are private to prevent their use (use takeOverStream instead)
+	TipsyReader(const TipsyReader& r);
+	TipsyReader& operator=(const TipsyReader& r);
+	
+public:
+	
+	TipsyReader() : native(true), ok(false), responsible(false), tipsyStream(0) { }
+
+	/// Load from a file
+	TipsyReader(const std::string& filename) : ok(false), responsible(true) {
+		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
+		loadHeader();
+	}
+	
+	/// Load from a stream
+	TipsyReader(std::istream& is) : ok(false), responsible(true) {
+		tipsyStream = new std::istream(is.rdbuf());
+		loadHeader();
+	}
+	
+	void takeOverStream(TipsyReader& r) {
+		native = r.native;
+		ok = r.native;
+		numGasRead = r.numGasRead;
+		numDarksRead = r.numDarksRead;
+		numStarsRead = r.numStarsRead;
+		h = r.h;
+		if(responsible)
+			delete tipsyStream;
+		responsible = true;
+		r.responsible = false;
+		tipsyStream = r.tipsyStream;
+	}
+	
+	bool reload(const std::string& filename) {
+		if(responsible)
+			delete tipsyStream;
+		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
+		responsible = true;
+		return loadHeader();		
+	}
+	
+	bool reload(std::istream& is) {
+		if(responsible)
+			delete tipsyStream;
+		tipsyStream = new std::istream(is.rdbuf());
+		responsible = true;
+		return loadHeader();		
+	}
+	
+	~TipsyReader() {
+		if(responsible)
+			delete tipsyStream;
+	}
+	
+	header getHeader() {
+		return h;
+	}
+	
+	bool getNextSimpleParticle(simple_particle& p);
+	
+	bool getNextGasParticle(gas_particle& p);
+	bool getNextDarkParticle(dark_particle& p);
+	bool getNextStarParticle(star_particle& p);
+	
+	bool readAllParticles(gas_particle* gas, dark_particle* darks, star_particle* stars);
+	bool readAllParticles(std::vector<gas_particle>& gas, std::vector<dark_particle>& darks, std::vector<star_particle>& stars);
+	
+	/// Is this file in native byte-order
+	bool isNative() const {
+		return native;
+	}
+	
+	bool status() const {
+		return ok;
+	}
+	
+	bool seekParticleNum(unsigned int num);
+	
+	bool skipParticles(unsigned int num);
+	
+	/// Returns the index of the next particle to be read.
+	unsigned int tellParticleNum() const {
+		return numGasRead + numDarksRead + numStarsRead;
+	}
+};
+
+} //close namespace Tipsy
+
+#endif //TIPSYREADER_H

@@ -12,46 +12,18 @@
 #include <string>
 
 #include "TipsyParticles.h"
+#include "TipsyReader.h"
 #include "Vector3D.h"
 #include "OrientedBox.h"
 
 namespace Tipsy {
-
-/** The header in a tipsy format file. */
-struct header {
-	/// The time of the output
-    double time;
-	/// The number of particles of all types in this file
-    int nbodies;
-	/// The number of dimensions, must be equal to MAXDIM
-    int ndim;
-	/// The number of SPH (gas) particles in this file
-    int nsph;
-	/// The number of dark matter particles in this file
-    int ndark;
-	/// The number of star particles in this file
-    int nstar;
-    //int pad; //unused on x86
-	
-	header(int nGas = 0, int nDark = 0, int nStar = 0) : time(0), nbodies(nGas + nDark + nStar), ndim(MAXDIM), nsph(nGas), ndark(nDark), nstar(nStar) { }
-	
-	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const header& h) {
-		return os << "Time: " << h.time
-			<< "\nnBodies: " << h.nbodies
-			<< "\nnDim: " << h.ndim
-			<< "\nnSPH: " << h.nsph
-			<< "\nnDark: " << h.ndark
-			<< "\nnStar: " << h.nstar;
-	}
-};
 
 /** This class represents a tipsy format file in memory. */
 class TipsyFile {
 private:
 
 	/// Load the file from disk
-	bool loadfile(std::istream& in);
+	bool loadfile();
 	
 	mutable std::vector<int> markedGas;
 	mutable std::vector<int> markedDarks;
@@ -60,6 +32,8 @@ private:
 	bool native;
 
 	bool success;
+	
+	TipsyReader myReader;
 	
 public:
 	/// The filename of this tipsy file
@@ -188,9 +162,11 @@ public:
 class PartialTipsyFile {
 private:
 		
-	bool loadPartial(std::istream& is);
+	bool loadPartial();
 	bool native;
 	bool success;
+	
+	TipsyReader myReader;
 	
 public:
 	
@@ -208,9 +184,6 @@ public:
 	std::vector<dark_particle> darks;
 	/// The array of star particles
 	std::vector<star_particle> stars;
-	
-	/// The axis-aligned box that contains all the particles
-	OrientedBox<Real> boundingBox;
 	
 	/// The on-disk index of the first particle we hold
 	int beginParticle;
