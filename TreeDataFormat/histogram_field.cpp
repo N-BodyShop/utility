@@ -25,8 +25,8 @@ void makeHistogram(const unsigned int numElements, XDR* xdrs, const int numBins,
 			cerr << "Cannot have negative values with logarithmic bins" << endl;
 			return;
 		}
-		min = static_cast<T>(log10(min));
-		max = static_cast<T>(log10(max));
+		min = static_cast<T>(log10(static_cast<double>(min)));
+		max = static_cast<T>(log10(static_cast<double>(max)));
 	}
 	
 	binWidth = (max - min) / numBins;
@@ -34,9 +34,9 @@ void makeHistogram(const unsigned int numElements, XDR* xdrs, const int numBins,
 	for(unsigned int i = 0; i < numElements; ++i) {
 		xdr_template(xdrs, &element);
 		if(logarithmic)
-			bin = static_cast<unsigned int>(floor(numBins * (log10(element) - min) / (max - min)));
+			bin = static_cast<unsigned int>(floor(static_cast<double>(numBins * (log10(static_cast<double>(element)) - min) / (max - min))));
 		else
-			bin = static_cast<unsigned int>(floor(numBins * (element - min) / (max - min)));
+			bin = static_cast<unsigned int>(floor(static_cast<double>(numBins * (element - min) / (max - min))));
 		if(bin < 0)
 			bin = 0;
 		if(bin > numBins - 1)
@@ -47,12 +47,12 @@ void makeHistogram(const unsigned int numElements, XDR* xdrs, const int numBins,
 	element = min;
 	for(int i = 0; i < numBins; ++i) {
 		if(logarithmic)
-			cout << pow(10, element) << "\t" << counts[i] << "\n";
+			cout << pow(10.0, static_cast<double>(element)) << "\t" << counts[i] << "\n";
 		else
 			cout << element << "\t" << counts[i] << "\n";
 		element += binWidth;
 		if(logarithmic)
-			cout << pow(10, element) << "\t" << counts[i] << "\n";
+			cout << pow(10.0, static_cast<double>(element)) << "\t" << counts[i] << "\n";
 		else
 			cout << element << "\t" << counts[i] << "\n";
 	}
