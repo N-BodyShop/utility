@@ -298,7 +298,10 @@ class SphericalIterator : public GroupIteratorInstance {
 	
 public:
 	
-	SphericalIterator(GroupIterator parentBegin, Vector3D<T> centerVector_, T radiusValue_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), centerVector(centerVector_), radiusValue(radiusValue_), array(array_), length(length_) { }
+	SphericalIterator(GroupIterator parentBegin, Vector3D<T> centerVector_, T radiusValue_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), centerVector(centerVector_), radiusValue(radiusValue_), array(array_), length(length_) {
+		while(*parentIter < length && (array[*parentIter]-centerVector).length() > radiusValue)
+		    ++parentIter;
+	    }
 
 	void increment() {
 	    if(*parentIter < length)
@@ -414,18 +417,30 @@ class BoxIterator : public GroupIteratorInstance {
 	
 public:
 	
-	BoxIterator(GroupIterator parentBegin, Vector3D<T> cornerVector_, Vector3D<T> edge1Vector_, Vector3D<T> edge2Vector_, Vector3D<T> edge3Vector_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), cornerVector(cornerVector_), edge1Vector(edge1Vector_), edge2Vector(edge2Vector_), edge3Vector(edge3Vector_), array(array_), length(length_) { }
+	BoxIterator(GroupIterator parentBegin, Vector3D<T> cornerVector_, Vector3D<T> edge1Vector_, Vector3D<T> edge2Vector_, Vector3D<T> edge3Vector_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), cornerVector(cornerVector_), edge1Vector(edge1Vector_), edge2Vector(edge2Vector_), edge3Vector(edge3Vector_), array(array_), length(length_) {
+	    while(*parentIter < length) {
+		Vector3D<T> vec = array[*parentIter]-cornerVector;
+		if((dot(vec,edge1Vector) < edge1Vector.lengthSquared()) &&
+		   (dot(vec,edge1Vector) >= 0)  &&
+		   (dot(vec,edge2Vector) < edge2Vector.lengthSquared()) &&
+		   (dot(vec,edge2Vector) >= 0) &&
+		   (dot(vec,edge3Vector) < edge3Vector.lengthSquared()) &&
+		   (dot(vec,edge3Vector) >= 0))
+		    break;
+		++parentIter;
+		}
+	    }
 
 	void increment() {
 	    if(*parentIter < length) {
 		for(++parentIter; *parentIter < length; ++parentIter) {
 		    Vector3D<T> vec = array[*parentIter]-cornerVector;
-		    if((dot(vec,edge1Vector.normalize()) < edge1Vector.length()) &&
-			(dot(vec,edge1Vector.normalize()) >= 0 )  &&
-			(dot(vec,edge2Vector.normalize()) < edge2Vector.length()) &&
-			(dot(vec,edge2Vector.normalize()) >= 0) ||
-			(dot(vec,edge3Vector.normalize()) < edge3Vector.length()) &&
-			(dot(vec,edge3Vector.normalize()) >= 0))
+		    if((dot(vec,edge1Vector) < edge1Vector.lengthSquared()) &&
+		       (dot(vec,edge1Vector) >= 0)  &&
+		       (dot(vec,edge2Vector) < edge2Vector.lengthSquared()) &&
+		       (dot(vec,edge2Vector) >= 0) &&
+		       (dot(vec,edge3Vector) < edge3Vector.lengthSquared()) &&
+		       (dot(vec,edge3Vector) >= 0))
 			break;
 		    }
 		}
