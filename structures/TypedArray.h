@@ -55,7 +55,7 @@ class TypedArray : public TypeInformation {
 	}
 	
 public:
-	
+		
 	void* minValue;
 	void* maxValue;
 	

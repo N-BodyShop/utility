@@ -25,8 +25,8 @@ public:
 	T yPeriod;
 	T zPeriod;
 	
-	PeriodicSpace(const T& xp, const T& yp = xp, const T& zp = yp) : xPeriod(xp), yPeriod(xp), zPeriod(zp) { }
-	PeriodicSpace(const Vector3D<T>& v) :xPeriod(v.x), yPeriod(v.y), zPeriod(v.z) { }
+	PeriodicSpace(const T& xp, const T& yp, const T& zp) : xPeriod(xp), yPeriod(xp), zPeriod(zp) { }
+	PeriodicSpace(const Vector3D<T>& v) : xPeriod(v.x), yPeriod(v.y), zPeriod(v.z) { }
 	
 	/// Offset between two points (p - q), accounting for  periodic boundary conditions
 	template <typename T2>

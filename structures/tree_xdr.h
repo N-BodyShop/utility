@@ -546,7 +546,7 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 	arr.data = data;
 	arr.length = N;
 	//set the type of the array to the promoted type
-	arr.type = TypeHandling::Type2Code<PromotedT>::code;
+	arr.code = TypeHandling::Type2Code<PromotedT>::code;
 	
 	return true;
 }
@@ -628,12 +628,14 @@ inline void operator|(PUP::er& p, FieldHeader& h) {
 	p | h.time;
 	p | h.numParticles;
 	p | h.dimensions;
+	int enum_int;
 	if(p.isUnpacking()) {
-		int enum_int;
 		p | enum_int;
 		h.code = TypeHandling::DataTypeCode(enum_int);
-	} else
-		p | static_cast<int>(h.code);
+	} else {
+		enum_int = static_cast<int>(h.code);
+		p | enum_int;
+	}
 }
 
 inline void operator|(PUP::er& p, BasicTreeNode& n) {
