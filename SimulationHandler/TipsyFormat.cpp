@@ -79,7 +79,7 @@ bool TipsyFormatReader::loadFromTipsyFile(const string& filename) {
 		family.addAttribute("position", TypedArray(emptyVector, 0));
 		family.addAttribute("velocity", TypedArray(emptyVector, 0));
 
-		insert(make_pair("dark", family));
+		insert(make_pair("star", family));
 	}
 	
 	return true;
