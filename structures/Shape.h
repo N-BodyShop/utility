@@ -7,15 +7,13 @@
 #ifndef SHAPE_H
 #define SHAPE_H
 
-#include "Vector3D.h"
-
 /// An abstract base class defining a geometric shape in three dimensions
 template <class T>
 class Shape {
 public:
 	
 	Shape() { }
-	virtual ~Shape() { };
+	virtual ~Shape() { }
 		
 	/// What is the volume enclosed by this shape?
 	virtual T volume() const = 0;

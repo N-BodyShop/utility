@@ -11,7 +11,6 @@
 #include "TipsyReader.h"
 
 /// XDR conversion for the header structure
-template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::header* val) {
 	return (xdr_template(xdrs, &(val->time))
 			&& xdr_template(xdrs, &(val->nbodies))
@@ -22,14 +21,12 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::header* val) {
 }
 
 ///XDR conversions for the particle types
-template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::simple_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
 		&& xdr_template(xdrs, &(p->vel)));
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
@@ -41,7 +38,6 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
 		&& xdr_template(xdrs, &(p->phi)));
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
@@ -50,7 +46,6 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
 		&& xdr_template(xdrs, &(p->phi)));
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, Tipsy::star_particle* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))

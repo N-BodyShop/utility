@@ -49,7 +49,7 @@ public:
 	
 	/// The length of this vector
 	T length() const {
-		return (T) std::sqrt(x * x + y * y + z * z);
+		return static_cast<T>(std::sqrt(static_cast<double>(x * x + y * y + z * z)));
 	}
 
 	/// The length squared of this vector
@@ -192,19 +192,19 @@ public:
 
 /// Scalar multiplication on the left
 template <typename T, typename T2>
-Vector3D<T> operator*(const T2& s, const Vector3D<T>& v) {
+inline Vector3D<T> operator*(const T2& s, const Vector3D<T>& v) {
 	return Vector3D<T>(v.x * s, v.y * s, v.z * s);
 }
 
 /// The dot product of two vectors
 template <typename T, typename T2>
-T dot(const Vector3D<T>& a, const Vector3D<T2>& b) {
+inline T dot(const Vector3D<T>& a, const Vector3D<T2>& b) {
 	return (a.x * b.x + a.y * b.y + a.z * b.z);
 }
 
 /// The cosine of the angle between two vectors
 template <typename T, typename T2>
-T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
+inline T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
 	T lengths_squared = a.lengthSquared() * b.lengthSquared();
 	if(lengths_squared == 0)
 		return 0;
@@ -214,13 +214,13 @@ T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
 
 /// The cross product of two vectors (Order is important! a x b == - b x a) */
 template <typename T, typename T2>
-Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
+inline Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
 	return Vector3D<T>(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
 /// Output operator, used for formatted display
 template <typename T>
-std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
+inline std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
 	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
 	//os << v.x << delim << v.y << delim << v.z;
 	return os;
@@ -228,13 +228,13 @@ std::ostream& operator<< (std::ostream& os, const Vector3D<T>& v) {
 
 /** Given the spherical coordinates of a vector, return a cartesion version of the same vector. */
 template <typename T>
-Vector3D<T> fromSpherical(const T r, const T theta, const T phi) {
+inline Vector3D<T> fromSpherical(const T r, const T theta, const T phi) {
 	return Vector3D<T>(r * sin(theta) * cos(phi), r * sin(theta) * sin(phi), r * cos(theta));
 }
 
 /** Given the cylindrical coordinates of a vector, return a cartesion version of the same vector. */
 template <typename T>
-Vector3D<T> fromCylindrical(const T r, const T theta, const T z) {
+inline Vector3D<T> fromCylindrical(const T r, const T theta, const T z) {
 	return Vector3D<T>(r * cos(theta), r * sin(theta), z);
 }
 

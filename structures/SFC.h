@@ -83,7 +83,7 @@ Key makeKey(Vector3D<float> v);
 Vector3D<float> makeVector(Key k);
 
 template <typename T>
-OrientedBox<T> cutBoxLeft(const OrientedBox<T>& box, const int axis) {
+inline OrientedBox<T> cutBoxLeft(const OrientedBox<T>& box, const int axis) {
 	OrientedBox<T> newBox = box;
 	switch(axis) {
 		case 0: //cut x
@@ -100,7 +100,7 @@ OrientedBox<T> cutBoxLeft(const OrientedBox<T>& box, const int axis) {
 }
 
 template <typename T>
-OrientedBox<T> cutBoxRight(const OrientedBox<T>& box, const int axis) {
+inline OrientedBox<T> cutBoxRight(const OrientedBox<T>& box, const int axis) {
 	OrientedBox<T> newBox = box;
 	switch(axis) {
 		case 0: //cut x

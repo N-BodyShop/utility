@@ -706,7 +706,7 @@ bool PartialTipsyFile::loadMark(std::istream& markstream) {
 		return false;
 	
 	h.nsph = h.ndark = h.nstar = 0;
-	vector<int> marks;
+	std::vector<int> marks;
 	int markIndex;
 	while(markstream >> markIndex) {
 		markIndex--; //mark inidices start at 1
@@ -733,7 +733,7 @@ bool PartialTipsyFile::loadMark(std::istream& markstream) {
 	dark_particle dp;
 	star_particle sp;
 	
-	for(vector<int>::iterator iter = marks.begin(); iter != marks.end(); ++iter) {
+	for(std::vector<int>::iterator iter = marks.begin(); iter != marks.end(); ++iter) {
 		if(!myReader.seekParticleNum(*iter))
 			return false;
 		if(*iter < fullHeader.nsph) {

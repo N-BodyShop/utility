@@ -14,7 +14,6 @@
 
 #include "Shape.h"
 #include "Vector3D.h"
-#include "Sphere.h"
 
 /// A box in three dimensions whose axes are aligned with the coordinate axes
 template <typename T = double>
@@ -53,7 +52,7 @@ public:
 	
 	~OrientedBox() { }
 	
-	inline bool initialized() const {
+	bool initialized() const {
 		return lesser_corner.x <= greater_corner.x && lesser_corner.y <= greater_corner.y && lesser_corner.z <= greater_corner.z;
 	}
 	
@@ -68,13 +67,13 @@ public:
 		return OrientedBox<T2>(static_cast<Vector3D<T2> >(lesser_corner), static_cast<Vector3D<T2> >(greater_corner));
 	}
 	
-	inline bool contains(const Vector3D<T>& point) const {
+	bool contains(const Vector3D<T>& point) const {
 		return point.x >= lesser_corner.x && point.x <= greater_corner.x
 				&& point.y >= lesser_corner.y && point.y <= greater_corner.y
 				&& point.z >= lesser_corner.z && point.z <= greater_corner.z;
 	}
 	
-	inline void grow(const Vector3D<T>& point) {
+	void grow(const Vector3D<T>& point) {
 		if(point.x < lesser_corner.x)
 			lesser_corner.x = point.x;
 		if(point.y < lesser_corner.y)
@@ -90,19 +89,19 @@ public:
 			greater_corner.z = point.z;		
 	}
 	
-	inline T volume() const {
+	virtual T volume() const {
 		return (greater_corner.x - lesser_corner.x) * (greater_corner.y - lesser_corner.y) * (greater_corner.z - lesser_corner.z);
 	}
 	
-	inline Vector3D<T> center() const {
+	Vector3D<T> center() const {
 		return (lesser_corner + greater_corner) / 2.0;
 	}
 	
-	inline Vector3D<T> size() const {
+	Vector3D<T> size() const {
 		return greater_corner - lesser_corner;
 	}
 	
-	inline OrientedBox<T>& shift(const Vector3D<T>& v) {
+	OrientedBox<T>& shift(const Vector3D<T>& v) {
 		lesser_corner += v;
 		greater_corner += v;
 		return *this;

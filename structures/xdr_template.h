@@ -21,55 +21,42 @@
 #include "Vector3D.h"
 #include "OrientedBox.h"
 
-template <typename T>
-inline bool_t xdr_template(XDR* xdrs, T* val);
-
-template <>
 inline bool_t xdr_template(XDR* xdrs, unsigned char* val) {
 	return xdr_u_char(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, char* val) {
 	return xdr_char(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, unsigned short* val) {
 	return xdr_u_short(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, short* val) {
 	return xdr_short(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, unsigned int* val) {
 	return xdr_u_int(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, int* val) {
 	return xdr_int(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, u_int64_t* val) {
 	return xdr_u_hyper(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, int64_t* val) {
 	return xdr_hyper(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, float* val) {
 	return xdr_float(xdrs, val);
 }
 
-template <>
 inline bool_t xdr_template(XDR* xdrs, double* val) {
 	return xdr_double(xdrs, val);
 }

@@ -15,6 +15,7 @@
 #include "TipsyReader.h"
 #include "Vector3D.h"
 #include "OrientedBox.h"
+#include "Sphere.h"
 
 namespace Tipsy {
 

@@ -1,4 +1,4 @@
-CXXFLAGS += -g -O3 -Wall
+CXXFLAGS += -g -O3 
 
 NAME = structures
 VERSION = 1.1
