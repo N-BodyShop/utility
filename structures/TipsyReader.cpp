@@ -150,7 +150,7 @@ bool TipsyReader::getNextGasParticle(gas_particle& p) {
 	if(numGasRead < h.nsph) {
 		++numGasRead;
 		tipsyStream->read(reinterpret_cast<char *>(&p), gas_particle::sizeBytes);
-		if(!(*tipsyStream))
+		if(numGasRead < h.nsph && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
@@ -181,7 +181,8 @@ bool TipsyReader::getNextDarkParticle(dark_particle& p) {
 	if(numDarksRead < h.ndark) {
 		++numDarksRead;
 		tipsyStream->read(reinterpret_cast<char *>(&p), dark_particle::sizeBytes);
-		if(!(*tipsyStream))
+	// Hack to fix end of stream problem on Macs --trq
+		if(numDarksRead < h.ndark && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
@@ -213,7 +214,8 @@ bool TipsyReader::getNextStarParticle(star_particle& p) {
 	if(numStarsRead < h.nstar) {
 		++numStarsRead;
 		tipsyStream->read(reinterpret_cast<char *>(&p), star_particle::sizeBytes);
-		if(!(*tipsyStream))
+	// Hack to fix end of stream problem on Macs --trq
+		if(numStarsRead < h.nstar && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
