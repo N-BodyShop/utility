@@ -153,13 +153,14 @@ inline void bumpBox(OrientedBox<float>& b, float direction) {
 	b.lesser_corner.z = bumpLastTwoBits(b.lesser_corner.z, -direction);	
 }
 
-inline void cubize(OrientedBox<float>& b) {
-	float max = b.greater_corner.x - b.lesser_corner.x;
+template <typename T>
+inline void cubize(OrientedBox<T>& b) {
+	T max = b.greater_corner.x - b.lesser_corner.x;
 	if((b.greater_corner.y - b.lesser_corner.y) > max)
 		max = b.greater_corner.y - b.lesser_corner.y;
 	if((b.greater_corner.z - b.lesser_corner.z) > max)
 		max = b.greater_corner.z - b.lesser_corner.z;
-	float middle = (b.greater_corner.x + b.lesser_corner.x) / 2.0;
+	T middle = (b.greater_corner.x + b.lesser_corner.x) / 2.0;
 	b.greater_corner.x = middle + max / 2.0;
 	b.lesser_corner.x = middle - max / 2.0;
 	middle = (b.greater_corner.y + b.lesser_corner.y) / 2.0;
@@ -169,8 +170,6 @@ inline void cubize(OrientedBox<float>& b) {
 	b.greater_corner.z = middle + max / 2.0;
 	b.lesser_corner.z = middle - max / 2.0;
 	
-	//nudge the boundaries up by enough bits so that all particles' keys get generated within the allowed range
-	bumpBox(b, HUGE_VAL);
 }
 
 } //close namespace SFC
