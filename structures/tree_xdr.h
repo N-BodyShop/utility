@@ -421,23 +421,25 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 	arr.maxValue = maxVal;
 	
 	T* data = 0;
-	if(*minVal == *maxVal) {
-		//all values are the same (file doesn't contain replicas of the value)
-		data = new T[N];
-		for(u_int64_t i = 0; i < N; ++i)
-			data[i] = *minVal;
-	} else if(N != 0) {
-		//seek to the starting value
-		if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code)))
-			//throw FileReadException;
-			return false;
-		//allocate for the array of values
-		data = new T[N];
-		for(u_int64_t i = 0; i < N; ++i) {
-			if(!xdr_template(xdrs, data + i)) {
-				delete[] data;
+	if(N != 0) {
+		if(*minVal == *maxVal) {
+			//all values are the same (file doesn't contain replicas of the value)
+			data = new T[N];
+			for(u_int64_t i = 0; i < N; ++i)
+				data[i] = *minVal;
+		} else {
+			//seek to the starting value
+			if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code)))
 				//throw FileReadException;
 				return false;
+			//allocate for the array of values
+			data = new T[N];
+			for(u_int64_t i = 0; i < N; ++i) {
+				if(!xdr_template(xdrs, data + i)) {
+					delete[] data;
+					//throw FileReadException;
+					return false;
+				}
 			}
 		}
 	}
@@ -561,11 +563,12 @@ inline bool writeAttributes_typed(XDR* xdrs, const TypeHandling::TypedArray& arr
 		return false;
 	
 	//write the attribute values
-	T* data = reinterpret_cast<T *>(arr.data);
-	for(u_int64_t i = 0; i < arr.length; ++i)
-		if(!xdr_template(xdrs, data + i))
-			return false;
-	
+	if(*reinterpret_cast<T *>(arr.minValue) != *reinterpret_cast<T *>(arr.maxValue)) {
+		T* data = reinterpret_cast<T *>(arr.data);
+		for(u_int64_t i = 0; i < arr.length; ++i)
+			if(!xdr_template(xdrs, data + i))
+				return false;
+	}
 	return true;
 }
 
