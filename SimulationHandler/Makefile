@@ -1,21 +1,26 @@
-STRUCTURES_PATH = $(HOME)/projects/structures
+STRUCTURES_PATH = ../structures
 CC = $(CXX)
-CXXFLAGS += -g -O3 -Wall -I$(STRUCTURES_PATH) -I$(XERCESCROOT)/include
+CXXFLAGS += -g -O3 -Wall -I$(STRUCTURES_PATH) -I$(XERCESCROOT)/include #-I../boost
 LDFLAGS += -L$(XERCESCROOT)/lib -L$(STRUCTURES_PATH) 
 LDLIBS += -lxerces-c -lTipsy
 
 TARGETS = simload
 
-all:: $(TARGETS)
+all: $(TARGETS)
+
+.PHONY: all clean
 
 simload: SiXFormat.o TipsyFormat.o
+simload2: SiXFormat2.o
 
 TipsyFormat.o: Simulation.h
 
 SiXFormat.o: Simulation.h
+SiXFormat2.o: Simulation2.h
 
 simload.o: Simulation.h SiXFormat.h TipsyFormat.h
+simload2.o: Simulation2.h SiXFormat2.h
 
-clean::
+clean:
 	rm -f *~ *.o core.* $(TARGETS)
 	
