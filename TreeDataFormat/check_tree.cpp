@@ -13,6 +13,7 @@
 
 using namespace std;
 using namespace SFC;
+using namespace TypeHandling;
 
 int numBuckets;
 

@@ -6,6 +6,7 @@
 #include "tree_xdr.h"
 
 using namespace std;
+using namespace TypeHandling;
 
 int main(int argc, char** argv) {
 	if(argc < 2) {

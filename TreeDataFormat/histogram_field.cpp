@@ -9,6 +9,7 @@
 #include "tree_xdr.h"
 
 using namespace std;
+using namespace TypeHandling;
 
 template <typename T>
 void makeHistogram(const unsigned int numElements, XDR* xdrs, const int numBins, bool logarithmic) {
