@@ -3,7 +3,7 @@
  set of files.
  @author Graeme Lufkin (gwl@u.washington.edu)
  @date Created February 12, 2003
- @version 1.0
+ @version 2.0
  */
 
 #include <iostream>
@@ -13,77 +13,69 @@
 #include <algorithm>
 #include <cmath>
 
-#include "TipsyReader.h"
+#include <sys/stat.h>
+#include <sys/types.h>
+#include <unistd.h>
+
+#include <popt.h>
+
+#include "TipsyFile.h"
 #include "OrientedBox.h"
 #include "tree_xdr.h"
+#include "aggregate_xdr.h"
 #include "SFC.h"
 
 using namespace std;
-using namespace SFC;
 using namespace Tipsy;
+using namespace SFC;
 
-/// A particle that contains all the attributes for dark matter particles, plus some
-class SFCParticle {
+int verbosity;
+int bucketSize;
+
+MAKE_AGGREGATE_WRITER(tipsyOrder)
+MAKE_AGGREGATE_WRITER(mass)
+MAKE_AGGREGATE_WRITER(pos)
+MAKE_AGGREGATE_WRITER(vel)
+MAKE_AGGREGATE_WRITER(eps)
+MAKE_AGGREGATE_WRITER(phi)
+MAKE_AGGREGATE_WRITER(rho)
+MAKE_AGGREGATE_WRITER(temp)
+MAKE_AGGREGATE_WRITER(hsmooth)
+MAKE_AGGREGATE_WRITER(metals)
+MAKE_AGGREGATE_WRITER(tform)
+
+template <typename BaseParticle>
+class TreeParticle : public BaseParticle {
 public:
 	
 	Key key;
-	unsigned int tipsyOrder; //the original order on disk
-	float mass;
-	Vector3D<float> position;
-	Vector3D<float> velocity;
-	float softening;
-	float potential;
+	unsigned int tipsyOrder;
 	
-	SFCParticle(Key k = 0) : key(k) { }
-
-	//All particles get turned into this type, ignoring extra fields
-	SFCParticle(const simple_particle& p) : mass(p.mass), position(p.pos), velocity(p.vel), softening(0), potential(0) { }	
-	SFCParticle(const gas_particle& p) :  mass(p.mass), position(p.pos), velocity(p.vel), softening(p.hsmooth), potential(p.phi) { }
-	SFCParticle(const dark_particle& p) :  mass(p.mass), position(p.pos), velocity(p.vel), softening(p.eps), potential(p.phi) { }
-	SFCParticle(const star_particle& p) :  mass(p.mass), position(p.pos), velocity(p.vel), softening(p.eps), potential(p.phi) { }
-
+	TreeParticle(Key k = 0) : key(k) { }
+	
+	TreeParticle(const BaseParticle& p) : BaseParticle(p) { }
 	
 	/** Comparison operator, used for a sort based on key values. */
-	bool operator<(const SFCParticle& p) const {
+	bool operator<(const TreeParticle<BaseParticle>& p) const {
 		return key < p.key;
 	}
 };
 
-enum NodeType {
-	Invalid,
-	Bucket,
-	Internal,
-	NonLocal,
-	Empty,
-	Boundary,
-	Top
-};
-
-int maxBucketSize;
-
-class MyTreeNode  {
-	NodeType myType;
+class MyTreeNode {
 public:
+	
+	MyTreeNode* leftChild;
+	MyTreeNode* rightChild;
 	
 	Key key;
 	unsigned char level;
 	
 	unsigned int numNodesLeft;
-	unsigned int numNodesRight;
+	unsigned int numNodesUnder;
 	unsigned int numParticlesLeft;
-	unsigned int numParticlesRight;
+	unsigned int numParticlesUnder;
 	
-	union {
-		MyTreeNode* leftChild;
-		SFCParticle* beginBucket;
-	};
-
-	union {
-		MyTreeNode* rightChild;
-		SFCParticle* endBucket;
-	};
-	
-	MyTreeNode() : myType(Invalid), key(0), level(0), numNodesLeft(0), numNodesRight(0), numParticlesLeft(0), numParticlesRight(0), leftChild(0), rightChild(0) { }
+	MyTreeNode() : leftChild(0), rightChild(0), key(0), level(0), numNodesLeft(0), numNodesUnder(0), numParticlesLeft(0), numParticlesUnder(0) { }
 	
 	MyTreeNode* createLeftChild() {
 		MyTreeNode* child = new MyTreeNode;
@@ -101,102 +93,101 @@ public:
 		return child;
 	}
 	
-	~MyTreeNode() {
-		if(myType != Bucket) {
-			delete leftChild;
-			delete rightChild;
-		}
+	bool isBucket() const {
+		return (leftChild == 0 && rightChild == 0);
 	}
-	
-	NodeType getType() const { return myType; }
-	void setType(NodeType t) { myType = t; }
-	
 };
 
-SFCParticle* leftBoundary;
-SFCParticle* rightBoundary;
+template <typename ParticleType>
+class TreeBuilder {
+public:
+	ParticleType* leftBoundary;
+	ParticleType* rightBoundary;
+	int maxBucketSize;
+	
+	unsigned int numBuckets;
+	unsigned int numNodes;
+	unsigned int numParticles;
+	
+	TreeBuilder(ParticleType* leftB, ParticleType* rightB, int bucketSize) : leftBoundary(leftB), rightBoundary(rightB), maxBucketSize(bucketSize), numBuckets(0), numNodes(0), numParticles(0) { }
 
-unsigned int totalNumNodes;
-unsigned int totalNumParticles;
-
-unsigned int* bucketCounts;
-
-void buildTree(MyTreeNode* node, SFCParticle* leftParticle, SFCParticle* rightParticle) {
-	//check if we should bucket these particles
-	if(rightParticle - leftParticle < maxBucketSize) {
-		//can't bucket until we've cut at the boundary
-		if((leftParticle != leftBoundary) && (rightParticle != rightBoundary)) {
-			node->setType(Bucket);
-			node->beginBucket = leftParticle;
-			node->endBucket = rightParticle + 1;
-			totalNumParticles += node->endBucket - node->beginBucket;
-			node->numParticlesLeft = node->endBucket - node->beginBucket;
-			bucketCounts[node->endBucket - node->beginBucket]++;
-			node->numParticlesRight = 0;
-			node->numNodesLeft = 0;
-			node->numNodesRight = 0;
+	
+	void buildTree(MyTreeNode* node) {
+		buildTree(node, leftBoundary, rightBoundary);
+	}
+	
+private:
+	void buildTree(MyTreeNode* node, ParticleType* leftParticle, ParticleType* rightParticle) {
+		numNodes++;
+		
+		//check if we should bucket these particles
+		if(rightParticle - leftParticle < maxBucketSize) {
+			//can't bucket until we've cut at the boundary
+			if((leftParticle != leftBoundary) && (rightParticle != rightBoundary)) {
+				numBuckets++;
+				node->numNodesLeft = 0;
+				node->numNodesUnder = 0;
+				node->numParticlesLeft = rightParticle - leftParticle + 1;
+				node->numParticlesUnder = node->numParticlesLeft;
+				numParticles += node->numParticlesLeft;
+				return;
+			}
+		} else if(node->level == 63) {
+			cerr << "This tree has exhausted all the bits in the keys.  Super double-plus ungood!" << endl;
 			return;
 		}
-	} else if(node->level == 63) {
-		cerr << "This tree has exhausted all the bits in the keys.  Super double-plus ungood!" << endl;
-		return;
-	}
-	
-	//this is the bit we are looking at
-	Key currentBitMask = static_cast<Key>(1) << (62 - node->level);
-	//we need to know the bit values at the left and right
-	Key leftBit = leftParticle->key & currentBitMask;
-	Key rightBit = rightParticle->key & currentBitMask;
-	MyTreeNode* child;
-	
-	node->setType(Internal);
-	
-	if(leftBit ^ rightBit) { //a split at this level
-		//find the split by looking for where the key with the bit switched on could go
-		SFCParticle* splitParticle = lower_bound(leftParticle, rightParticle + 1, node->key | currentBitMask);
-		if(splitParticle == leftBoundary + 1) {
-			bucketCounts[0]++;
-			child = node->createRightChild();
-			buildTree(child, splitParticle, rightParticle);
-		} else if(splitParticle == rightBoundary) {
-			child = node->createLeftChild();
-			buildTree(child, leftParticle, splitParticle - 1);
-			bucketCounts[0]++;
-		} else {
-			child = node->createLeftChild();
-			buildTree(child, leftParticle, splitParticle - 1);
-			child = node->createRightChild();
-			buildTree(child, splitParticle, rightParticle);
-		}
-	} else if(leftBit & rightBit) { //both ones, make a right child
-		bucketCounts[0]++;
-		child = node->createRightChild();
-		buildTree(child, leftParticle, rightParticle);
-	} else { //both zeros, make a left child
-		child = node->createLeftChild();
-		buildTree(child, leftParticle, rightParticle);
-		bucketCounts[0]++;
-	}
-	
-	totalNumNodes++;
-	if(node->leftChild) {
-		node->numParticlesLeft = node->leftChild->numParticlesLeft + node->leftChild->numParticlesRight;
-		node->numNodesLeft = node->leftChild->numNodesLeft + node->leftChild->numNodesRight + (node->leftChild->getType() == Bucket ? 0 : 1);
-	} else {
-		node->numParticlesLeft = 0;
-		node->numNodesLeft = 0;
-	}
-	if(node->rightChild) {
-		node->numParticlesRight = node->rightChild->numParticlesLeft + node->rightChild->numParticlesRight;
-		node->numNodesRight = node->rightChild->numNodesLeft + node->rightChild->numNodesRight + (node->rightChild->getType() == Bucket ? 0 : 1);
-	} else {
-		node->numParticlesRight = 0;
-		node->numNodesRight = 0;
-	}
-}
 
+		//this is the bit we are looking at
+		Key currentBitMask = static_cast<Key>(1) << (62 - node->level);
+		//we need to know the bit values at the left and right
+		Key leftBit = leftParticle->key & currentBitMask;
+		Key rightBit = rightParticle->key & currentBitMask;
+		MyTreeNode* child;
+
+		if(leftBit < rightBit) { //a split at this level
+			//find the split by looking for where the key with the bit switched on could go
+			ParticleType* splitParticle = lower_bound(leftParticle, rightParticle + 1, node->key | currentBitMask);
+			if(splitParticle == leftBoundary + 1) {
+				child = node->createRightChild();
+				buildTree(child, splitParticle, rightParticle);
+			} else if(splitParticle == rightBoundary) {
+				child = node->createLeftChild();
+				buildTree(child, leftParticle, splitParticle - 1);
+			} else {
+				child = node->createLeftChild();
+				buildTree(child, leftParticle, splitParticle - 1);
+				child = node->createRightChild();
+				buildTree(child, splitParticle, rightParticle);
+			}
+		} else if(leftBit & rightBit) { //both ones, make a right child
+			child = node->createRightChild();
+			buildTree(child, leftParticle, rightParticle);
+		} else if(leftBit > rightBit) {
+			cerr << "This should never happen, the keys must not be sorted right!" << endl;
+			return;
+		} else { //both zeros, make a left child
+			child = node->createLeftChild();
+			buildTree(child, leftParticle, rightParticle);
+		}
+
+		if(node->leftChild) {
+			node->numNodesLeft = node->leftChild->numNodesUnder + (node->leftChild->isBucket() ? 0 : 1);
+			node->numParticlesLeft = node->leftChild->numParticlesUnder;
+		} else {
+			node->numNodesLeft = 0;
+			node->numParticlesLeft = 0;
+		}
+		node->numNodesUnder = node->numNodesLeft;
+		node->numParticlesUnder = node->numParticlesLeft;
+		if(node->rightChild) {
+			node->numNodesUnder += node->rightChild->numNodesUnder + (node->rightChild->isBucket() ? 0 : 1);
+			node->numParticlesUnder += node->rightChild->numParticlesUnder;
+		}
+	}
+};
+		
 int xdr_convert_tree(XDR* xdrs, MyTreeNode* node) {
-	if(node->getType() != Bucket) {
+	if(!node->isBucket()) {
 		u_int64_t numNodesLeft = node->numNodesLeft;
 		u_int64_t numParticlesLeft = node->numParticlesLeft;
 		int result = xdr_template(xdrs, &numNodesLeft) && xdr_template(xdrs, &numParticlesLeft);
@@ -210,231 +201,535 @@ int xdr_convert_tree(XDR* xdrs, MyTreeNode* node) {
 }
 
 void print_tree(OrientedBox<double> box, MyTreeNode* node, int axis) {
-	if(node->getType() == Bucket)
+	if(node->isBucket())
 		return;
 	cout << "Box: " << box << endl;
-	cout << "Node: numNodesLeft: " << node->numNodesLeft << " numNodesRight: " << node->numNodesRight << endl;
-	cout << "numParticlesLeft: " << node->numParticlesLeft << " numParticlesRight: " << node->numParticlesRight << endl;
+	cout << "Node: numNodesLeft: " << node->numNodesLeft << " numNodesRight: " << (node->numNodesUnder - node->numNodesLeft) << endl;
+	cout << "numParticlesLeft: " << node->numParticlesLeft << " numParticlesRight: " << (node->numParticlesUnder - node->numParticlesLeft) << endl;
 	if(node->leftChild)
 		print_tree(cutBoxLeft(box, axis), node->leftChild, (axis + 1) % 3);
 	if(node->rightChild)
 		print_tree(cutBoxRight(box, axis), node->rightChild, (axis + 1) % 3);
 }
 
-int main(int argc, char** argv) {
+template <typename ParticleType>
+void createAndWriteTree(const string& filename, const unsigned int numParticles, ParticleType* particles, const OrientedBox<float>& boundingBox, bool periodic, double time) {
+	if(verbosity > 2)
+		cerr << "Calculating keys ..." << endl;
+	for(unsigned int i = 0; i < numParticles; ++i)
+		particles[i].key = generateKey(particles[i].pos, boundingBox);
 
-	if(argc < 2) {
-		cerr << "Usage: " << argv[0] << " tipsyfile [bucketSize]" << endl;
-		return 1;
-	}
-	
-	cerr << "Loading tipsy file ..." << endl;
-	TipsyReader r(argv[1]);
-	if(!r.status()) {
-		cerr << "Couldn't open tipsy file correctly!  Maybe it's not a tipsy file?" << endl;
-		return 2;
-	}
-	
-	if(argc > 2) {
-		maxBucketSize = atoi(argv[2]);
-		if(maxBucketSize <= 0) {
-			maxBucketSize = 12;
-			cerr << "Bucket size must be positive, using default value (" << maxBucketSize << ")" << endl;
-		}
-	} else
-		maxBucketSize = 12;
-	
-	header h = r.getHeader();
-	SFCParticle* particles = new SFCParticle[h.nbodies + 2];
-	gas_particle gp;
-	dark_particle dp;
-	star_particle sp;
-	cerr << "Tipsy header:\n" << h << endl;
-	
-	OrientedBox<Real> boundingBox;
-	cerr << "Converting mass, position, velocity, softening, and potential" << endl;
-	for(unsigned int i = 0; i < h.nsph; ++i) {
-		if(!r.getNextGasParticle(gp)) {
-			cerr << "Error reading tipsy file!" << endl;
-			return 3;
-		}
-		boundingBox.grow(gp.pos);
-		particles[i] = gp;
-		particles[i].tipsyOrder = i;
-	}
-	for(unsigned int i = 0; i < h.ndark; ++i) {
-		if(!r.getNextDarkParticle(dp)) {
-			cerr << "Error reading tipsy file!" << endl;
-			return 3;
-		}
-		boundingBox.grow(dp.pos);
-		particles[i] = dp;
-		particles[i].tipsyOrder = i + h.nsph;
-	}
-	for(unsigned int i = 0; i < h.nstar; ++i) {
-		if(!r.getNextStarParticle(sp)) {
-			cerr << "Error reading tipsy file!" << endl;
-			return 3;
-		}
-		boundingBox.grow(sp.pos);
-		particles[i] = sp;
-		particles[i].tipsyOrder = i + h.nsph + h.ndark;
-	}
-	
-	OrientedBox<Real> unitCube(Vector3D<Real>(-0.5, -0.5, -0.5), Vector3D<Real>(0.5, 0.5, 0.5));
-	Real diagonal = (boundingBox.greater_corner - boundingBox.lesser_corner).length();
-	Real epsilon = max(1E-2, 1.0 / h.nbodies);
-	if((boundingBox.lesser_corner - unitCube.lesser_corner).length() / diagonal < epsilon
-			&& (boundingBox.greater_corner - unitCube.greater_corner).length() / diagonal < epsilon) {
-		cerr << "The bounding box for this file appears to be a unit cube about the origin, using this for key generation" << endl;
-		boundingBox = unitCube;
-	} else {
-		cerr << "The bounding box for this file is " << boundingBox << ", using longest axis to generate keys" << endl;
-		cubize(boundingBox);
-		bumpBox(boundingBox, HUGE_VAL);
-		cerr << "Resized bounding box is " << boundingBox << endl;
-	}
-	
-	cerr << "Calculating keys ..." << endl;
-	for(unsigned int i = 0; i < h.nbodies; ++i)
-		particles[i].key = generateKey(particles[i].position, boundingBox);
-	
-	cerr << "Sorting particles ..." << endl;
-	SFCParticle dummy;
+	if(verbosity > 2)
+		cerr << "Sorting particles ..." << endl;
+	ParticleType dummy;
 	dummy.key = firstPossibleKey;
-	particles[h.nbodies] = dummy;
+	particles[numParticles] = dummy;
 	dummy.key = lastPossibleKey;
-	particles[h.nbodies + 1] = dummy;
-	sort(particles, particles + h.nbodies + 2);
-	leftBoundary = particles;
-	rightBoundary = particles + h.nbodies + 2 - 1;
-		
-	//build tree
-	bucketCounts = new unsigned int[maxBucketSize + 1];
-	for(int i = 0; i <= maxBucketSize; ++i)
-		bucketCounts[i] = 0;
-	cerr << "Building the tree ..." << endl;
+	particles[numParticles + 1] = dummy;
+	sort(particles, particles + numParticles + 2);
+
+	if(verbosity > 2)
+		cerr << "Building the tree ..." << endl;
 	MyTreeNode* root = new MyTreeNode;
 	root->key = firstPossibleKey;
-	buildTree(root, leftBoundary, rightBoundary);
-	
-	cerr << "Total number of internal nodes: " << totalNumNodes << endl;
-	cerr << "Total number of particles: " << totalNumParticles << endl;
-	unsigned int numBuckets = 0;
-	for(int i = 1; i <= maxBucketSize; ++i)
-		numBuckets += bucketCounts[i];
-	cerr << "Total number of leaf nodes: " << (numBuckets + bucketCounts[0]) << endl;
-	cerr << "Total number of buckets: " << numBuckets << endl;
-	cerr << "Bucket statistics:" << endl;
-	for(int i = 1; i <= maxBucketSize; ++i)
-		cerr << i << "\t" << ((double) bucketCounts[i] / numBuckets) << endl;
-	cerr << "Average particles per bucket: " << ((double) totalNumParticles / numBuckets) << endl;
-	delete[] bucketCounts;
-	
+	TreeBuilder<ParticleType> builder(particles, particles + numParticles + 2 - 1, bucketSize);
+	builder.buildTree(root);
+	if(builder.numParticles != numParticles) {
+		cerr << "Number of particles different: " << builder.numParticles << " vs " << numParticles << endl;
+	}
+	if(builder.numNodes - builder.numBuckets != root->numNodesUnder + 1) {
+		cerr << "Number of nodes different: " << builder.numNodes << " vs " << (root->numNodesUnder + 1) << endl;
+	}
+	if(verbosity > 2)
+		cerr << "Tree has " << (builder.numNodes - builder.numBuckets) << " internal nodes and " << builder.numBuckets << " buckets" << endl;
+
 	TreeHeader th;
-	th.time = h.time;
-	th.numNodes = totalNumNodes;
-	th.numParticles = totalNumParticles;
+	th.time = time;
+	th.numNodes = builder.numNodes - builder.numBuckets;
+	th.numParticles = numParticles;
 	th.boundingBox = boundingBox;
-	
-	string basename(argv[1]);
-	int slashPos = basename.find_last_of("/");
-	if(slashPos != string::npos)
-		basename.erase(0, slashPos + 1);
-	cerr << "Basename for tree-based files: \"" << basename << "\"" << endl;
-	
-	//write xml
-	ofstream xmlfile((basename + ".xml").c_str());
-	xmlfile << "<xml fakery>\n<simulation>\n";
-	xmlfile << "\t<tree filename=\"" << basename << ".tree\">\n";
-	xmlfile << "\t<mass filename=\"" << basename << ".mass\">\n";
-	xmlfile << "\t<position filename=\"" << basename << ".pos\">\n";
-	xmlfile << "\t<velocity filename=\"" << basename << ".vel\">\n";
-	xmlfile << "</simulation>\n";
-	xmlfile.close();
-	
-	FILE* outfile;
-	XDR xdrs;
+	if(periodic)
+		th.flags |= TreeHeader::PeriodicFlag;
 
 	//write tree file
-	outfile = fopen((basename + ".tree").c_str(), "wb");
+	FILE* outfile = fopen(filename.c_str(), "wb");
+	XDR xdrs;
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	xdr_template(&xdrs, &th);
 	xdr_convert_tree(&xdrs, root);
 	xdr_destroy(&xdrs);
 	fclose(outfile);
 	
-	//print_tree(th.boundingBox, root, 0);
-	
 	delete root;
+}
+
+bool determineBoundingBox(OrientedBox<float>& boundingBox, const int numParticles) {
+	OrientedBox<float> unitCube(Vector3D<float>(-0.5, -0.5, -0.5), Vector3D<float>(0.5, 0.5, 0.5));
+	float diagonal = (boundingBox.greater_corner - boundingBox.lesser_corner).length();
+	float epsilon = max(1E-2, 1.0 / numParticles);
+	bool periodic = false;
+	if((boundingBox.lesser_corner - unitCube.lesser_corner).length() / diagonal < epsilon
+			&& (boundingBox.greater_corner - unitCube.greater_corner).length() / diagonal < epsilon) {
+		if(verbosity > 1) {
+			cerr << "The bounding box for this file appears to be a unit cube about the origin, using this for key generation" << endl;
+			cerr << "Setting the tree to have periodic boundary conditions." << endl;
+		}
+		periodic = true;
+		boundingBox = unitCube;
+	} else {
+		if(verbosity > 1)
+			cerr << "The bounding box for this file is " << boundingBox << ", using longest axis to generate keys" << endl;
+		cubize(boundingBox);
+		bumpBox(boundingBox, HUGE_VAL);
+		if(verbosity > 1)
+			cerr << "Resized bounding box is " << boundingBox << endl;
+	}
+
+	return periodic;
+}
+
+bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
+	int numParticles = r.getHeader().nsph;
+	TipsyStats stats;
+	OrientedBox<float> velocityBox;
+	OrientedBox<float> boundingBox;
+	
+	//need two extra particles for boundaries
+	TreeParticle<gas_particle>* particles = new TreeParticle<gas_particle>[numParticles + 2];
+	gas_particle p;
+	
+	//read in the gas particles from the tipsy file
+	for(int i = 0; i < numParticles; ++i) {
+		if(!r.getNextGasParticle(p)) {
+			cerr << "Error reading tipsy file!" << endl;
+			return false;
+		}
+		stats.contribute(p);
+		velocityBox.grow(p.vel);
+		particles[i] = p;
+		particles[i].tipsyOrder = i;
+	}
+
+	stats.finalize();
+	boundingBox = stats.bounding_box;
+
+	bool periodic = determineBoundingBox(boundingBox, numParticles);
+	
+	//make gas subdirectory
+	if(mkdir("gas", 0755))
+		return false;
+	
+	createAndWriteTree("gas/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	
+	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	FILE* outfile;
+	XDR xdrs;
 	
 	FieldHeader fh;
-	fh.time = th.time;
-	fh.numParticles = totalNumParticles;
+	fh.time = r.getHeader().time;
+	fh.numParticles = numParticles;
 	
-	//write extras files
-	
-	outfile = fopen((basename + ".uid").c_str(), "wb");
-	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	fh.dimensions = 1;
 	fh.code = uint32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].tipsyOrder));
-	xdr_destroy(&xdrs);
-	fclose(outfile);
-
-	outfile = fopen((basename + ".mass").c_str(), "wb");
+	unsigned int minUID = 0;
+	unsigned int maxUID = numParticles - 1;
+	outfile = fopen(("gas/" + filenamePrefix + ".uid").c_str(), "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+	
 	fh.dimensions = 1;
 	fh.code = float32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].mass));
-	xdr_destroy(&xdrs);
-	fclose(outfile);
-	
-	outfile = fopen((basename + ".pos").c_str(), "wb");
+	outfile = fopen(("gas/" + filenamePrefix + ".mass").c_str(), "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.gas_min_mass, stats.gas_max_mass);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
 	fh.dimensions = 3;
 	fh.code = float32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].position));
-	xdr_destroy(&xdrs);
-	fclose(outfile);
-	
-	outfile = fopen((basename + ".vel").c_str(), "wb");
+	outfile = fopen(("gas/" + filenamePrefix + ".pos").c_str(), "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
 	fh.dimensions = 3;
 	fh.code = float32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].velocity));
-	xdr_destroy(&xdrs);
-	fclose(outfile);
-	
-	outfile = fopen((basename + ".softening").c_str(), "wb");
+	outfile = fopen(("gas/" + filenamePrefix + ".vel").c_str(), "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-	fh.dimensions = 1;
-	fh.code = float32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].softening));
+	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
-	fclose(outfile);
-	
-	outfile = fopen((basename + ".potential").c_str(), "wb");
-	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-	fh.dimensions = 1;
-	fh.code = float32;
-	xdr_template(&xdrs, &fh);
-	for(unsigned int i = 1; i <= totalNumParticles; ++i)
-		xdr_template(&xdrs, &(particles[i].potential));
-	xdr_destroy(&xdrs);
-	fclose(outfile);
+	fclose(outfile);	
 
-	cerr << "Tipsy format file \"" << basename << "\" converted to tree-based format." << endl;
-	
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("gas/" + filenamePrefix + ".density").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_rho(&xdrs, fh, particles + 1, stats.gas_min_rho, stats.gas_max_rho);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("gas/" + filenamePrefix + ".temp").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_temp(&xdrs, fh, particles + 1, stats.gas_min_temp, stats.gas_max_temp);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("gas/" + filenamePrefix + ".softening").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_hsmooth(&xdrs, fh, particles + 1, stats.gas_min_hsmooth, stats.gas_max_hsmooth);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("gas/" + filenamePrefix + ".metals").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.gas_min_metals, stats.gas_max_metals);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("gas/" + filenamePrefix + ".potential").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.gas_min_phi, stats.gas_max_phi);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
 	delete[] particles;
+	
+	return true;
+}
+
+bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
+	int numParticles = r.getHeader().ndark;
+	int numParticlesBefore = r.getHeader().nsph;
+	TipsyStats stats;
+	OrientedBox<float> velocityBox;
+	OrientedBox<float> boundingBox;
+	
+	//need two extra particles for boundaries
+	TreeParticle<dark_particle>* particles = new TreeParticle<dark_particle>[numParticles + 2];
+	dark_particle p;
+	
+	//read in the gas particles from the tipsy file
+	for(int i = 0; i < numParticles; ++i) {
+		if(!r.getNextDarkParticle(p)) {
+			cerr << "Error reading tipsy file!" << endl;
+			return false;
+		}
+		stats.contribute(p);
+		velocityBox.grow(p.vel);
+		particles[i] = p;
+		particles[i].tipsyOrder = i + numParticlesBefore;
+	}
+
+	stats.finalize();
+	boundingBox = stats.bounding_box;
+
+	bool periodic = determineBoundingBox(boundingBox, numParticles);
+	
+	//make dark subdirectory
+	if(mkdir("dark", 0775))
+		return false;
+	
+	createAndWriteTree("dark/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	
+	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	FILE* outfile;
+	XDR xdrs;
+	
+	FieldHeader fh;
+	fh.time = r.getHeader().time;
+	fh.numParticles = numParticles;
+	
+	fh.dimensions = 1;
+	fh.code = uint32;
+	unsigned int minUID = numParticlesBefore;
+	unsigned int maxUID = numParticlesBefore + numParticles - 1;
+	outfile = fopen(("dark/" + filenamePrefix + ".uid").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+	
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("dark/" + filenamePrefix + ".mass").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.dark_min_mass, stats.dark_max_mass);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 3;
+	fh.code = float32;
+	outfile = fopen(("dark/" + filenamePrefix + ".pos").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 3;
+	fh.code = float32;
+	outfile = fopen(("dark/" + filenamePrefix + ".vel").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("dark/" + filenamePrefix + ".softening").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.dark_min_eps, stats.dark_max_eps);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("dark/" + filenamePrefix + ".potential").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.dark_min_phi, stats.dark_max_phi);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	delete[] particles;
+	
+	return true;
+}
+
+bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
+	int numParticles = r.getHeader().nstar;
+	int numParticlesBefore = r.getHeader().nsph + r.getHeader().ndark;
+	TipsyStats stats;
+	OrientedBox<float> velocityBox;
+	OrientedBox<float> boundingBox;
+	
+	//need two extra particles for boundaries
+	TreeParticle<star_particle>* particles = new TreeParticle<star_particle>[numParticles + 2];
+	star_particle p;
+	
+	//read in the gas particles from the tipsy file
+	for(int i = 0; i < numParticles; ++i) {
+		if(!r.getNextStarParticle(p)) {
+			cerr << "Error reading tipsy file!" << endl;
+			return false;
+		}
+		stats.contribute(p);
+		velocityBox.grow(p.vel);
+		particles[i] = p;
+		particles[i].tipsyOrder = i + numParticlesBefore;
+	}
+
+	stats.finalize();
+	boundingBox = stats.bounding_box;
+
+	bool periodic = determineBoundingBox(boundingBox, numParticles);
+	
+	//make star subdirectory
+	if(mkdir("star", 0775))
+		return false;
+	
+	createAndWriteTree("star/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	
+	//write out uid, mass, pos, vel, rho, temp, eps, phi
+	FILE* outfile;
+	XDR xdrs;
+	
+	FieldHeader fh;
+	fh.time = r.getHeader().time;
+	fh.numParticles = numParticles;
+	
+	fh.dimensions = 1;
+	fh.code = uint32;
+	unsigned int minUID = numParticlesBefore;
+	unsigned int maxUID = numParticlesBefore + numParticles - 1;
+	outfile = fopen(("star/" + filenamePrefix + ".uid").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+	
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".mass").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.star_min_mass, stats.star_max_mass);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 3;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".pos").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 3;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".vel").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".metals").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.star_min_metals, stats.star_max_metals);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".tform").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_tform(&xdrs, fh, particles + 1, stats.star_min_tform, stats.star_max_tform);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".softening").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.star_min_eps, stats.star_max_eps);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	fh.dimensions = 1;
+	fh.code = float32;
+	outfile = fopen(("star/" + filenamePrefix + ".potential").c_str(), "wb");
+	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.star_min_phi, stats.star_max_phi);
+	xdr_destroy(&xdrs);
+	fclose(outfile);	
+
+	delete[] particles;
+	
+	return true;
+}
+
+int main(int argc, const char** argv) {
+
+	bucketSize = 12;
+	
+	poptOption optionsTable[] = {
+		{"verbose", 'v', POPT_ARG_NONE | POPT_ARGFLAG_ONEDASH | POPT_ARGFLAG_SHOW_DEFAULT, 0, 1, "be verbose about what's going on", "verbosity"},
+		{"bucket", 'b', POPT_ARG_INT | POPT_ARGFLAG_ONEDASH | POPT_ARGFLAG_SHOW_DEFAULT, &bucketSize, 0, "maximum number of particles in a bucket", "bucketsize"},
+		POPT_AUTOHELP
+		POPT_TABLEEND
+	};
+	
+	poptContext context = poptGetContext("tipsy2tree", argc, argv, optionsTable, 0);
+	
+	poptSetOtherOptionHelp(context, " [OPTION ...] tipsyfile");
+	
+	int rc;
+	while((rc = poptGetNextOpt(context)) >= 0) {
+		switch(rc) {
+			case 1: //increase verbosity
+				verbosity++;
+				break;
+		}
+	}
+	
+	if(rc < -1) {
+		cerr << "Argument error: " << poptBadOption(context, POPT_BADOPTION_NOALIAS) << " : " << poptStrerror(rc) << endl;
+		poptPrintUsage(context, stderr, 0);
+		return 1;
+	}
+	
+	const char* fname = poptGetArg(context);
+	
+	if(fname == 0) {
+		cerr << "You must provide a tipsy file name" << endl;
+		poptPrintUsage(context, stderr, 0);
+		return 2;
+	}
+	
+	if(verbosity > 1)
+		cerr << "Loading tipsy file ..." << endl;
+	
+	TipsyReader r(fname);
+	if(!r.status()) {
+		cerr << "Couldn't open tipsy file correctly!  Maybe it's not a tipsy file?" << endl;
+		return 2;
+	}
+		
+	string basename(fname);
+	int slashPos = basename.find_last_of("/");
+	if(slashPos != string::npos)
+		basename.erase(0, slashPos + 1);
+	cerr << "Basename for tree-based files: \"" << basename << "\"" << endl;
+	string dirname = basename + ".data";
+	
+	//make directory for files
+	if(mkdir(dirname.c_str(), 0775) || chdir(dirname.c_str())) {
+		cerr << "Could not create and move into a directory for the converted files, maybe you don't have permission?" << endl;
+		return 3;
+	}
+	//make output a string for output index
+	
+	//write xml
+	ofstream xmlfile("description.xml");
+	xmlfile << "<xml fakery>\n<simulation>\n";
+
+	header h = r.getHeader();
+	if(verbosity > 2)
+		cout << "Tipsy header:\n" << h << endl;
+	
+	if(h.nsph > 0) {
+		convertGasParticles(basename, r);
+		xmlfile << "\t<family type=\"gas\">\n";
+		xmlfile << "\t\t<tree filename=\"gas/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<mass filename=\"gas/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<pos filename=\"gas/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<vel filename=\"gas/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<softening filename=\"gas/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<potential filename=\"gas/" << basename << ".potential\"/>\n";
+		xmlfile << "\t\t<density filename=\"gas/" << basename << ".density\"/>\n";
+		xmlfile << "\t\t<temp filename=\"gas/" << basename << ".temp\"/>\n";
+		xmlfile << "\t\t<metals filename=\"gas/" << basename << ".metals\"/>\n";
+		xmlfile << "\t</family>\n";
+	}
+	
+	if(h.ndark > 0) {
+		convertDarkParticles(basename, r);
+		xmlfile << "\t<family type=\"dark\">\n";
+		xmlfile << "\t\t<tree filename=\"dark/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<mass filename=\"dark/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<pos filename=\"dark/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<vel filename=\"dark/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<softening filename=\"dark/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<potential filename=\"dark/" << basename << ".potential\"/>\n";
+		xmlfile << "\t</family>\n";
+	}
+	
+	if(h.nstar > 0) {
+		convertStarParticles(basename, r);
+		xmlfile << "\t<family type=\"star\">\n";
+		xmlfile << "\t\t<tree filename=\"star/" << basename << ".tree\"/>\n";
+		xmlfile << "\t\t<mass filename=\"star/" << basename << ".mass\"/>\n";
+		xmlfile << "\t\t<pos filename=\"star/" << basename << ".pos\"/>\n";
+		xmlfile << "\t\t<vel filename=\"star/" << basename << ".vel\"/>\n";
+		xmlfile << "\t\t<softening filename=\"star/" << basename << ".softening\"/>\n";
+		xmlfile << "\t\t<potential filename=\"star/" << basename << ".potential\"/>\n";
+		xmlfile << "\t\t<metals filename=\"star/" << basename << ".metals\"/>\n";
+		xmlfile << "\t\t<tform filename=\"star/" << basename << ".tform\"/>\n";
+		xmlfile << "\t</family>\n";
+	}
+	
+	xmlfile << "</simulation>\n";
+	xmlfile.close();
+	
+	cerr << "Done." << endl;
 }

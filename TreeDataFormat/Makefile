@@ -1,14 +1,14 @@
 STRUCTURES_PATH = $(HOME)/projects/structures
 CC = $(CXX)
-CXXFLAGS += -Wall -g -O3  -I$(STRUCTURES_PATH) #-I$(HOME)/projects/boost_1_29_0
+CXXFLAGS += -Wall -O3 -I$(STRUCTURES_PATH)
 LDFLAGS += -L$(STRUCTURES_PATH)
-LDLIBS += -lTipsy
+LDLIBS += -lTipsy $(STRUCTURES_PATH)/SFC.o -lpopt
 
-TARGETS = tipsy2tree see_header browse_field #check_tree region_query #convert_ascii_field 
+TARGETS = tipsy2tree see_header browse_field check_tree convert_to_ascii histogram_field
 
 all:: $(TARGETS)
 
-tipsy2tree.o: SFC.h $(STRUCTURES_PATH)/libTipsy.a
+tipsy2tree.o: $(STRUCTURES_PATH)/libTipsy.a
 
 tipsy2tree.o: Makefile
 

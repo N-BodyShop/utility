@@ -10,47 +10,50 @@
 
 using namespace std;
 
+template <typename T>
+void printFieldValue(ostream& os, T* data, int i) {
+	os << data[i];
+}
+
+template <typename T>
+void printFieldValue(ostream& os, const unsigned int dimensions, T* data, int i) {
+	if(dimensions == 3)
+		printFieldValue(os, reinterpret_cast<Vector3D<T> *>(data), i);
+	else
+		printFieldValue(os, data, i);
+}
+
 void printFieldValue(ostream& os, const FieldHeader& fh, void* data, int i) {
 	switch(fh.code) {
 		case int8:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<char *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<char *>(data), i);
 			break;
 		case uint8:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<unsigned char *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<unsigned char *>(data), i);
 			break;
 		case int16:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<short *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<short *>(data), i);
 			break;
 		case uint16:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<unsigned short *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<unsigned short *>(data), i);
 			break;
 		case int32:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<int *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<int *>(data), i);
 			break;
 		case uint32:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<unsigned int *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<unsigned int *>(data), i);
 			break;
 		case int64:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<int64_t *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<int64_t *>(data), i);
 			break;
 		case uint64:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<u_int64_t *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<u_int64_t *>(data), i);
 			break;
 		case float32:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<float *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<float *>(data), i);
 			break;
 		case float64:
-			for(unsigned int j = 0; j < fh.dimensions; ++j)
-				os << static_cast<double *>(data)[i * fh.dimensions + j] << " ";
+			printFieldValue(os, fh.dimensions, static_cast<double *>(data), i);
 			break;
 		default:
 			os << "I don't recognize the type of this field!";
@@ -91,9 +94,13 @@ int main(int argc, char** argv) {
 	fclose(infile);
 	
 	cout << "File \"" << argv[1] << "\" contains a field.  Header:\n" << fh << endl;
-	
+	cout << "Minimum: ";
+	printFieldValue(cout, fh, data, fh.numParticles);
+	cout << "\nMaximum: ";
+	printFieldValue(cout, fh, data, fh.numParticles + 1);
+		
 	int i;
-	cout << "Which index do you want to see? ";
+	cout << "\nWhich index do you want to see? ";
 	while((cin >> i) && (i >= 0)) {
 		if(i >= fh.numParticles)
 			cout << "Index too high, must be between 0 and " << (fh.numParticles - 1);
@@ -104,6 +111,8 @@ int main(int argc, char** argv) {
 		cout << "\nWhich index do you want to see? ";
 		cout.flush();
 	}
+	
+	deleteField(fh, data);
 	
 	cerr << "Done." << endl;
 }
