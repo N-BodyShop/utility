@@ -17,7 +17,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef HAVE_LIBPOPT
 #include <popt.h>
+#endif
 
 #include "TipsyFile.h"
 #include "OrientedBox.h"
@@ -619,10 +621,11 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	return true;
 }
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
 
 	bucketSize = 12;
 	
+#ifdef HAVE_LIBPOPT
 	poptOption optionsTable[] = {
 		{"verbose", 'v', POPT_ARG_NONE | POPT_ARGFLAG_ONEDASH | POPT_ARGFLAG_SHOW_DEFAULT, 0, 1, "be verbose about what's going on", "verbosity"},
 		{"bucket", 'b', POPT_ARG_INT | POPT_ARGFLAG_ONEDASH | POPT_ARGFLAG_SHOW_DEFAULT, &bucketSize, 0, "maximum number of particles in a bucket", "bucketsize"},
@@ -656,6 +659,32 @@ int main(int argc, const char** argv) {
 		poptPrintUsage(context, stderr, 0);
 		return 2;
 	}
+	poptFreeContext(context);
+#else
+	const char *optstring = "b:v";
+	int c;
+	while((c=getopt(argc,argv,optstring))>0){
+		if(c == -1){
+			break;
+		}
+		switch(c){
+			case 'v':
+				verbosity++;
+				break;
+		case 'b':
+		    bucketSize = atoi(optarg);
+		    break;
+		};
+	}
+	const char *fname;
+	if(optind  < argc){
+		fname = argv[optind];
+	}else{
+		cerr << "You must provide a simulation list file" << endl;
+		exit(-1);
+	}
+
+#endif
 	
 	if(verbosity > 1)
 		cerr << "Loading tipsy file ..." << endl;

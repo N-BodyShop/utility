@@ -16,7 +16,9 @@
 #include <sys/types.h>
 #include <unistd.h>
 
+#ifdef HAVE_LIBPOPT
 #include <popt.h>
+#endif
 
 #include "SS.h"
 #include "OrientedBox.h"
@@ -50,7 +52,7 @@ void determineBoundingBox(OrientedBox<T>& boundingBox, const int numParticles) {
 bool convertParticles(const string& filenamePrefix, SSReader& r) {
 	int numParticles = r.getHeader().n_data;
 	
-	vector<Particle> particles;
+	vector<ss_particle> particles;
 	particles.reserve(numParticles);
 	
 	r.readAllParticles(back_inserter(particles));
@@ -139,8 +141,9 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 	return true;
 }
 
-int main(int argc, const char** argv) {
+int main(int argc, char** argv) {
 
+#ifdef HAVE_LIBPOPT
 	poptOption optionsTable[] = {
 		{"verbose", 'v', POPT_ARG_NONE | POPT_ARGFLAG_ONEDASH | POPT_ARGFLAG_SHOW_DEFAULT, 0, 1, "be verbose about what's going on", "verbosity"},
 		POPT_AUTOHELP
@@ -167,12 +170,34 @@ int main(int argc, const char** argv) {
 	}
 	
 	const char* fname = poptGetArg(context);
-	
+
 	if(fname == 0) {
 		cerr << "You must provide a SS file name" << endl;
 		poptPrintUsage(context, stderr, 0);
 		return 2;
 	}
+	
+#else
+	const char *optstring = "v";
+	int c;
+	while((c=getopt(argc,argv,optstring))>0){
+		if(c == -1){
+			break;
+		}
+		switch(c){
+			case 'v':
+				verbosity++;
+				break;
+		};
+	}
+	const char *fname;
+	if(optind  < argc){
+		fname = argv[optind];
+	}else{
+		cerr << "You must provide a SS file name" << endl;
+		exit(-1);
+	}
+#endif
 	
 	if(verbosity > 1)
 		cerr << "Loading SS file ..." << endl;
@@ -201,7 +226,7 @@ int main(int argc, const char** argv) {
 	ofstream xmlfile("description.xml");
 	xmlfile << "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n<simulation>\n";
 
-	Header h = r.getHeader();
+	ss_header h = r.getHeader();
 	if(verbosity > 2)
 		cout << "SS header:\n" << h << endl;
 	
