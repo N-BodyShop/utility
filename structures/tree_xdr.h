@@ -98,6 +98,28 @@ inline bool_t xdr_template(XDR* xdrs, FieldHeader* h) {
 			&& xdr_template(xdrs, reinterpret_cast<enum_t *>(&(h->code))));
 }
 
+// XDR has a minimum size of 4 bytes.
+inline unsigned int mySizeof(TypeHandling::DataTypeCode code) {
+	switch(code) {
+		case TypeHandling::int8:
+		case TypeHandling::uint8:
+		case TypeHandling::int16:
+		case TypeHandling::uint16:
+		case TypeHandling::int32:
+		case TypeHandling::uint32:
+			return 4;
+		case TypeHandling::int64:
+		case TypeHandling::uint64:
+			return 8;
+		case TypeHandling::float32:
+			return 4;
+		case TypeHandling::float64:
+			return 8;
+		default:
+			return 0;
+	}
+}
+
 /** Given a FieldHeader, check that the dimensionality and type
  match the one you expect.  That is, checkType<T>(fh) will compare the
  dimensionality and contained type of T with the type specified by fh. */
@@ -343,28 +365,6 @@ inline bool deleteField(const FieldHeader& fh, void*& data) {
 			return deleteField<double>(fh.dimensions, data);
 		default:
 			return false;
-	}
-}
-
-// XDR has a minimum size of 4 bytes.
-inline unsigned int mySizeof(TypeHandling::DataTypeCode code) {
-	switch(code) {
-		case TypeHandling::int8:
-		case TypeHandling::uint8:
-		case TypeHandling::int16:
-		case TypeHandling::uint16:
-		case TypeHandling::int32:
-		case TypeHandling::uint32:
-			return 4;
-		case TypeHandling::int64:
-		case TypeHandling::uint64:
-			return 8;
-		case TypeHandling::float32:
-			return 4;
-		case TypeHandling::float64:
-			return 8;
-		default:
-			return 0;
 	}
 }
 
