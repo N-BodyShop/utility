@@ -392,6 +392,8 @@ inline bool_t xdr_template(XDR* xdrs, BasicTreeNode* node) {
 			&& xdr_template(xdrs, &(node->numParticlesLeft));
 }
 
+//New, preferred naming convention is *attribute*
+
 template <typename T>
 inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int64_t N, const u_int64_t start = 0) {
 	//seek to just past the header

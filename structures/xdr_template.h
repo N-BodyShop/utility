@@ -1,16 +1,17 @@
 /** @file xdr_template.h
- Provides a inline templated function xdr_template() which performs
- XDR conversion of a generic value.  Numerous specializations
- of this inline template are provided for many common types, including
- Vector3D and OrientedBox (of arbitrary types themselves).  If
+ Provides inline functions xdr_template() which perform
+ XDR conversion of a value.  Numerous overloads
+ of this function are provided for many common types, including
+ Vector3D and OrientedBox (of arbitrary types).  If
  you attempt to use this function for a type that does not have
- a provided specialization, you will get a link error complaining
- about the function xdr_template() for the type you tried to use.
- You can provide specializations for your own types by copying the
+ a provided overload, you will get a compile time error.
+ You can provide overloads for your own types by copying the
  syntax used below.
- This function allows you to call xdr_template() whenever you wish
+ This framework allows you to call xdr_template() whenever you wish
  to do XDR conversion, and not worry about the underlying calls
  to xdr_int, xdr_float, etc.
+ @author Graeme Lufkin (gwl@u.washington.edu)
+ @version 1.5
  */
 
 #ifndef XDR_TEMPLATE_H

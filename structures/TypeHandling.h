@@ -24,7 +24,7 @@ enum DataTypeCode {
 	float64
 };
 
-inline std::ostream& operator<< (std::ostream& os, DataTypeCode code) {
+inline std::ostream& operator<<(std::ostream& os, DataTypeCode code) {
 	switch(code) {
 		case int8:
 			return os << "signed 8-bit integer";
@@ -109,6 +109,7 @@ struct Type2Code<double> {
 	const static DataTypeCode code = float64;
 };
 
+//The type of a vector quantity is the type the Vector3D holds
 template <typename T>
 struct Type2Code<Vector3D<T> > {
 	const static DataTypeCode code = Type2Code<T>::code;

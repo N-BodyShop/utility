@@ -11,6 +11,7 @@
 
 namespace TypeHandling {
 
+//This struct exists only to be a placeholder to allow template functions to be overloaded
 template <typename T>
 struct Type2Type {
 	typedef T OriginalType;
