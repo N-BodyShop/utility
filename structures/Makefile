@@ -3,7 +3,7 @@ CXXFLAGS = -O3 -Wall
 NAME = structures
 VERSION = 1.1
 TARGETS = TipsyFile.o TipsyFile.debug.o
-all: $(TARGETS) tools
+all: $(TARGETS)
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
@@ -11,7 +11,7 @@ TipsyFile.debug.o: TipsyFile.h TipsyFile.cpp Vector3D.h OrientedBox.h
 	$(CXX) -Wall -g -o TipsyFile.debug.o -c TipsyFile.cpp
 
 tools::
-	cd tools; make
+	cd tools && make
 
 docs:
 	doxygen structures.doxygen
