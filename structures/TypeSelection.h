@@ -11,7 +11,8 @@
  If the flag template parameter is true, the typedef is of the first
  type, if false of the second.  By referring to 
  Select<condition, T, U>::Result you can choose between the types
- T and U based on the boolean condition. */
+ T and U based on the boolean condition. 
+ This trick is taken from Andrei Alexandrescu's Modern C++ Design.*/
 template <bool flag, typename T, typename U>
 struct Select {
 	typedef T Result;
