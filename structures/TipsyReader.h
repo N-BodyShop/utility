@@ -49,6 +49,10 @@ struct header {
 	}
 };
 
+/** A particle-at-a-time reader for Tipsy files.
+ On little-endian machines, can read native and standard format files.
+ On big-endian machine, can read standard format files. 
+ */
 class TipsyReader {
 	bool native;
 	bool ok;
@@ -76,12 +80,17 @@ public:
 		loadHeader();
 	}
 	
-	/// Load from a stream
+	/** Load from a stream.
+	 @note When using the stream interface, the given stream's buffer must
+	 outlast your use of the reader object, since the original stream owns
+	 the buffer.  For the standard stream cin this is guaranteed.
+	 */
 	TipsyReader(std::istream& is) : ok(false), responsible(true) {
 		tipsyStream = new std::istream(is.rdbuf());
 		loadHeader();
 	}
 	
+	/// Use this instead of a copy constructor
 	void takeOverStream(TipsyReader& r) {
 		native = r.native;
 		ok = r.native;
@@ -96,6 +105,8 @@ public:
 		tipsyStream = r.tipsyStream;
 	}
 	
+	/** Reload from a file.
+	 */
 	bool reload(const std::string& filename) {
 		if(responsible)
 			delete tipsyStream;
@@ -104,6 +115,11 @@ public:
 		return loadHeader();		
 	}
 	
+	/** Reload from a stream.
+	 @note When using the stream interface, the given stream's buffer must
+	 outlast your use of the reader object, since the original stream owns
+	 the buffer.  For the standard stream cin this is guaranteed.
+	 */
 	bool reload(std::istream& is) {
 		if(responsible)
 			delete tipsyStream;

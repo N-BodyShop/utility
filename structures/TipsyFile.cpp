@@ -30,16 +30,14 @@ TipsyFile::TipsyFile(std::istream& is) : native(true), success(false), myReader(
 }
 
 bool TipsyFile::reload(const std::string& fn) {
-	filename = fn;
-	TipsyReader r(filename);
-	myReader.takeOverStream(r);
+	filename = fn;	
+	myReader.reload(filename);
 	return loadfile();
 }
 
 bool TipsyFile::reload(std::istream& is) {
 	filename = "";
-	TipsyReader r(is);
-	myReader.takeOverStream(r);
+	myReader.reload(is);
 	return loadfile();
 }
 
@@ -319,15 +317,13 @@ PartialTipsyFile::PartialTipsyFile(std::istream& is, int begin, int end) : myRea
 
 bool PartialTipsyFile::reload(const std::string& fn) {
 	filename = fn;
-	TipsyReader r(filename);
-	myReader.takeOverStream(r);
+	myReader.reload(filename);
 	return loadPartial();
 }
 
 bool PartialTipsyFile::reload(std::istream& is) {
 	filename = "";
-	TipsyReader r(is);
-	myReader.takeOverStream(r);
+	myReader.reload(is);
 	return loadPartial();
 }
 

@@ -69,6 +69,7 @@ public:
 	~TipsyFile() { }
 	
 	TipsyFile& operator=(const TipsyFile& tf) {
+		// a TipsyFile object has already read in its particles, so it doesn't need to pass its TipsyReader around
 		markedGas = tf.markedGas;
 		markedDarks = tf.markedDarks;
 		markedStars = tf.markedStars;
