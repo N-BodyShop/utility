@@ -31,15 +31,19 @@ public:
 	
 	GroupIteratorInstance() : index(0) { }
 	GroupIteratorInstance(u_int64_t start) : index(start) { }
-
+	virtual ~GroupIteratorInstance() { }
+	
+	/// For criterion-based groups, this method should move to the next member of the parent group that satisfies the criterion, or the end
 	virtual void increment() {
 		++index;
 	}
 	
+	/// For non-trivial groups, check both array index and criterion data
 	virtual bool equal(GroupIteratorInstance* const& other) const {
 		return index == other->index;
 	}
 	
+	/// This should return the array index of the current group member
 	virtual u_int64_t dereference() const {
 		return index;
 	}
@@ -92,9 +96,10 @@ class Group {
 	//disable copying
 	Group(Group const&);
 	Group& operator=(Group const&);
+	
 public:
 	
-	Group() { }
+	Group(boost::shared_ptr<Group> const& parent = boost::shared_ptr<Group>()) : parentGroup(parent) { }
 	virtual ~Group() { }
 		
 	typedef std::vector<std::string> GroupFamilies;
@@ -102,12 +107,15 @@ public:
 	
 	virtual GroupIterator make_begin_iterator(std::string const& familyName) = 0;
 	virtual GroupIterator make_end_iterator(std::string const& familyName) = 0;
-		
+
+protected:
+	boost::shared_ptr<Group> parentGroup;
 };
 
 /// The "All" group iterator is the default behavior, provide a typedef.
 typedef GroupIteratorInstance AllGroupIterator;
 
+/// The All group doesn't have a parent
 class AllGroup : public Group {
 	Simulation const& sim;
 public:
@@ -137,36 +145,37 @@ class AttributeRangeIterator : public GroupIteratorInstance {
 	template <typename>
 	friend class AttributeRangeGroup;
 	
-	u_int64_t index;
+	//u_int64_t index;
+	//parent group idiom: Instead of index, use iterator into parent group
+	GroupIterator parentIter;
 	T minValue;
 	T maxValue;
 	T const* array; //bare pointer is okay here, default copy constructor will do what we want
 	u_int64_t length;
 	
-	void resetBegin() {
-		for(index = 0; index < length && (array[index] < minValue || maxValue < array[index]); ++index);
-	}
-
 public:
 	
-	AttributeRangeIterator(u_int64_t start, T minValue_, T maxValue_, T const* array_, u_int64_t length_) : index(start), minValue(minValue_), maxValue(maxValue_), array(array_), length(length_) { }
+	AttributeRangeIterator(GroupIterator parentBegin, T minValue_, T maxValue_, T const* array_, u_int64_t length_) : parentIter(parentBegin), minValue(minValue_), maxValue(maxValue_), array(array_), length(length_) {
+		while(*parentIter < length && (array[*parentIter] < minValue || maxValue < array[*parentIter]))
+			++parentIter;
+	}
 
 	void increment() {
-		if(index >= length - 1)
-			index = length;
-		else
-			for(++index; index < length && (array[index] < minValue || maxValue < array[index]); ++index);
+		//parent group idiom: increment parentIter instead of index
+		if(*parentIter < length)
+			for(++parentIter; *parentIter < length && (array[*parentIter] < minValue || maxValue < array[*parentIter]); ++parentIter);
 	}
 	
 	bool equal(GroupIteratorInstance* const& other) const {
 		if(AttributeRangeIterator* const o = dynamic_cast<AttributeRangeIterator* const>(other))
-			return minValue == o->minValue && maxValue == o->maxValue && array == o->array && index == o->index;
+			return minValue == o->minValue && maxValue == o->maxValue && array == o->array && parentIter == o->parentIter;
 		else
 			return false;
 	}
 	
 	u_int64_t dereference() const {
-		return index;
+		//parent group idiom: instead of index value, dereference iterator
+		return *parentIter;
 	}
 };
 
@@ -178,7 +187,7 @@ class AttributeRangeGroup : public Group {
 	T maxValue;
 public:
 		
-	AttributeRangeGroup(Simulation const& s, std::string const& attributeName_, T minValue_, T maxValue_) : sim(s), attributeName(attributeName_), minValue(minValue_), maxValue(maxValue_) {
+	AttributeRangeGroup(Simulation const& s, boost::shared_ptr<Group> const& parent, std::string const& attributeName_, T minValue_, T maxValue_) : Group(parent), sim(s), attributeName(attributeName_), minValue(minValue_), maxValue(maxValue_) {
 		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
 			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 			if(attrIter != simIter->second.attributes.end())
@@ -187,35 +196,23 @@ public:
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		boost::shared_ptr<AttributeRangeIterator<T> > p;
 		Simulation::const_iterator simIter = sim.find(familyName);
 		if(simIter == sim.end())
-			p.reset(new AttributeRangeIterator<T>(0, 0, 0, 0, 0));
-		else {
-			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
-			TypedArray const& array = attrIter->second;
-			p.reset(new AttributeRangeIterator<T>(0, minValue, maxValue, array.getArray(Type2Type<T>()), array.length));
-			p->resetBegin();
-		}
+			return make_end_iterator(familyName);
+		TypedArray const& array = simIter->second.attributes.find(attributeName)->second;
+		//parent group idiom: start with parent group's begin iterator
+		GroupIterator parentBegin = parentGroup->make_begin_iterator(familyName);
+		boost::shared_ptr<AttributeRangeIterator<T> > p(new AttributeRangeIterator<T>(parentBegin, minValue, maxValue, array.getArray(Type2Type<T>()), array.length));
 		return GroupIterator(p);
 	}
 
 	GroupIterator make_end_iterator(std::string const& familyName) {
-		boost::shared_ptr<AttributeRangeIterator<T> > p;
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end())
-			p.reset(new AttributeRangeIterator<T>(0, 0, 0, 0, 0));
-		else {
-			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
-			TypedArray const& array = attrIter->second;
-			p.reset(new AttributeRangeIterator<T>(array.length, minValue, maxValue, array.getArray(Type2Type<T>()), array.length));
-		}
-		return GroupIterator(p);
+		//parent group idiom: parent group can handle end iterator
+		return parentGroup->make_end_iterator(familyName);
 	}
 };
 
-static
-boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, std::string const& attributeName, double minValue, double maxValue) {
+boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, double minValue, double maxValue) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
 		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
@@ -225,34 +222,34 @@ boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, std::st
 			if(arr.dimensions == 1) {
 				switch(arr.code) {
 					case int8:
-						p.reset(new AttributeRangeGroup<Code2Type<int8>::type>(sim, attributeName, static_cast<Code2Type<int8>::type>(minValue), static_cast<Code2Type<int8>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<int8>::type>(sim, parent, attributeName, static_cast<Code2Type<int8>::type>(minValue), static_cast<Code2Type<int8>::type>(maxValue)));
 						break;
 					case uint8:
-						p.reset(new AttributeRangeGroup<Code2Type<uint8>::type>(sim, attributeName, static_cast<Code2Type<uint8>::type>(minValue), static_cast<Code2Type<uint8>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<uint8>::type>(sim, parent, attributeName, static_cast<Code2Type<uint8>::type>(minValue), static_cast<Code2Type<uint8>::type>(maxValue)));
 						break;
 					case int16:
-						p.reset(new AttributeRangeGroup<Code2Type<int16>::type>(sim, attributeName, static_cast<Code2Type<int16>::type>(minValue), static_cast<Code2Type<int16>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<int16>::type>(sim, parent, attributeName, static_cast<Code2Type<int16>::type>(minValue), static_cast<Code2Type<int16>::type>(maxValue)));
 						break;
 					case uint16:
-						p.reset(new AttributeRangeGroup<Code2Type<uint16>::type>(sim, attributeName, static_cast<Code2Type<uint16>::type>(minValue), static_cast<Code2Type<uint16>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<uint16>::type>(sim, parent, attributeName, static_cast<Code2Type<uint16>::type>(minValue), static_cast<Code2Type<uint16>::type>(maxValue)));
 						break;
 					case int32:
-						p.reset(new AttributeRangeGroup<Code2Type<int32>::type>(sim, attributeName, static_cast<Code2Type<int32>::type>(minValue), static_cast<Code2Type<int32>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<int32>::type>(sim, parent, attributeName, static_cast<Code2Type<int32>::type>(minValue), static_cast<Code2Type<int32>::type>(maxValue)));
 						break;
 					case uint32:
-						p.reset(new AttributeRangeGroup<Code2Type<uint32>::type>(sim, attributeName, static_cast<Code2Type<uint32>::type>(minValue), static_cast<Code2Type<uint32>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<uint32>::type>(sim, parent, attributeName, static_cast<Code2Type<uint32>::type>(minValue), static_cast<Code2Type<uint32>::type>(maxValue)));
 						break;
 					case int64:
-						p.reset(new AttributeRangeGroup<Code2Type<int64>::type>(sim, attributeName, static_cast<Code2Type<int64>::type>(minValue), static_cast<Code2Type<int64>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<int64>::type>(sim, parent, attributeName, static_cast<Code2Type<int64>::type>(minValue), static_cast<Code2Type<int64>::type>(maxValue)));
 						break;
 					case uint64:
-						p.reset(new AttributeRangeGroup<Code2Type<uint64>::type>(sim, attributeName, static_cast<Code2Type<uint64>::type>(minValue), static_cast<Code2Type<uint64>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<uint64>::type>(sim, parent, attributeName, static_cast<Code2Type<uint64>::type>(minValue), static_cast<Code2Type<uint64>::type>(maxValue)));
 						break;
 					case float32:
-						p.reset(new AttributeRangeGroup<Code2Type<float32>::type>(sim, attributeName, static_cast<Code2Type<float32>::type>(minValue), static_cast<Code2Type<float32>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<float32>::type>(sim, parent, attributeName, static_cast<Code2Type<float32>::type>(minValue), static_cast<Code2Type<float32>::type>(maxValue)));
 						break;
 					case float64:
-						p.reset(new AttributeRangeGroup<Code2Type<float64>::type>(sim, attributeName, static_cast<Code2Type<float64>::type>(minValue), static_cast<Code2Type<float64>::type>(maxValue)));
+						p.reset(new AttributeRangeGroup<Code2Type<float64>::type>(sim, parent, attributeName, static_cast<Code2Type<float64>::type>(minValue), static_cast<Code2Type<float64>::type>(maxValue)));
 						break;
 				}
 			}
@@ -262,6 +259,31 @@ boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, std::st
 	return p;
 }
 
+/*
+class NoCriterionGroupIterator : public GroupIteratorInstance {
+	GroupIterator parentIter;	
+public:
+	
+	NoCriterionGroupIterator(GroupIterator parentBegin) : parentIter(parentBegin) { }
+
+	void increment() {
+		if(*parentIter < length)
+			++parentIter;
+	}
+	
+	bool equal(GroupIteratorInstance* const& other) const {
+		if(NoCriterionGroupIterator* const o = dynamic_cast<NoCriterionGroupIterator* const>(other))
+			return parentIter == o->parentIter;
+		else
+			return false;
+	}
+	
+	u_int64_t dereference() const {
+		return *parentIter;
+	}
+};
+*/
+		
 template <typename T>
 class SphericalIterator : public GroupIteratorInstance {
 	template <typename>
@@ -400,21 +422,19 @@ class FamilyGroup : public Group {
 	Simulation const& sim;
 public:
 		
-	FamilyGroup(Simulation const& s, std::string const& familyName) : sim(s) {
+	FamilyGroup(Simulation const& s, boost::shared_ptr<Group> const& parent, std::string const& familyName) : Group(parent), sim(s) {
 		families.push_back(familyName);
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		boost::shared_ptr<AllGroupIterator> p(new AllGroupIterator(0));
-		return GroupIterator(p);
+		Simulation::const_iterator simIter = sim.find(familyName);
+		if(simIter == sim.end())
+			return make_end_iterator(familyName);
+		return parentGroup->make_begin_iterator(familyName);
 	}
 
 	GroupIterator make_end_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end())
-			return make_begin_iterator(familyName);
-		boost::shared_ptr<AllGroupIterator> p(new AllGroupIterator(simIter->second.count.numParticles));
-		return GroupIterator(p);
+		return parentGroup->make_end_iterator(familyName);
 	}
 };
 

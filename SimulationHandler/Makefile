@@ -1,6 +1,9 @@
 STRUCTURES_PATH = ../structures
+BOOST_PATH = ../boost_install
+BOOST_INCLUDE_PATH = $(BOOST_PATH)/include/current
+BOOST_LIB_PATH = $(BOOST_PATH)/lib
 CC = $(CXX)
-CXXFLAGS += -g -O3 -Wall -I$(STRUCTURES_PATH) -I$(XERCESCROOT)/include -I../boost
+CXXFLAGS += -g -Wall -I$(STRUCTURES_PATH) -I$(XERCESCROOT)/include -I$(BOOST_INCLUDE_PATH)
 LDFLAGS += -L$(XERCESCROOT)/lib -L$(STRUCTURES_PATH) 
 LDLIBS += -lxerces-c -lTipsy
 
