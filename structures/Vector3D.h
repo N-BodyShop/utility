@@ -12,13 +12,15 @@
 #include <iostream> //for formatted output
 #include <cmath> //for sqrt()
 
+#include "TypeSelection.h"
+
 /** A class containing the three cartesian coordinates of a three-dimensional vector. */
 template <typename T = double>
 class Vector3D {
 public:
 	//expose the type of the coordinates
 	typedef T componentType;
-
+	
 	/// The cartesian coordinates of this three-dimensional vector
 	T x, y, z;
 
@@ -195,20 +197,20 @@ public:
 
 /// Scalar multiplication on the left
 template <typename T, typename T2>
-inline Vector3D<T> operator*(const T2& s, const Vector3D<T>& v) {
-	return Vector3D<T>(v.x * s, v.y * s, v.z * s);
+inline Vector3D<typename wider<T, T2>::widerType> operator*(const T2& s, const Vector3D<T>& v) {
+	return Vector3D<typename wider<T, T2>::widerType>(v.x * s, v.y * s, v.z * s);
 }
 
 /// The dot product of two vectors
 template <typename T, typename T2>
-inline T dot(const Vector3D<T>& a, const Vector3D<T2>& b) {
+inline typename wider<T, T2>::widerType dot(const Vector3D<T>& a, const Vector3D<T2>& b) {
 	return (a.x * b.x + a.y * b.y + a.z * b.z);
 }
 
 /// The cosine of the angle between two vectors
 template <typename T, typename T2>
-inline T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
-	T lengths_squared = a.lengthSquared() * b.lengthSquared();
+inline typename wider<T, T2>::widerType costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
+	typename wider<T, T2>::widerType lengths_squared = a.lengthSquared() * b.lengthSquared();
 	if(lengths_squared == 0)
 		return 0;
 	else
@@ -217,8 +219,8 @@ inline T costheta(const Vector3D<T>& a, const Vector3D<T2>& b) {
 
 /// The cross product of two vectors (Order is important! a x b == - b x a) */
 template <typename T, typename T2>
-inline Vector3D<T> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
-	return Vector3D<T>(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
+inline Vector3D<typename wider<T, T2>::widerType> cross(const Vector3D<T>& a, const Vector3D<T2>& b) {
+	return Vector3D<typename wider<T, T2>::widerType>(a.y * b.z - a.z * b.y, a.z * b.x - a.x * b.z, a.x * b.y - a.y * b.x);
 }
 
 /// Output operator, used for formatted display

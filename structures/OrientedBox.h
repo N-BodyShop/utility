@@ -31,7 +31,7 @@ public:
 		greater_corner = Vector3D<T>(-HUGE_VAL, -HUGE_VAL, -HUGE_VAL);
 	}
 	
-	explicit OrientedBox(const Vector3D<T>& corner1, const Vector3D<T>& corner2) {
+	OrientedBox(const Vector3D<T>& corner1, const Vector3D<T>& corner2) {
 		if(corner1.x < corner2.x) {
 			lesser_corner = Vector3D<T>(corner1);
 			if(corner1.y > corner2.y || corner1.z > corner2.z) //malformed box!
@@ -90,7 +90,7 @@ public:
 	}
 	
 	virtual T volume() const {
-		return (greater_corner.x - lesser_corner.x) * (greater_corner.y - lesser_corner.y) * (greater_corner.z - lesser_corner.z);
+		return static_cast<T>((greater_corner.x - lesser_corner.x) * (greater_corner.y - lesser_corner.y) * (greater_corner.z - lesser_corner.z));
 	}
 	
 	Vector3D<T> center() const {
