@@ -54,6 +54,8 @@ public:
 template <typename T = double>
 class SphericalShell : public Sphere<T> {
 public:
+	using Sphere<T>::origin;
+	using Sphere<T>::radius;
 	
 	/// The half-thickness of the shell (shell extends from radius-delta to radius+delta) 
 	T delta;
