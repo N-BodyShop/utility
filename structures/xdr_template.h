@@ -22,6 +22,73 @@
 #include "Vector3D.h"
 #include "OrientedBox.h"
 
+#ifdef MACOSX
+/*
+ * XDR hyper integers
+ * same as xdr_u_hyper - open coded to save a proc call!
+ */
+static inline bool_t
+xdr_hyper (XDR *xdrs, quad_t *llp)
+{
+  long t1;
+  long t2;
+
+  if (xdrs->x_op == XDR_ENCODE)
+    {
+      t1 = (long) ((*llp) >> 32);
+      t2 = (long) (*llp);
+      return (XDR_PUTLONG(xdrs, &t1) && XDR_PUTLONG(xdrs, &t2));
+    }
+
+  if (xdrs->x_op == XDR_DECODE)
+    {
+      if (!XDR_GETLONG(xdrs, &t1) || !XDR_GETLONG(xdrs, &t2))
+	return FALSE;
+      *llp = ((quad_t) t1) << 32;
+      *llp |= t2;
+      return TRUE;
+    }
+
+  if (xdrs->x_op == XDR_FREE)
+    return TRUE;
+
+  return FALSE;
+}
+
+
+/*
+ * XDR hyper integers
+ * same as xdr_hyper - open coded to save a proc call!
+ */
+static inline bool_t
+xdr_u_hyper (XDR *xdrs, u_quad_t *ullp)
+{
+  unsigned long t1;
+  unsigned long t2;
+
+  if (xdrs->x_op == XDR_ENCODE)
+    {
+      t1 = (unsigned long) ((*ullp) >> 32);
+      t2 = (unsigned long) (*ullp);
+      return (XDR_PUTLONG(xdrs, &t1) && XDR_PUTLONG(xdrs, &t2));
+    }
+
+  if (xdrs->x_op == XDR_DECODE)
+    {
+      if (!XDR_GETLONG(xdrs, &t1) || !XDR_GETLONG(xdrs, &t2))
+	return FALSE;
+      *ullp = ((u_quad_t) t1) << 32;
+      *ullp |= t2;
+      return TRUE;
+    }
+
+  if (xdrs->x_op == XDR_FREE)
+    return TRUE;
+
+  return FALSE;
+}
+#endif /*MACOSX*/
+
 inline bool_t xdr_template(XDR* xdrs, unsigned char* val) {
 	return xdr_u_char(xdrs, val);
 }
