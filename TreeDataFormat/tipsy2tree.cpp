@@ -320,7 +320,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 	if(mkdir("gas", 0755))
 		return false;
 	
-	createAndWriteTree("gas/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	createAndWriteTree("gas/tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
 	//write out uid, mass, pos, vel, rho, temp, metals, eps, phi
 	FILE* outfile;
@@ -334,7 +334,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.code = uint32;
 	unsigned int minUID = 0;
 	unsigned int maxUID = numParticles - 1;
-	outfile = fopen(("gas/" + filenamePrefix + ".uid").c_str(), "wb");
+	outfile = fopen("gas/uid", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
 	xdr_destroy(&xdrs);
@@ -342,7 +342,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".mass").c_str(), "wb");
+	outfile = fopen("gas/mass", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.gas_min_mass, stats.gas_max_mass);
 	xdr_destroy(&xdrs);
@@ -350,7 +350,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".pos").c_str(), "wb");
+	outfile = fopen("gas/position", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -358,7 +358,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".vel").c_str(), "wb");
+	outfile = fopen("gas/velocity", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -366,7 +366,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".density").c_str(), "wb");
+	outfile = fopen("gas/density", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_rho(&xdrs, fh, particles + 1, stats.gas_min_rho, stats.gas_max_rho);
 	xdr_destroy(&xdrs);
@@ -374,7 +374,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".temperature").c_str(), "wb");
+	outfile = fopen("gas/temperature", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_temp(&xdrs, fh, particles + 1, stats.gas_min_temp, stats.gas_max_temp);
 	xdr_destroy(&xdrs);
@@ -382,7 +382,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".softening").c_str(), "wb");
+	outfile = fopen("gas/softening", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_hsmooth(&xdrs, fh, particles + 1, stats.gas_min_hsmooth, stats.gas_max_hsmooth);
 	xdr_destroy(&xdrs);
@@ -390,7 +390,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".metals").c_str(), "wb");
+	outfile = fopen("gas/metals", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.gas_min_metals, stats.gas_max_metals);
 	xdr_destroy(&xdrs);
@@ -398,7 +398,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("gas/" + filenamePrefix + ".potential").c_str(), "wb");
+	outfile = fopen("gas/potential", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.gas_min_phi, stats.gas_max_phi);
 	xdr_destroy(&xdrs);
@@ -441,7 +441,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 	if(mkdir("dark", 0775))
 		return false;
 	
-	createAndWriteTree("dark/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	createAndWriteTree("dark/tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
 	//write out uid, mass, pos, vel, eps, phi
 	FILE* outfile;
@@ -455,7 +455,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.code = uint32;
 	unsigned int minUID = numParticlesBefore;
 	unsigned int maxUID = numParticlesBefore + numParticles - 1;
-	outfile = fopen(("dark/" + filenamePrefix + ".uid").c_str(), "wb");
+	outfile = fopen("dark/uid", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
 	xdr_destroy(&xdrs);
@@ -463,7 +463,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("dark/" + filenamePrefix + ".mass").c_str(), "wb");
+	outfile = fopen("dark/mass", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.dark_min_mass, stats.dark_max_mass);
 	xdr_destroy(&xdrs);
@@ -471,7 +471,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("dark/" + filenamePrefix + ".pos").c_str(), "wb");
+	outfile = fopen("dark/position", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -479,7 +479,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("dark/" + filenamePrefix + ".vel").c_str(), "wb");
+	outfile = fopen("dark/velocity", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -487,7 +487,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("dark/" + filenamePrefix + ".softening").c_str(), "wb");
+	outfile = fopen("dark/softening", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.dark_min_eps, stats.dark_max_eps);
 	xdr_destroy(&xdrs);
@@ -495,7 +495,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("dark/" + filenamePrefix + ".potential").c_str(), "wb");
+	outfile = fopen("dark/potential", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.dark_min_phi, stats.dark_max_phi);
 	xdr_destroy(&xdrs);
@@ -538,7 +538,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	if(mkdir("star", 0775))
 		return false;
 	
-	createAndWriteTree("star/" + filenamePrefix + ".tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
+	createAndWriteTree("star/tree", numParticles, particles, boundingBox, periodic, r.getHeader().time);
 	
 	//write out uid, mass, pos, vel, metals, tform, eps, phi
 	FILE* outfile;
@@ -552,7 +552,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.code = uint32;
 	unsigned int minUID = numParticlesBefore;
 	unsigned int maxUID = numParticlesBefore + numParticles - 1;
-	outfile = fopen(("star/" + filenamePrefix + ".uid").c_str(), "wb");
+	outfile = fopen("star/uid", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_tipsyOrder(&xdrs, fh, particles + 1, minUID, maxUID);
 	xdr_destroy(&xdrs);
@@ -560,7 +560,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".mass").c_str(), "wb");
+	outfile = fopen("star/mass", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.star_min_mass, stats.star_max_mass);
 	xdr_destroy(&xdrs);
@@ -568,7 +568,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".pos").c_str(), "wb");
+	outfile = fopen("star/position", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -576,7 +576,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".vel").c_str(), "wb");
+	outfile = fopen("star/velocity", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -584,7 +584,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".metals").c_str(), "wb");
+	outfile = fopen("star/metals", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.star_min_metals, stats.star_max_metals);
 	xdr_destroy(&xdrs);
@@ -592,7 +592,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".tform").c_str(), "wb");
+	outfile = fopen("star/formationtime", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_tform(&xdrs, fh, particles + 1, stats.star_min_tform, stats.star_max_tform);
 	xdr_destroy(&xdrs);
@@ -600,7 +600,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".softening").c_str(), "wb");
+	outfile = fopen("star/softening", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.star_min_eps, stats.star_max_eps);
 	xdr_destroy(&xdrs);
@@ -608,7 +608,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = float32;
-	outfile = fopen(("star/" + filenamePrefix + ".potential").c_str(), "wb");
+	outfile = fopen("star/potential", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.star_min_phi, stats.star_max_phi);
 	xdr_destroy(&xdrs);
@@ -691,44 +691,44 @@ int main(int argc, const char** argv) {
 	if(h.nsph > 0) {
 		convertGasParticles(basename, r);
 		xmlfile << "\t<family name=\"gas\">\n";
-		xmlfile << "\t\t<attribute name=\"tree\" link=\"gas/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<attribute name=\"uid\" link=\"gas/" << basename << ".uid\"/>\n";
-		xmlfile << "\t\t<attribute name=\"mass\" link=\"gas/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<attribute name=\"position\" link=\"gas/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<attribute name=\"velocity\" link=\"gas/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<attribute name=\"softening\" link=\"gas/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<attribute name=\"potential\" link=\"gas/" << basename << ".potential\"/>\n";
-		xmlfile << "\t\t<attribute name=\"density\" link=\"gas/" << basename << ".density\"/>\n";
-		xmlfile << "\t\t<attribute name=\"temperature\" link=\"gas/" << basename << ".temperature\"/>\n";
-		xmlfile << "\t\t<attribute name=\"metals\" link=\"gas/" << basename << ".metals\"/>\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"gas/tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"gas/uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"gas/mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"gas/position\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"gas/velocity\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"gas/softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"gas/potential\"/>\n";
+		xmlfile << "\t\t<attribute name=\"density\" link=\"gas/density\"/>\n";
+		xmlfile << "\t\t<attribute name=\"temperature\" link=\"gas/temperature\"/>\n";
+		xmlfile << "\t\t<attribute name=\"metals\" link=\"gas/metals\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
 	if(h.ndark > 0) {
 		convertDarkParticles(basename, r);
 		xmlfile << "\t<family name=\"dark\">\n";
-		xmlfile << "\t\t<attribute name=\"tree\" link=\"dark/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<attribute name=\"uid\" link=\"dark/" << basename << ".uid\"/>\n";
-		xmlfile << "\t\t<attribute name=\"mass\" link=\"dark/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<attribute name=\"position\" link=\"dark/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<attribute name=\"velocity\" link=\"dark/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<attribute name=\"softening\" link=\"dark/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<attribute name=\"potential\" link=\"dark/" << basename << ".potential\"/>\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"dark/tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"dark/uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"dark/mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"dark/position\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"dark/velocity\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"dark/softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"dark/potential\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
 	if(h.nstar > 0) {
 		convertStarParticles(basename, r);
 		xmlfile << "\t<family name=\"star\">\n";
-		xmlfile << "\t\t<attribute name=\"tree\" link=\"star/" << basename << ".tree\"/>\n";
-		xmlfile << "\t\t<attribute name=\"uid\" link=\"star/" << basename << ".uid\"/>\n";
-		xmlfile << "\t\t<attribute name=\"mass\" link=\"star/" << basename << ".mass\"/>\n";
-		xmlfile << "\t\t<attribute name=\"position\" link=\"star/" << basename << ".pos\"/>\n";
-		xmlfile << "\t\t<attribute name=\"velocity\" link=\"star/" << basename << ".vel\"/>\n";
-		xmlfile << "\t\t<attribute name=\"softening\" link=\"star/" << basename << ".softening\"/>\n";
-		xmlfile << "\t\t<attribute name=\"potential\" link=\"star/" << basename << ".potential\"/>\n";
-		xmlfile << "\t\t<attribute name=\"metals\" link=\"star/" << basename << ".metals\"/>\n";
-		xmlfile << "\t\t<attribute name=\"formationtime\" link=\"star/" << basename << ".tform\"/>\n";
+		xmlfile << "\t\t<attribute name=\"tree\" link=\"star/tree\"/>\n";
+		xmlfile << "\t\t<attribute name=\"uid\" link=\"star/uid\"/>\n";
+		xmlfile << "\t\t<attribute name=\"mass\" link=\"star/mass\"/>\n";
+		xmlfile << "\t\t<attribute name=\"position\" link=\"star/position\"/>\n";
+		xmlfile << "\t\t<attribute name=\"velocity\" link=\"star/velocity\"/>\n";
+		xmlfile << "\t\t<attribute name=\"softening\" link=\"star/softening\"/>\n";
+		xmlfile << "\t\t<attribute name=\"potential\" link=\"star/potential\"/>\n";
+		xmlfile << "\t\t<attribute name=\"metals\" link=\"star/metals\"/>\n";
+		xmlfile << "\t\t<attribute name=\"formationtime\" link=\"star/formationtime\"/>\n";
 		xmlfile << "\t</family>\n";
 	}
 	
