@@ -190,6 +190,12 @@ public:
 				|| box1.lesser_corner.z > box2.greater_corner.z || box1.greater_corner.z < box2.lesser_corner.z);
 	}
 	
+	/// Do two spheres intersect
+	template <typename T, typename T2>
+	static bool intersect(const Sphere<T>& s1, const Sphere<T2>& s2) {
+		return distance(s1.origin, s2.origin) <= s1.radius + s2.radius;
+	}
+	
 	/// Do an oriented box and a sphere intersect
 	template <typename T, typename T2>
 	static bool intersect(const OrientedBox<T>& b, const Sphere<T2>& s) {
