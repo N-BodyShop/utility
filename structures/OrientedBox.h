@@ -53,6 +53,10 @@ public:
 	
 	~OrientedBox() { }
 	
+	inline bool initialized() const {
+		return lesser_corner.x <= greater_corner.x && lesser_corner.y <= greater_corner.y && lesser_corner.z <= greater_corner.z;
+	}
+	
 	OrientedBox<T>& operator=(const OrientedBox<T>& b) {
 		lesser_corner = b.lesser_corner;
 		greater_corner = b.greater_corner;
