@@ -93,7 +93,7 @@ public:
 	/// Use this instead of a copy constructor
 	void takeOverStream(TipsyReader& r) {
 		native = r.native;
-		ok = r.native;
+		ok = r.ok;
 		numGasRead = r.numGasRead;
 		numDarksRead = r.numDarksRead;
 		numStarsRead = r.numStarsRead;
