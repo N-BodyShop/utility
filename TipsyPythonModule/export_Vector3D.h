@@ -17,9 +17,9 @@ std::string bare(const Vector3D<T>& v) {
 }
 
 template <typename T>
-void export_Vector3D() {
+void export_Vector3D(char const* className = "Vector3D") {
 	
-	class_<Vector3D<T> >("Vector3D", "A Cartesian vector in three dimensions", init<T, T, T>())
+	class_<Vector3D<T> >(className, "A Cartesian vector in three dimensions", init<T, T, T>())
 		.def(init<>())
 		.def(init<const Vector3D<T>&>())
 		.def_readwrite("x", &Vector3D<T>::x)

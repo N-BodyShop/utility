@@ -3,4 +3,4 @@
 
 # Edit this path to point at the tools/build/v1 subdirectory of your
 # Boost installation.  Absolute paths work, too.
-boost-build /users/gwl/Projects/boost/tools/build/v1 ;
+boost-build $(HOME)/Projects/boost/tools/build/v1 ;

@@ -6,6 +6,7 @@ project-root ;
 # Include definitions needed for Python modules
 import python ;
 
+# Make sure these names correspond to the shared libraries that Boost.Python built
 template external-boost_python 
 	: : <debug><find-library>boost_python-gcc-d
 	<release><find-library>boost_python-gcc
@@ -20,6 +21,7 @@ extension TipsyFile
 	export_TipsyParticles.cpp
 	export_TipsyReader.cpp
 	export_TipsyFile.cpp
+	export_SS.cpp
 	<template>external-boost_python
 	:
 	<include>../structures

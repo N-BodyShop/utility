@@ -6,7 +6,7 @@
 # one containing a subdirectory called "boost/" and a sub-subdirectory
 # "boost/python/" full of .hpp files).  Absolute paths work, too.
 #
-path-global BOOST_ROOT : /users/gwl/Projects/boost ;
+path-global BOOST_ROOT : $(HOME)/Projects/boost ;
 
 # Boost.Python configuration variables, as described in
 # http://www.boost.org/libs/python/doc/building.html#configuration.
