@@ -10,10 +10,6 @@
 #define INTERPOLATE_H
 
 #include <vector>
-#include <algorithm>
-
-using std::vector;
-using std::copy;
 
 /**
  * This class does linear interpolation on a data set with function values 
@@ -29,9 +25,9 @@ class LinearInterpolator {
 private:
 	
 	bool ready;
-	vector<T> indeps;
-	vector<T> deps;
-	vector<T> coefs;
+	std::vector<T> indeps;
+	std::vector<T> deps;
+	std::vector<T> coefs;
 	unsigned int size;
 	mutable int klo, khi;
 	
@@ -111,7 +107,7 @@ class BilinearInterpolator {
 	bool ready;
 	T min_x, min_y, max_x, max_y;
 	unsigned int num_x, num_y;
-	vector<T> deps;
+	std::vector<T> deps;
 	T delta_x, delta_y;
 	mutable int klo_x, khi_x, klo_y, khi_y;
 	
@@ -122,6 +118,7 @@ public:
 		ready = false;
 	}
 	
+	/// Values are specified at the center of equally spaced bins (min/max specify the edge of the boundary grid cells)
 	template <typename Iterator>
 	BilinearInterpolator(T xmin, T ymin, T xmax, T ymax, 
 			unsigned int nx, unsigned int ny, 
@@ -236,9 +233,9 @@ class SplineInterpolator {
 private:
 	
 	bool ready;
-	vector<T> indeps;
-	vector<T> deps;
-	vector<T> secondDerivs;
+	std::vector<T> indeps;
+	std::vector<T> deps;
+	std::vector<T> secondDerivs;
 	T beginFirstDeriv;
 	T endFirstDeriv;
 	unsigned int size;
@@ -268,13 +265,13 @@ public:
 		
 		secondDerivs.assign(size, 0);
 		
-		vector<T> u(size - 1);
+		std::vector<T> u(size - 1);
 		T sig, p, qn, un;
 		
 		secondDerivs[0] = -0.5;
 		u[0] = (3.0 / (indeps[1] - indeps[0])) * ((deps[1] - deps[0]) / (indeps[1] - indeps[0]) - beginFirstDeriv);
 
-		for(int i = 1; i < size - 1; i++) {
+		for(unsigned int i = 1; i < size - 1; i++) {
 			sig = (indeps[i] - indeps[i - 1]) / (indeps[i + 1] - indeps[i - 1]);
 			p = sig * secondDerivs[i - 1] + 2.0;
 			secondDerivs[i] = (sig - 1.0) / p;
@@ -316,7 +313,7 @@ public:
 		
 		secondDerivs.assign(size, 0);
 		
-		vector<T> u(size - 1);
+		std::vector<T> u(size - 1);
 		T sig, p;
 		
 		secondDerivs[0] = 0;
@@ -394,9 +391,9 @@ class SplineDerivative {
 private:
 	
 	bool ready;
-	vector<T> indeps;
-	vector<T> deps;
-	vector<T> secondDerivs;
+	std::vector<T> indeps;
+	std::vector<T> deps;
+	std::vector<T> secondDerivs;
 	T beginFirstDeriv;
 	T endFirstDeriv;
 	unsigned int size;
