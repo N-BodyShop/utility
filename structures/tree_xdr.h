@@ -487,6 +487,68 @@ inline bool readAttributes(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int
 	}
 }
 
+template <typename T, typename PromotedT>
+inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int64_t N, const u_int64_t start = 0) {
+	//seek to just past the header
+	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes))
+		//throw FileReadException;
+		return false;
+	
+	//read the values in, then convert them to the promoted type
+		
+	//allocate for and read the minimum value
+	PromotedT* minVal = new PromotedT;
+	T value;
+	if(!xdr_template(xdrs, &value)) {
+		delete minVal;
+		//throw FileReadException;
+		return false;
+	}
+	*minVal = value;
+	//set the minimum value
+	arr.minValue = minVal;
+	//allocate for and read the maximum value
+	PromotedT* maxVal = new PromotedT;
+	if(!xdr_template(xdrs, &value)) {
+		delete maxVal;
+		//throw FileReadException;
+		return false;
+	}
+	*maxVal = value;
+	//set the minimum value
+	arr.maxValue = maxVal;
+	
+	PromotedT* data = 0;
+	if(*minVal == *maxVal) {
+		//all values are the same (file doesn't contain replicas of the value)
+		data = new PromotedT[N];
+		for(u_int64_t i = 0; i < N; ++i)
+			data[i] = *minVal;
+	} else if(N != 0) {
+		//seek to the starting value
+		if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code)))
+			//throw FileReadException;
+			return false;
+		//allocate for the array of values
+		data = new PromotedT[N];
+		for(u_int64_t i = 0; i < N; ++i) {
+			if(!xdr_template(xdrs, &value)) {
+				delete[] data;
+				//throw FileReadException;
+				return false;
+			}
+			data[i] = value;
+		}
+	}
+	//set the array of values
+	arr.data = data;
+	arr.length = N;
+	//set the type of the array to the promoted type
+	arr.type = TypeHandling::Type2Code<PromotedT>::code;
+	
+	return true;
+}
+
 template <typename T>
 inline bool writeAttributes_typed(XDR* xdrs, const TypeHandling::TypedArray& arr) {
 	FieldHeader fh(arr);
