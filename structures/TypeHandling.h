@@ -57,6 +57,59 @@ struct Type2Type {
 	typedef T OriginalType;
 };
 
+template <DataTypeCode code>
+struct Code2Type { };
+
+template <>
+struct Code2Type<int8> {
+	typedef char type;
+};
+
+template <>
+struct Code2Type<uint8> {
+	typedef unsigned char type;
+};
+
+template <>
+struct Code2Type<int16> {
+	typedef short type;
+};
+
+template <>
+struct Code2Type<uint16> {
+	typedef unsigned short type;
+};
+
+template <>
+struct Code2Type<int32> {
+	typedef int type;
+};
+
+template <>
+struct Code2Type<uint32> {
+	typedef unsigned int type;
+};
+
+template <>
+struct Code2Type<int64> {
+	typedef int64_t type;
+};
+
+template <>
+struct Code2Type<uint64> {
+	typedef u_int64_t type;
+};
+
+template <>
+struct Code2Type<float32> {
+	typedef float type;
+};
+
+template <>
+struct Code2Type<float64> {
+	typedef double type;
+};
+
 /** This template not yet complete. 
 template <typename T>
 struct MinMaxValues;
@@ -216,6 +269,35 @@ inline bool checkType(const TypeInformation& info) {
 	return (Type2Dimensions<T>::dimensions == info.dimensions && Type2Code<T>::code == info.code);
 }
 
+/*
+namespace detail {
+
+struct Releaser : public static_visitor<> {
+	template <typename T>
+	void operator()(ArrayWithLimits<T>& array) const {
+		array.release();
+	}
+};
+
+class Allocator : public static_visitor<> {
+	const u_int64_t N;
+public:
+	Allocator(const u_int64_t size) : N(size) { }
+
+	template <typename T>
+	void operator()(ArrayWithLimits<T>& array) const {
+		array.allocate(N);
+	}
+};
+
+}
+
+bool allocateArray(variant_type& v, const u_int64_t N) {
+	apply_visitor(Allocator(N), v);
+}
+
+*/
+		
 template <typename T>
 inline void* allocateArray(const unsigned int dimensions, const u_int64_t N) {
 	if(dimensions == 1)
