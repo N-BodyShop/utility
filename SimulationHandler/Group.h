@@ -261,6 +261,139 @@ boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, std::st
 	return p;
 }
 
+template <typename T>
+class SphericalIterator : public GroupIteratorInstance {
+	template <typename>
+	friend class SphericalGroup;
+	
+	u_int64_t index;
+	Vector3D<T> centerVector;
+	T radiusValue;
+	Vector3D<T> const* array; //bare pointer is okay here, default copy constructor will do what we want
+	u_int64_t length;
+	
+	void resetBegin() {
+		for(index = 0; index < length && ((array[index]-centerVector).length() > radiusValue); ++index);
+	}
+
+public:
+	
+	SphericalIterator(u_int64_t start, Vector3D<T> centerVector_, T radiusValue_, Vector3D<T> const* array_, u_int64_t length_) : index(start), centerVector(centerVector_), radiusValue(radiusValue_), array(array_), length(length_) { }
+
+	void increment() {
+		if(index >= length - 1)
+			index = length;
+		else
+			for(++index; index < length && ((array[index]-centerVector).length() > radiusValue); ++index);
+	}
+	
+	bool equal(GroupIteratorInstance* const& other) const {
+		if(SphericalIterator* const o = dynamic_cast<SphericalIterator* const>(other))
+			return centerVector == o->centerVector && radiusValue == o->radiusValue && array == o->array && index == o->index;
+		else
+			return false;
+	}
+	
+	u_int64_t dereference() const {
+		return index;
+	}
+};
+
+template <typename T>
+class SphericalGroup : public Group {
+	Simulation const& sim;
+	std::string attributeName;
+	Vector3D<T> centerVector;
+	T radiusValue;
+public:
+		
+	SphericalGroup(Simulation const& s, std::string const& attributeName_, Vector3D<T> centerVector_, T radiusValue_) : sim(s), attributeName(attributeName_), centerVector(centerVector_), radiusValue(radiusValue_) {
+		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
+			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+			if(attrIter != simIter->second.attributes.end())
+				families.push_back(simIter->first);
+		}
+	}
+	
+	GroupIterator make_begin_iterator(std::string const& familyName) {
+		boost::shared_ptr<SphericalIterator<T> > p;
+		Simulation::const_iterator simIter = sim.find(familyName);
+		if(simIter == sim.end()) {
+		    Vector3D<T> tmp(0,0,0);
+		    p.reset(new SphericalIterator<T>(0, tmp, 0, 0, 0));
+		    }
+		else {
+			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+			TypedArray const& array = attrIter->second;
+			p.reset(new SphericalIterator<T>(0, centerVector, radiusValue, array.getArray(Type2Type<Vector3D<T> >()), array.length));
+			p->resetBegin();
+		}
+		return GroupIterator(p);
+	}
+
+	GroupIterator make_end_iterator(std::string const& familyName) {
+		boost::shared_ptr<SphericalIterator<T> > p;
+		Simulation::const_iterator simIter = sim.find(familyName);
+		if(simIter == sim.end()) {
+		    Vector3D<T> tmp(0,0,0);
+		    p.reset(new SphericalIterator<T>(0, tmp, 0, 0, 0));
+		    }
+		else {
+			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+			TypedArray const& array = attrIter->second;
+			p.reset(new SphericalIterator<T>(array.length, centerVector, radiusValue, array.getArray(Type2Type<Vector3D<T> >()), array.length));
+		}
+		return GroupIterator(p);
+	}
+};
+
+boost::shared_ptr<Group> make_SphericalGroup(Simulation const& sim, std::string const& attributeName, Vector3D<double> centerVector, double radiusValue) {
+	boost::shared_ptr<Group> p;
+	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
+		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+		if(attrIter != simIter->second.attributes.end()) {
+			//found a family with the attribute
+			TypedArray const& arr = attrIter->second;
+			if(arr.dimensions == 1) {
+				switch(arr.code) {
+					case int8:
+						p.reset(new SphericalGroup<Code2Type<int8>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<int8>::type> >(centerVector), static_cast<Code2Type<int8>::type>(radiusValue)));
+						break;
+					case uint8:
+						p.reset(new SphericalGroup<Code2Type<uint8>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<uint8>::type> >(centerVector), static_cast<Code2Type<uint8>::type>(radiusValue)));
+						break;
+					case int16:
+						p.reset(new SphericalGroup<Code2Type<int16>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<int16>::type> >(centerVector), static_cast<Code2Type<int16>::type>(radiusValue)));
+						break;
+					case uint16:
+						p.reset(new SphericalGroup<Code2Type<uint16>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<uint16>::type> >(centerVector), static_cast<Code2Type<uint16>::type>(radiusValue)));
+						break;
+					case int32:
+						p.reset(new SphericalGroup<Code2Type<int32>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<int32>::type> >(centerVector), static_cast<Code2Type<int32>::type>(radiusValue)));
+						break;
+					case uint32:
+						p.reset(new SphericalGroup<Code2Type<uint32>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<uint32>::type> >(centerVector), static_cast<Code2Type<uint32>::type>(radiusValue)));
+						break;
+					case int64:
+						p.reset(new SphericalGroup<Code2Type<int64>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<int64>::type> >(centerVector), static_cast<Code2Type<int64>::type>(radiusValue)));
+						break;
+					case uint64:
+						p.reset(new SphericalGroup<Code2Type<uint64>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<uint64>::type> >(centerVector), static_cast<Code2Type<uint64>::type>(radiusValue)));
+						break;
+					case float32:
+						p.reset(new SphericalGroup<Code2Type<float32>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<float32>::type> >(centerVector), static_cast<Code2Type<float32>::type>(radiusValue)));
+						break;
+					case float64:
+						p.reset(new SphericalGroup<Code2Type<float64>::type>(sim, attributeName, static_cast<Vector3D<Code2Type<float64>::type> >(centerVector), static_cast<Code2Type<float64>::type>(radiusValue)));
+						break;
+				}
+			}
+			break;
+		}
+	}
+	return p;
+}
+
 class FamilyGroup : public Group {
 	Simulation const& sim;
 public:
