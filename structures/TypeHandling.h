@@ -51,6 +51,12 @@ inline std::ostream& operator<<(std::ostream& os, DataTypeCode code) {
 	}
 }
 
+//This struct exists only to be a placeholder to allow template functions to be overloaded
+template <typename T>
+struct Type2Type {
+	typedef T OriginalType;
+};
+
 /** This template not yet complete. 
 template <typename T>
 struct MinMaxValues;
@@ -166,7 +172,6 @@ struct Type2Code<u_int64_t> {
 template <>
 struct Type2Code<float> {
 	const static DataTypeCode code = float32;
-	const static int bob = 34;
 };
 
 template <>
