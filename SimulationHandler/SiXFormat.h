@@ -29,7 +29,7 @@ public:
 
 	bool loadFromXMLFile(std::string directoryname);
 	
-	virtual bool loadAttribute(const std::string& familyName, const std::string& attributeName, u_int64_t numParticles = 0, const u_int64_t startParticle = 0);
+	virtual bool loadAttribute(const std::string& familyName, const std::string& attributeName, int64_t numParticles = 0, const u_int64_t startParticle = 0);
 	
 	virtual void startElement(const XMLCh *const uri, const XMLCh *const localname, const XMLCh *const qname, const Attributes& attrs);
 	virtual void endElement(const XMLCh *const uri, const XMLCh* const localname, const XMLCh *const qname);

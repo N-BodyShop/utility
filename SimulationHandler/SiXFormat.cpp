@@ -23,6 +23,10 @@ SiXFormatReader::SiXFormatReader(const string& directoryname) {
 }
 
 bool SiXFormatReader::loadFromXMLFile(string directoryname) {
+	//erase any previous contents
+	release();
+	clear();
+	
 	//remove any trailing slash
 	if(directoryname.at(directoryname.size() - 1) == '/')
 		directoryname.erase(directoryname.size() - 1, 1);
@@ -141,11 +145,14 @@ void SiXFormatReader::endElement(const XMLCh *const uri, const XMLCh *const loca
 	}
 }
 
-bool SiXFormatReader::loadAttribute(const string& familyName, const string& attributeName, u_int64_t numParticles, const u_int64_t startParticle) {
+bool SiXFormatReader::loadAttribute(const string& familyName, const string& attributeName, int64_t numParticles, const u_int64_t startParticle) {
 	iterator familyIter = find(familyName);
 	if(familyIter == end())
 		return false;
 	ParticleFamily& family = familyIter->second;
+	//if asked for a negative number of particles, load them all
+	if(numParticles < 0)
+		numParticles = family.count.totalNumParticles;
 	//is this the first attribute loaded?
 	if(family.count.numParticles == 0) {
 		family.count.numParticles = numParticles;

@@ -4,12 +4,13 @@
  @version 1.0
  */
  
-#ifndef SIMULATION_H
-#define SIMULATION_H
+#ifndef SIMULATION_H__iunfediunhtew8976378042iuhnrvge9o43
+#define SIMULATION_H__iunfediunhtew8976378042iuhnrvge9o43
 
 #include <string>
 #include <map>
 #include <list>
+#include <vector>
 
 #include <sys/types.h>
 
@@ -28,18 +29,23 @@ struct ParticleCount {
 };
 
 typedef std::map<std::string, TypedArray> AttributeMap;
+typedef std::vector<u_int64_t> ParticleGroup;
 
+/** A ParticleFamily represents a group of attributes that particles
+ have in common.
+ */
 class ParticleFamily {
 public:
 
 	std::string familyName;
 	ParticleCount count;
 	AttributeMap attributes;
+	std::map<std::string, ParticleGroup> groups;
 	
 	ParticleFamily(const std::string& name = "") : familyName(name) { }
 	
 	template <typename T>
-	T* getAttribute(const std::string& attributeName) {
+	T* getAttribute(const std::string& attributeName, Type2Type<T> bob = Type2Type<T>()) {
 		AttributeMap::iterator iter = attributes.find(attributeName);
 		if(iter == attributes.end())
 			return 0;
@@ -47,12 +53,18 @@ public:
 	}
 	
 	void addAttribute(const std::string& attributeName, const TypeHandling::TypedArray& arr) {
+		AttributeMap::iterator iter = attributes.find(attributeName);
+		if(iter != attributes.end())
+			iter->second.release();
 		if(arr.length == count.numParticles)
 			attributes[attributeName] = arr;
 	}
 	
 	template <typename T>
 	void addAttribute(const std::string& attributeName, T* data) {
+		AttributeMap::iterator iter = attributes.find(attributeName);
+		if(iter != attributes.end())
+			iter->second.release();
 		TypeHandling::TypedArray& arr = attributes[attributeName];
 		arr.dimensions = Type2Dimensions<T>::dimensions;
 		arr.code = Type2Code<T>::code;
@@ -73,8 +85,102 @@ public:
 		for(AttributeMap::iterator iter = attributes.begin(); iter != attributes.end(); ++iter)
 			iter->second.release();
 	}
+	
+	template <typename T>
+	ParticleGroup& createGroup(const std::string& groupName, const std::string& attributeName, T minValue, T maxValue) {
+		ParticleGroup& g = groups[groupName];
+		g.clear();
+		if(T* values = getAttribute(attributeName, Type2Type<T>())) {
+			for(u_int64_t i = 0; i < count.numParticles; ++i) {
+				if(minValue <= values[i] && values[i] <= maxValue)
+					g.push_back(i);
+			}
+		}
+		return g;
+	}
+
+	template <typename T>
+	ParticleGroup& createGroup(const std::string& groupName, const std::string& attributeName, Vector3D<T> minValue, Vector3D<T> maxValue) {
+		ParticleGroup& g = groups[groupName];
+		g.clear();
+		if(Vector3D<T>* values = getAttribute(attributeName, Type2Type<Vector3D<T> >())) {
+			OrientedBox<T> box(minValue, maxValue);
+			for(u_int64_t i = 0; i < count.numParticles; ++i) {
+				if(box.contains(values[i]))
+					g.push_back(i);
+			}
+		}
+		return g;
+	}
+	
+	ParticleGroup& createGroup(const std::string& groupName, const std::string& attributeName, void* minData, void* maxData) {
+		ParticleGroup& g = groups[groupName];
+		g.clear();
+		AttributeMap::iterator iter = attributes.find(attributeName);
+		if(iter == attributes.end())
+			return g;
+		switch(iter->second.dimensions) {
+			case 1:
+				switch(iter->second.code) {
+					case int8:
+						return createGroup(groupName, attributeName, *static_cast<char *>(minData), *static_cast<char *>(maxData));
+					case uint8:
+						return createGroup(groupName, attributeName, *static_cast<unsigned char *>(minData), *static_cast<unsigned char *>(maxData));
+					case int16:
+						return createGroup(groupName, attributeName, *static_cast<short *>(minData), *static_cast<short *>(maxData));
+					case uint16:
+						return createGroup(groupName, attributeName, *static_cast<unsigned short *>(minData), *static_cast<unsigned short *>(maxData));
+					case int32:
+						return createGroup(groupName, attributeName, *static_cast<int *>(minData), *static_cast<int *>(maxData));
+					case uint32:
+						return createGroup(groupName, attributeName, *static_cast<unsigned int *>(minData), *static_cast<unsigned int *>(maxData));
+					case int64:
+						return createGroup(groupName, attributeName, *static_cast<int64_t *>(minData), *static_cast<int64_t *>(maxData));
+					case uint64:
+						return createGroup(groupName, attributeName, *static_cast<u_int64_t *>(minData), *static_cast<u_int64_t *>(maxData));
+					case float32:
+						return createGroup(groupName, attributeName, *static_cast<float *>(minData), *static_cast<float *>(maxData));
+					case float64:
+						return createGroup(groupName, attributeName, *static_cast<double *>(minData), *static_cast<double *>(maxData));
+				}
+				break;
+			case 3:
+				switch(iter->second.code) {
+					case int8:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<char> *>(minData), *static_cast<Vector3D<char> *>(maxData));
+					case uint8:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<unsigned char> *>(minData), *static_cast<Vector3D<unsigned char> *>(maxData));
+					case int16:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<short> *>(minData), *static_cast<Vector3D<short> *>(maxData));
+					case uint16:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<unsigned short> *>(minData), *static_cast<Vector3D<unsigned short> *>(maxData));
+					case int32:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<int> *>(minData), *static_cast<Vector3D<int> *>(maxData));
+					case uint32:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<unsigned int> *>(minData), *static_cast<Vector3D<unsigned int> *>(maxData));
+					case int64:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<int64_t> *>(minData), *static_cast<Vector3D<int64_t> *>(maxData));
+					case uint64:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<u_int64_t> *>(minData), *static_cast<Vector3D<u_int64_t> *>(maxData));
+					case float32:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<float> *>(minData), *static_cast<Vector3D<float> *>(maxData));
+					case float64:
+						return createGroup(groupName, attributeName, *static_cast<Vector3D<double> *>(minData), *static_cast<Vector3D<double> *>(maxData));
+				}
+				break;
+		}
+		return g;
+	}
+	
 };
 
+/** Represents a simulation as a collection of families.
+ Simulation objects are created by subclasses, and then manipulated using
+ this interface.  When a Simulation object has been created, it should
+ hold all the families, the count for each family, and the type, dimensionality
+ and min/max of each family's attributes.  The actual values should not
+ be loaded until calls to loadAttribute().
+ */
 class Simulation : public std::map<std::string, ParticleFamily> {
 public:
 		
@@ -85,7 +191,7 @@ public:
 	}
 	
 	/// A sub-class implements the loading of values for a particular attribute
-	virtual bool loadAttribute(const std::string& familyName, const std::string& attributeName, u_int64_t numParticles = 0, const u_int64_t startParticle = 0) = 0;
+	virtual bool loadAttribute(const std::string& familyName, const std::string& attributeName, int64_t numParticles = 0, const u_int64_t startParticle = 0) = 0;
 
 	void release() {
 		for(iterator iter = begin(); iter != end(); ++iter)
@@ -122,4 +228,4 @@ public:
 
 } //close namespace SimulationHandling
 
-#endif //SIMULATION_H
+#endif //SIMULATION_H__iunfediunhtew8976378042iuhnrvge9o43
