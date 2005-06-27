@@ -6,6 +6,7 @@
  the precise IEEE representation of 32-bit floating point numbers.
  */
 
+#include "config.h"
 #include "SFC.h"
 
 namespace SFC {

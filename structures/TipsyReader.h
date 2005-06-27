@@ -62,6 +62,7 @@ class TipsyReader {
 	header h;
 	
 	bool responsible;
+ public:
 	std::istream* tipsyStream;
 	
 	bool loadHeader();

@@ -7,6 +7,7 @@
 
 #include <limits>
 
+#include "config.h"
 #include "xdr_template.h"
 
 #include "SS.h"

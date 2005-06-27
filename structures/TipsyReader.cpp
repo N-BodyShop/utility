@@ -4,6 +4,7 @@
  @version 1.0
  */
 
+#include "config.h"
 #include "xdr_template.h"
 
 #include "TipsyReader.h"
@@ -301,23 +302,29 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 	if(c[3] == bob || !native) //we're big-endian, can't do xdr from little-endian
 		padSize = 4;
 
-	unsigned int preface = header::sizeBytes + padSize;
+	std::streamoff preface = header::sizeBytes + padSize;
+	std::streamoff num_off = num;  // promote to possibly larger type
 	if(num < h.nsph) {
-		tipsyStream->seekg(preface + num * gas_particle::sizeBytes);
+		tipsyStream->seekg(preface + num_off*gas_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = num;
 		numDarksRead = 0;
 		numStarsRead = 0;
 	} else if(num < h.nsph + h.ndark) {
-		tipsyStream->seekg(preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes);
+		tipsyStream->seekg(preface
+			+ ((std::streamoff)h.nsph) * gas_particle::sizeBytes
+			+ (num_off - h.nsph) * dark_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = h.nsph;
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
 	} else if(num < h.nsph + h.ndark + h.nstar) {
-		tipsyStream->seekg(preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes);
+		tipsyStream->seekg(preface
+			+ ((std::streamoff)h.nsph) * gas_particle::sizeBytes
+			+ ((std::streamoff)h.ndark) * dark_particle::sizeBytes
+			+ (num - h.ndark - h.nsph) * star_particle::sizeBytes);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = h.nsph;
