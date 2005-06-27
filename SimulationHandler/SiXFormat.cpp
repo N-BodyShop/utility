@@ -5,6 +5,7 @@
  @version 1.0
  */
 
+#include "config.h"
 #include <fstream>
 
 #include <xercesc/util/PlatformUtils.hpp>

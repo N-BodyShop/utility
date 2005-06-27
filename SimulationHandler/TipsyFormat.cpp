@@ -4,6 +4,7 @@
  @version 1.0
  */
  
+#include "config.h"
 #include "TipsyFormat.h"
 
 namespace SimulationHandling {
@@ -132,8 +133,10 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			family.addAttribute("softening", softenings);
 			family.addAttribute("potential", potentials);
 		} else if(familyName == "dark") {
-			if(!r.seekParticleNum(startParticle + h.nsph))
-				return false;
+			if(!r.seekParticleNum(startParticle + h.nsph)) {
+			    cerr << "dark SEEK FAILED" << endl;
+			    return false;
+			    }
 			float* masses = new float[numParticles];
 			Vector3D<float>* positions = new Vector3D<float>[numParticles];
 			Vector3D<float>* velocities = new Vector3D<float>[numParticles];
