@@ -11,6 +11,8 @@
 
 namespace SFC {
 
+  float exchangeKey[3];
+
 /// Out of three floats, make a Morton order (z-order) space-filling curve key
 // Cannot make this function inline, or g++ with -O2 or higher generates incorrect code
 /** Given the floating point numbers for the location, construct the key. 
@@ -20,10 +22,10 @@ namespace SFC {
  in xyz order to form the key.  This makes the key a position on the z-ordering
  space-filling curve. 
  */
-Key makeKey(Vector3D<float> v) {
-	unsigned int ix = *reinterpret_cast<unsigned int *>(&v.x);
-	unsigned int iy = *reinterpret_cast<unsigned int *>(&v.y);
-	unsigned int iz = *reinterpret_cast<unsigned int *>(&v.z);
+Key makeKey() {
+  unsigned int ix = *reinterpret_cast<unsigned int *>(&exchangeKey[0]);
+  unsigned int iy = *reinterpret_cast<unsigned int *>(&exchangeKey[1]);
+  unsigned int iz = *reinterpret_cast<unsigned int *>(&exchangeKey[2]);
 	Key key = 0;
 	for(unsigned int mask = (1 << 22); mask > 2; mask >>= 1) {
 		key <<= 3;
@@ -35,6 +37,14 @@ Key makeKey(Vector3D<float> v) {
 			key += 1;
 	}
 	return key;
+}
+
+Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& boundingBox) {
+  Vector3D<float> d = (v - boundingBox.lesser_corner) / (boundingBox.greater_corner - boundingBox.lesser_corner) + Vector3D<float>(1, 1, 1);
+  exchangeKey[0] = d.x;
+  exchangeKey[1] = d.y;
+  exchangeKey[2] = d.z;
+  return makeKey();
 }
 
 /** Given a key, create a vector of floats representing a position.

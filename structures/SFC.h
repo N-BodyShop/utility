@@ -59,21 +59,16 @@ const Key firstPossibleKey = static_cast<Key>(0);
 /** The very last possible key a particle can take on. */
 const Key lastPossibleKey = ~(static_cast<Key>(1) << 63);
 
-
-template <typename T, typename T2>
-inline Key generateKey(const Vector3D<T>& v, const OrientedBox<T2>& boundingBox) {
-	return makeKey((v - boundingBox.lesser_corner) / (boundingBox.greater_corner - boundingBox.lesser_corner) + Vector3D<T>(1, 1, 1));
-}
-
 /** Given the floating point numbers for the location, construct the key. 
  The key uses 21 of the 23 bits for the floats of the x, y, and z coordinates
  of the position vector.  This process will only make sense if the position
  coordinates are in the range [1,2).  The mantissa bits are taken, and interleaved
  in xyz order to form the key.  This makes the key a position on the z-ordering
  space-filling curve. 
+ The second parameter is the bounding Box used to normalize the position vectors
+ between 1 and 2.
  */
-Key makeKey(Vector3D<float> v);
-
+Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& boundingBox);
 /** Given a key, create a vector of floats representing a position.
  This is almost the inverse of the makeKey() function.  Since the key
  does not use all the bits, each float generated here will have its last

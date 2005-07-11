@@ -17,7 +17,7 @@ TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_tem
 SS.o: xdr_template.h Vector3D.h
 
 SFC.o: SFC.cpp SFC.h
-	$(CXX) $(CXXFLAGS) -ffloat-store -c SFC.cpp
+	$(CXX) -O -ffloat-store -c SFC.cpp
 
 browse see_header random_sample: libTipsy.a
 
