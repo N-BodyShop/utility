@@ -11,6 +11,7 @@
 #include <iostream>
 #include <string>
 #include <sstream>
+class CkOStream;
 
 #include "Shape.h"
 #include "Vector3D.h"
@@ -109,6 +110,10 @@ public:
 	
 	/// Output operator, used for formatted display
 	friend std::ostream& operator<< (std::ostream& os, const OrientedBox<T>& b) {
+		os << '{' << b.lesser_corner << ',' << b.greater_corner << '}';
+		return os;
+	}
+	friend CkOStream& operator<< (CkOStream& os, const OrientedBox<T>& b) {
 		os << '{' << b.lesser_corner << ',' << b.greater_corner << '}';
 		return os;
 	}

@@ -10,6 +10,7 @@
 #define VECTOR3D_H
 
 #include <iostream> //for formatted output
+class CkOStream;
 #include <cmath> //for sqrt()
 
 #include "TypeSelection.h"
@@ -226,6 +227,12 @@ inline Vector3D<typename wider<T, T2>::widerType> cross(const Vector3D<T>& a, co
 /// Output operator, used for formatted display
 template <typename T>
 inline std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v) {
+	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
+	//os << v.x << delim << v.y << delim << v.z;
+	return os;
+}
+template <typename T>
+inline CkOStream& operator<<(CkOStream& os, const Vector3D<T>& v) {
 	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
 	//os << v.x << delim << v.y << delim << v.z;
 	return os;
