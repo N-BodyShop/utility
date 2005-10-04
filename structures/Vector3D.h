@@ -10,7 +10,6 @@
 #define VECTOR3D_H
 
 #include <iostream> //for formatted output
-class CkOStream;
 #include <cmath> //for sqrt()
 
 #include "TypeSelection.h"
@@ -231,12 +230,6 @@ inline std::ostream& operator<<(std::ostream& os, const Vector3D<T>& v) {
 	//os << v.x << delim << v.y << delim << v.z;
 	return os;
 }
-template <typename T>
-inline CkOStream& operator<<(CkOStream& os, const Vector3D<T>& v) {
-	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
-	//os << v.x << delim << v.y << delim << v.z;
-	return os;
-}
 
 template <typename T>
 inline std::istream& operator>>(std::istream& is, Vector3D<T>& v) {
@@ -342,6 +335,13 @@ inline void operator|(PUP::er& p, Vector3D<T>& v) {
 	p | v.z;
 }
 
+class CkOStream;
+template <typename T>
+inline CkOStream& operator<<(CkOStream& os, const Vector3D<T>& v) {
+	os << '(' << v.x << ' ' << v.y << ' ' << v.z << ')';
+	//os << v.x << delim << v.y << delim << v.z;
+	return os;
+}
 #endif //__CHARMC__
 
 #endif //VECTOR3D_H

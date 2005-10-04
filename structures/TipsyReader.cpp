@@ -302,29 +302,27 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 	if(c[3] == bob || !native) //we're big-endian, can't do xdr from little-endian
 		padSize = 4;
 
-	std::streamoff preface = header::sizeBytes + padSize;
-	std::streamoff num_off = num;  // promote to possibly larger type
+	unsigned int preface = header::sizeBytes + padSize;
+	int64_t seek_position;
 	if(num < h.nsph) {
-		tipsyStream->seekg(preface + num_off*gas_particle::sizeBytes);
+		seek_position = preface + num * gas_particle::sizeBytes;
+		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = num;
 		numDarksRead = 0;
 		numStarsRead = 0;
 	} else if(num < h.nsph + h.ndark) {
-		tipsyStream->seekg(preface
-			+ ((std::streamoff)h.nsph) * gas_particle::sizeBytes
-			+ (num_off - h.nsph) * dark_particle::sizeBytes);
+		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
+		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = h.nsph;
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
 	} else if(num < h.nsph + h.ndark + h.nstar) {
-		tipsyStream->seekg(preface
-			+ ((std::streamoff)h.nsph) * gas_particle::sizeBytes
-			+ ((std::streamoff)h.ndark) * dark_particle::sizeBytes
-			+ (num - h.ndark - h.nsph) * star_particle::sizeBytes);
+		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
+		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
 		numGasRead = h.nsph;
@@ -337,7 +335,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 }
 
 bool TipsyReader::skipParticles(unsigned int num) {
-	for(int skipped = 0; skipped < num; ++skipped) {
+	for(unsigned int skipped = 0; skipped < num; ++skipped) {
 		if(numGasRead < h.nsph) {
 			++numGasRead;
 			gas_particle gp;

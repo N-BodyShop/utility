@@ -11,7 +11,6 @@
 #include <iostream>
 #include <string>
 #include <sstream>
-class CkOStream;
 
 #include "Shape.h"
 #include "Vector3D.h"
@@ -113,11 +112,6 @@ public:
 		os << '{' << b.lesser_corner << ',' << b.greater_corner << '}';
 		return os;
 	}
-	friend CkOStream& operator<< (CkOStream& os, const OrientedBox<T>& b) {
-		os << '{' << b.lesser_corner << ',' << b.greater_corner << '}';
-		return os;
-	}
-
 	/** Make string containing the tipsy command to create this box.
 	 \param i The number of the box to make
 	 \return a string that can be given to tipsy
@@ -142,6 +136,13 @@ template <typename T>
 inline void operator|(PUP::er& p, OrientedBox<T>& b) {
 	p | b.lesser_corner;
 	p | b.greater_corner;
+}
+
+class CkOStream;
+template <typename T>
+CkOStream& operator<<(CkOStream& os, const OrientedBox<T>& b) {
+	os << '{' << b.lesser_corner << ',' << b.greater_corner << '}';
+	return os;
 }
 
 #endif //__CHARMC__

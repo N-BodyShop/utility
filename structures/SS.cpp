@@ -101,8 +101,9 @@ bool SSReader::readAllss_particles(std::vector<ss_particle>& particles) {
 bool SSReader::seekParticleNum(unsigned int num) {
 	if(num >= h.n_data)
 		return false;
-
-	ssStream->seekg(ss_header::sizeBytes + num * ss_particle::sizeBytes);
+	
+	int64_t seek_position = ss_header::sizeBytes + num * ss_particle::sizeBytes;
+	ssStream->seekg(seek_position);
 	if(!(*ssStream))
 		return false;
 	numParticlesRead = num;
