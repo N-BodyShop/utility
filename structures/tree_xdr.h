@@ -208,10 +208,21 @@ inline T* readField(XDR* xdrs, const u_int64_t N, const u_int64_t startParticle 
 		for(u_int64_t i = 0; i < N; ++i)
 			data[i] = data[N];
 	} else {
+		off_t offset = FieldHeader::sizeBytes
+				+ (startParticle + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
+		assert(sizeof(offset) == 8);
+/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
+		if(!fseeko((FILE *)xdrs->x_private, offset, 0)) {
+			std::cerr << "readField seek failed: " << offset << std::endl;
+			delete[] data;
+			return 0;
+		}
+#if 0
  		if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (startParticle + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code))) {
 			delete[] data;
 			return 0;
 		}
+#endif
  		for(u_int64_t i = 0; i < N; ++i) {
 			if(!xdr_template(xdrs, data + i)) {
 				delete[] data;
@@ -371,7 +382,13 @@ inline bool deleteField(const FieldHeader& fh, void*& data) {
 /** Given a header and a stream, seek to the desired location in the field stream.
  */
 inline bool_t seekField(const FieldHeader& fh, XDR* xdrs, const u_int64_t index) {
+	off_t offset = FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code);
+	assert(sizeof(offset) == 8);
+	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
+	return fseeko((FILE *)xdrs->x_private, offset, 0);
+#if 0
 	return xdr_setpos(xdrs, FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code));
+#endif
 }
 
 /** The tree file contains these structures.  With the total number of
@@ -428,10 +445,27 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 			for(u_int64_t i = 0; i < N; ++i)
 				data[i] = *minVal;
 		} else {
+#define __BILLION 1000000000
+			int64_t offset = FieldHeader::sizeBytes
+					+ (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
+			assert(sizeof(offset) == 8);
+	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
+			fseek((FILE *)xdrs->x_private, 0, 0);
+			while(offset > __BILLION) {
+				offset -= __BILLION;
+				fseek((FILE *)xdrs->x_private, __BILLION,
+					SEEK_CUR);
+			}
+			if(fseek((FILE *)xdrs->x_private, offset, SEEK_CUR) != 0) {
+			   std::cerr << "readAttributes_typed seek failed: " << offset << std::endl;
+				return false;
+			}
 			//seek to the starting value
+#if 0
 			if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code)))
 				//throw FileReadException;
 				return false;
+#endif
 			//allocate for the array of values
 			data = new T[N];
 			for(u_int64_t i = 0; i < N; ++i) {
@@ -527,10 +561,20 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 		for(u_int64_t i = 0; i < N; ++i)
 			data[i] = *minVal;
 	} else if(N != 0) {
+		off_t offset = FieldHeader::sizeBytes
+				+ (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
+		assert(sizeof(offset) == 8);
+	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
+		if(!fseeko((FILE *)xdrs->x_private, offset, 0)) {
+			   std::cerr << "readAttributes_promo_typed seek failed: " << offset << std::endl;
+			return false;
+		}
 		//seek to the starting value
+#if 0
 		if(!xdr_setpos(xdrs, FieldHeader::sizeBytes + (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code)))
 			//throw FileReadException;
 			return false;
+#endif
 		//allocate for the array of values
 		data = new PromotedT[N];
 		for(u_int64_t i = 0; i < N; ++i) {
