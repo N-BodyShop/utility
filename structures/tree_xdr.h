@@ -210,7 +210,6 @@ inline T* readField(XDR* xdrs, const u_int64_t N, const u_int64_t startParticle 
 	} else {
 		off_t offset = FieldHeader::sizeBytes
 				+ (startParticle + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
-		assert(sizeof(offset) == 8);
 /* XXX NASTY kludge to get around 4 byte limit of xdr functions */
 		if(!fseeko((FILE *)xdrs->x_private, offset, 0)) {
 			std::cerr << "readField seek failed: " << offset << std::endl;
@@ -383,7 +382,6 @@ inline bool deleteField(const FieldHeader& fh, void*& data) {
  */
 inline bool_t seekField(const FieldHeader& fh, XDR* xdrs, const u_int64_t index) {
 	off_t offset = FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code);
-	assert(sizeof(offset) == 8);
 	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
 	return fseeko((FILE *)xdrs->x_private, offset, 0);
 #if 0
@@ -448,7 +446,6 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 #define __BILLION 1000000000
 			int64_t offset = FieldHeader::sizeBytes
 					+ (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
-			assert(sizeof(offset) == 8);
 	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
 			fseek((FILE *)xdrs->x_private, 0, 0);
 			while(offset > __BILLION) {
@@ -563,7 +560,6 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 	} else if(N != 0) {
 		off_t offset = FieldHeader::sizeBytes
 				+ (start + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
-		assert(sizeof(offset) == 8);
 	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
 		if(!fseeko((FILE *)xdrs->x_private, offset, 0)) {
 			   std::cerr << "readAttributes_promo_typed seek failed: " << offset << std::endl;
