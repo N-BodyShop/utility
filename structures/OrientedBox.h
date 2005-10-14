@@ -131,6 +131,7 @@ public:
 
 #ifdef __CHARMC__
 #include "pup.h"
+#include "charm++.h"
 
 template <typename T>
 inline void operator|(PUP::er& p, OrientedBox<T>& b) {

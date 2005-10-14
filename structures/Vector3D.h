@@ -327,6 +327,7 @@ typedef Vector3D<double> Vector;
 
 #ifdef __CHARMC__
 #include "pup.h"
+#include "charm++.h"
 
 template <typename T>
 inline void operator|(PUP::er& p, Vector3D<T>& v) {
