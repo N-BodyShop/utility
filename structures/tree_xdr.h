@@ -383,7 +383,7 @@ inline bool deleteField(const FieldHeader& fh, void*& data) {
 inline bool_t seekField(const FieldHeader& fh, XDR* xdrs, const u_int64_t index) {
 	off_t offset = FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code);
 	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
-	return fseeko((FILE *)xdrs->x_private, offset, 0);
+	return (fseeko((FILE *)xdrs->x_private, offset, 0) == 0);
 #if 0
 	return xdr_setpos(xdrs, FieldHeader::sizeBytes + (index + 2) * fh.dimensions * mySizeof(fh.code));
 #endif
