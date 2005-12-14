@@ -19,12 +19,12 @@ int main(int argc, char** argv) {
 	    }
 	FILE* infile;
 	XDR xdrs;
-	FieldHeader fh, uid_fh;
+	FieldHeader fh;
 	const int FILELEN = 256;
 	char filename[FILELEN];
 	
 	strncpy(filename, argv[1], FILELEN);
-	strcat(filename, "dark/position");
+	strcat(filename, "/dark/position");
 
 	infile = fopen(filename, "rb");
 	if(!infile) {
@@ -76,7 +76,7 @@ int main(int argc, char** argv) {
 	
 	    // Masses
 	strncpy(filename, argv[1], FILELEN);
-	strcat(filename, "dark/mass");
+	strcat(filename, "/dark/mass");
 
 	infile = fopen(filename, "rb");
 	if(!infile) {
@@ -133,49 +133,55 @@ int main(int argc, char** argv) {
 	infile = fopen(filename, "rb");
 	if(!infile) {
 		cerr << "Couldn't open field file \"" << filename << "\"" << endl;
-		return 2;
-	}
-	xdrstdio_create(&xdrs, infile, XDR_DECODE);
-	if(!xdr_template(&xdrs, &fh)) {
-		cerr << "Couldn't read header from file!" << endl;
-		return 3;
-	}
-	if(fh.magic != FieldHeader::MagicNumber) {
-		cerr << "This file does not appear to be a field file (magic number doesn't match)." << endl;
-		return 4;
-	}
-	if(numParts != fh.numParticles) {
-	    cerr << "Wrong number of Particles" << endl;
-	    return 1;
+		for(unsigned int i = 0; i < fh.numParticles; ++i) {
+		    for(unsigned int j = 0; j < fh.dimensions; ++j) {
+			tf.darks[i].vel[j] = 0.0;
+			}
+		    }
 	    }
-	if(fh.dimensions != 3) {
-	    cerr << "Wrong dimension of velocities." << endl;
-	    return 1;
+	else {
+	    xdrstdio_create(&xdrs, infile, XDR_DECODE);
+	    if(!xdr_template(&xdrs, &fh)) {
+		    cerr << "Couldn't read header from file!" << endl;
+		    return 3;
 	    }
-	
-	data = readField(fh, &xdrs);
-	
-	if(data == 0) {
-		cerr << "Had problems reading in the field" << endl;
-		return 6;
-	}
-	
-	xdr_destroy(&xdrs);
-	fclose(infile);
-	
-	for(unsigned int i = 0; i < fh.numParticles; ++i) {
-	    for(unsigned int j = 0; j < fh.dimensions; ++j) {
-		switch(fh.code) {
-			case float32:
-			    tf.darks[i].vel[j] = static_cast<float *>(data)[fh.dimensions * i + j];
-				break;
-			case float64:
-			    tf.darks[i].vel[j] = static_cast<double *>(data)[fh.dimensions * i + j];
-				break;
-			default:
-				cout << "I don't recognize the type of this field!";
-				return 7;
+	    if(fh.magic != FieldHeader::MagicNumber) {
+		    cerr << "This file does not appear to be a field file (magic number doesn't match)." << endl;
+		    return 4;
+	    }
+	    if(numParts != fh.numParticles) {
+		cerr << "Wrong number of Particles" << endl;
+		return 1;
 		}
+	    if(fh.dimensions != 3) {
+		cerr << "Wrong dimension of velocities." << endl;
+		return 1;
+		}
+
+	    data = readField(fh, &xdrs);
+
+	    if(data == 0) {
+		    cerr << "Had problems reading in the field" << endl;
+		    return 6;
+	    }
+
+	    xdr_destroy(&xdrs);
+	    fclose(infile);
+
+	    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+		for(unsigned int j = 0; j < fh.dimensions; ++j) {
+		    switch(fh.code) {
+			    case float32:
+				tf.darks[i].vel[j] = static_cast<float *>(data)[fh.dimensions * i + j];
+				    break;
+			    case float64:
+				tf.darks[i].vel[j] = static_cast<double *>(data)[fh.dimensions * i + j];
+				    break;
+			    default:
+				    cout << "I don't recognize the type of this field!";
+				    return 7;
+		    }
+		    }
 		}
 	    }
 	
