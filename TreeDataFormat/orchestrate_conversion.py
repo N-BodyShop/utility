@@ -2,8 +2,8 @@
 
 import sys, os, glob, string
 
-tipsy2tree_program = '~/Projects/TreeDataFormat/tipsy2tree'
-merge_tipsy_array_program = '~/Projects/TreeDataFormat/merge_tipsy_array'
+tipsy2tree_program = './tipsy2tree'
+merge_tipsy_array_program = './merge_tipsy_array'
 
 attributeMap = {
 	'den': ['scalar', 'float32', 'smoothDensity'],
@@ -37,6 +37,13 @@ attributeMap = {
 	'rform': ['vector', 'float32', 'PositionAtFormationTime'],
 	'rhoform': ['scalar', 'float32', 'DensityAtFormationTime'],
 	'vform': ['vector', 'float32', 'VeclocityAtFormationTime'],
+	'acc': ['vector', 'float32', 'acceleration'],
+	'accg': ['vector', 'float32', 'accelerationGravity'],
+	'dt': ['scalar', 'float32', 'timestep'],
+	'SPHdt': ['scalar', 'float32', 'SPHtimestep'],
+	'FeMassFrac': ['scalar', 'float32', 'FeMassFraction'],
+	'OxMassFrac': ['scalar', 'float32', 'OxMassFraction'],
+	'coolontime': ['scalar', 'float32', 'CoolOnTime'],
 }
 
 def main():
