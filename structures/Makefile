@@ -1,4 +1,4 @@
-CXXFLAGS += -g -O3 -Wall
+CXXFLAGS += -g -O3 -Wall -DINTERLIST_VER=1
 
 NAME = structures
 VERSION = 1.1
@@ -8,7 +8,7 @@ EXECTARGETS = browse see_header random_sample
 
 .PHONY: all docs dist clean
 
-all: libTipsy.a($(LIBTARGETS)) SFC.o $(EXECTARGETS)
+all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  # SFC.o
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
@@ -16,8 +16,8 @@ TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_tem
 
 SS.o: xdr_template.h Vector3D.h
 
-SFC.o: SFC.cpp SFC.h
-	$(CXX) -O -ffloat-store -c SFC.cpp
+#SFC.o: SFC.cpp SFC.h
+#	$(CXX) -O -ffloat-store -c SFC.cpp
 
 browse see_header random_sample: libTipsy.a
 
