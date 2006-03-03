@@ -53,17 +53,17 @@ public:
 	 given here as a member function. */
 	
 	/// The length of this vector
-	T length() const {
+	inline T length() const {
 		return static_cast<T>(std::sqrt(static_cast<double>(x * x + y * y + z * z)));
 	}
 
 	/// The length squared of this vector
-	T lengthSquared() const {
+	inline T lengthSquared() const {
 		return x * x + y * y + z * z;
 	}
 
 	/// Make this vector a unit vector (length one)
-	Vector3D<T>& normalize() {
+	inline Vector3D<T>& normalize() {
 		return *this /= length();
 	}
 	
@@ -81,7 +81,7 @@ public:
 	
 	/// Assignment operator copies the components
 	template <typename T2>
-	Vector3D<T>& operator=(const Vector3D<T2>& v) {
+	inline Vector3D<T>& operator=(const Vector3D<T2>& v) {
 		x = v.x;
 		y = v.y;
 		z = v.z;
@@ -101,27 +101,27 @@ public:
 	}
 		
 	/// Equality operator tests all the components for equality
-	bool operator==(const Vector3D<T>& v) const { 
+	inline bool operator==(const Vector3D<T>& v) const { 
 		return (x == v.x) && (y == v.y) && (z == v.z);
 	}
 
 	/// Inequality operator tests all the components for inequality
-	bool operator!=(const Vector3D<T>& v) const { 
+	inline bool operator!=(const Vector3D<T>& v) const { 
 		return (x != v.x) || (y != v.y) || (z != v.z);
 	}
 
 	/// Vector addition
-	Vector3D<T> operator+(const Vector3D<T>& v) const {
+	inline Vector3D<T> operator+(const Vector3D<T>& v) const {
 		return Vector3D<T>(x + v.x, y + v.y, z + v.z);
 	}
 	
 	/// Vector subtraction
-	Vector3D<T> operator-(const Vector3D<T>& v) const {
+	inline Vector3D<T> operator-(const Vector3D<T>& v) const {
 		return Vector3D<T>(x - v.x, y - v.y, z - v.z);
 	}
 	
 	/// Addition set-equals
-	Vector3D<T>& operator+=(const Vector3D<T>& v) {
+	inline Vector3D<T>& operator+=(const Vector3D<T>& v) {
 		x += v.x;
 		y += v.y;
 		z += v.z;
@@ -129,7 +129,7 @@ public:
 	}
 	
 	/// Subtraction set-equals
-	Vector3D<T>& operator-=(const Vector3D<T>& v) {
+	inline Vector3D<T>& operator-=(const Vector3D<T>& v) {
 		x -= v.x;
 		y -= v.y;
 		z -= v.z;
@@ -137,12 +137,12 @@ public:
 	}
 
 	/// Scalar multiplication on the right
-	Vector3D<T> operator*(const T& s) const {
+	inline Vector3D<T> operator*(const T& s) const {
 		return Vector3D<T>(x * s, y * s, z * s);
 	}
 	
 	/// Scalar multiplication on the right set-equals
-	Vector3D<T>& operator*=(const T& s) {
+	inline Vector3D<T>& operator*=(const T& s) {
 		x *= s;
 		y *= s;
 		z *= s;
@@ -150,12 +150,12 @@ public:
 	}
 	
 	/// Scalar division on the right (can't have left division - division by a vector makes no sense!)
-	Vector3D<T> operator/(const T& s) const {
+	inline Vector3D<T> operator/(const T& s) const {
 		return Vector3D<T>(x / s, y / s, z / s);
 	}
 	
 	/// Scalar division on the right set-equals
-	Vector3D<T>& operator/=(const T& s) {
+	inline Vector3D<T>& operator/=(const T& s) {
 		x /= s;
 		y /= s;
 		z /= s;
@@ -163,17 +163,17 @@ public:
 	}
 	
 	/// Switch sign of all components (parity flip)
-	Vector3D<T> operator-() const {
+	inline Vector3D<T> operator-() const {
 		return Vector3D<T>(-x, -y, -z);
 	}
 	
 	/// Vector multiplication multiplies the components
-	Vector3D<T> operator*(const Vector3D<T>& v) const {
+	inline Vector3D<T> operator*(const Vector3D<T>& v) const {
 		return Vector3D<T>(x * v.x, y * v.y, z * v.z);
 	}
 
 	/// Vector multiplication set-equals
-	Vector3D<T>& operator*=(const Vector3D<T>& v) {
+	inline Vector3D<T>& operator*=(const Vector3D<T>& v) {
 		x *= v.x;
 		y *= v.y;
 		z *= v.z;
@@ -181,12 +181,12 @@ public:
 	}
 
 	/// Vector division divides the components
-	Vector3D<T> operator/(const Vector3D<T>& v) const {
+	inline Vector3D<T> operator/(const Vector3D<T>& v) const {
 		return Vector3D<T>(x / v.x, y / v.y, z / v.z);
 	}
 
 	/// Vector division set-equals
-	Vector3D<T>& operator/=(const Vector3D<T>& v) {
+	inline Vector3D<T>& operator/=(const Vector3D<T>& v) {
 		x /= v.x;
 		y /= v.y;
 		z /= v.z;
