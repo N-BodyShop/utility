@@ -176,10 +176,12 @@ void TipsyStats::finalize() {
 	
 	//get total angular momentum about the origin
 	angular_momentum = gas_ang_mom + dark_ang_mom + star_ang_mom;
-	//make specific (divide by total mass)
-	angular_momentum /= total_mass;
-	//subtract off the angular momentum of the center of mass
-	angular_momentum -= cross(center_of_mass, center_of_mass_velocity);
+	if(total_mass != 0) {
+		//make specific (divide by total mass)
+		angular_momentum /= total_mass;
+		//subtract off the angular momentum of the center of mass
+		angular_momentum -= cross(center_of_mass, center_of_mass_velocity);
+	}
 
 	//sort out the individual centers of mass and angular momenta
 	if(gas_mass != 0) {

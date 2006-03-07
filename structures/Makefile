@@ -4,7 +4,7 @@ NAME = structures
 VERSION = 1.1
 INSTALL_LOCATION = $(HOME)/my_stuff/bin/
 LIBTARGETS = TipsyReader.o TipsyFile.o SS.o
-EXECTARGETS = browse see_header random_sample
+EXECTARGETS = browse see_header random_sample tipsy2ifrit ss2ifrit
 
 .PHONY: all docs dist clean
 
@@ -19,7 +19,7 @@ SS.o: xdr_template.h Vector3D.h
 #SFC.o: SFC.cpp SFC.h
 #	$(CXX) -O -ffloat-store -c SFC.cpp
 
-browse see_header random_sample: libTipsy.a
+$(EXECTARGETS): libTipsy.a
 
 docs:
 	doxygen structures.doxygen
