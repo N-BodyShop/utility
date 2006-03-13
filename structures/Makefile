@@ -1,4 +1,4 @@
-CXXFLAGS += -g -O3 -Wall -DINTERLIST_VER=1
+CXXFLAGS += -O3 -Wall -DINTERLIST_VER=2
 
 NAME = structures
 VERSION = 1.1
