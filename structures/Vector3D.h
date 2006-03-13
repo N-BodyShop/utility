@@ -70,7 +70,7 @@ public:
 	/* To manipulate Vector3D objects as expected, we need to overload a bunch of operators. */
 
 	/// Allow array subscripting to return the components
-	T& operator[](int index) {
+	inline T& operator[](int index) {
 		switch(index) { //if index isn't valid, x gets returned
 			case 0: return x;
 			case 1: return y;
@@ -94,7 +94,7 @@ public:
 	 elements after it that can be set to the components of this vector.
 	 */
 	template <class T2>
-	void array_form(T2* arr) const {
+	inline void array_form(T2* arr) const {
 		arr[0] = x;
 		arr[1] = y;
 		arr[2] = z;
