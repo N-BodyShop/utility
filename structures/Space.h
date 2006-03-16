@@ -227,25 +227,8 @@ public:
 		return intersect(box1, s);
 	}
 
-#if INTERLIST_VER > 0
 	template <typename T, typename T2>
 	static bool contained(const OrientedBox<T>& b, const Sphere<T2>& s) {
-		/*Vector3D<T> v[8];
-
-		v[0].x=v[1].x=v[2].x=v[3].x=b.lesser_corner.x;
-		v[4].x=v[5].x=v[6].x=v[7].x=b.greater_corner.x;
-
-		v[0].y=v[1].y=v[4].y=v[5].y=b.lesser_corner.y;
-		v[2].y=v[3].y=v[6].y=v[7].y=b.greater_corner.y;
-		
-		v[0].z=v[2].z=v[4].z=v[6].z=b.lesser_corner.z;
-		v[1].z=v[3].z=v[5].z=v[7].z=b.greater_corner.z;
-
-		if(contains(s,v[0]) && contains(s,v[1]) && contains(s,v[2]) && contains(s,v[3]) && contains(s,v[4]) && contains(s,v[5]) && contains(s,v[6]) && contains(s,v[7]))
-			return true;
-		else
-			return false;
-*/
     Vector3D<T> vec;
 		T delta1;
     T delta2;
@@ -300,7 +283,6 @@ public:
     else
       return false;
   }
-#endif
 
 	/// Does the first box enclose the second
 	template <typename T, typename T2>
