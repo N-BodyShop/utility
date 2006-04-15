@@ -240,6 +240,8 @@ public:
 	virtual bool save(const Simulation*, const std::string&) = 0;
 
 	//virtual bool write(const Simulation*, const std::string&) = 0;
+
+	virtual ~SimulationWriter() { }
 };
 
 } //close namespace SimulationHandling
