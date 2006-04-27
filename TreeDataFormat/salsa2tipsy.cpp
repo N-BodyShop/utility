@@ -58,6 +58,7 @@ int main(int argc, char** argv) {
 	fclose(infile);
 	TipsyFile tf("tst", 0, fh.numParticles, 0);
 	
+	tf.h.time = fh.time;
 	for(unsigned int i = 0; i < fh.numParticles; ++i) {
 	    for(unsigned int j = 0; j < fh.dimensions; ++j) {
 		switch(fh.code) {
@@ -74,6 +75,8 @@ int main(int argc, char** argv) {
 		}
 	    }
 	
+	deleteField(fh, data);
+
 	    // Masses
 	strncpy(filename, argv[1], FILELEN);
 	strcat(filename, "/dark/mass");
@@ -126,9 +129,12 @@ int main(int argc, char** argv) {
 		}
 		}
 	    }
+	
+	deleteField(fh, data);
+
 	    // Velocities
 	strncpy(filename, argv[1], FILELEN);
-	strcat(filename, "dark/velocity");
+	strcat(filename, "/dark/velocity");
 
 	infile = fopen(filename, "rb");
 	if(!infile) {
@@ -183,8 +189,118 @@ int main(int argc, char** argv) {
 		    }
 		    }
 		}
+	    deleteField(fh, data);
 	    }
 	
+	    // Softening
+	strncpy(filename, argv[1], FILELEN);
+	strcat(filename, "/dark/softening");
+
+	infile = fopen(filename, "rb");
+
+	if(infile) {
+	xdrstdio_create(&xdrs, infile, XDR_DECODE);
+	if(!xdr_template(&xdrs, &fh)) {
+		cerr << "Couldn't read header from file!" << endl;
+		return 3;
+	}
+	if(fh.magic != FieldHeader::MagicNumber) {
+		cerr << "This file does not appear to be a field file (magic number doesn't match)." << endl;
+		return 4;
+	}
+	if(numParts != fh.numParticles) {
+	    cerr << "Wrong number of Particles" << endl;
+	    return 1;
+	    }
+	if(fh.dimensions != 1) {
+	    cerr << "Wrong dimension of softening." << endl;
+	    return 1;
+	    }
+	
+	data = readField(fh, &xdrs);
+	
+	if(data == 0) {
+		cerr << "Had problems reading in the field" << endl;
+		return 6;
+	}
+	
+	xdr_destroy(&xdrs);
+	fclose(infile);
+	
+	for(unsigned int i = 0; i < fh.numParticles; ++i) {
+	    for(unsigned int j = 0; j < fh.dimensions; ++j) {
+		switch(fh.code) {
+			case float32:
+			    tf.darks[i].eps = static_cast<float *>(data)[fh.dimensions * i + j];
+				break;
+			case float64:
+			    tf.darks[i].eps = static_cast<double *>(data)[fh.dimensions * i + j];
+				break;
+			default:
+				cout << "I don't recognize the type of this field!";
+				return 7;
+		}
+		}
+	    }
+	
+	deleteField(fh, data);
+	} else {
+	    cerr << "Warning: no softening\n";
+	}
+	    // potential
+	strncpy(filename, argv[1], FILELEN);
+	strcat(filename, "/dark/potential");
+
+	infile = fopen(filename, "rb");
+	if(infile) {
+	xdrstdio_create(&xdrs, infile, XDR_DECODE);
+	if(!xdr_template(&xdrs, &fh)) {
+		cerr << "Couldn't read header from file!" << endl;
+		return 3;
+	}
+	if(fh.magic != FieldHeader::MagicNumber) {
+		cerr << "This file does not appear to be a field file (magic number doesn't match)." << endl;
+		return 4;
+	}
+	if(numParts != fh.numParticles) {
+	    cerr << "Wrong number of Particles" << endl;
+	    return 1;
+	    }
+	if(fh.dimensions != 1) {
+	    cerr << "Wrong dimension of masses." << endl;
+	    return 1;
+	    }
+	
+	data = readField(fh, &xdrs);
+	
+	if(data == 0) {
+		cerr << "Had problems reading in the field" << endl;
+		return 6;
+	}
+	
+	xdr_destroy(&xdrs);
+	fclose(infile);
+	
+	for(unsigned int i = 0; i < fh.numParticles; ++i) {
+	    for(unsigned int j = 0; j < fh.dimensions; ++j) {
+		switch(fh.code) {
+			case float32:
+			    tf.darks[i].phi = static_cast<float *>(data)[fh.dimensions * i + j];
+				break;
+			case float64:
+			    tf.darks[i].phi = static_cast<double *>(data)[fh.dimensions * i + j];
+				break;
+			default:
+				cout << "I don't recognize the type of this field!";
+				return 7;
+		}
+		}
+	    }
+	
+	deleteField(fh, data);
+	} else {
+		cerr << "Warning: no potentials\n";
+	}
 
 	tf.saveAll(cout);
 	cerr << "Done." << endl;	
