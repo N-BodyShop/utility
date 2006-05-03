@@ -17,12 +17,14 @@
 #ifndef XDR_TEMPLATE_H
 #define XDR_TEMPLATE_H
 
+#include "config.h"
+
 #include <rpc/rpc.h>
 
 #include "Vector3D.h"
 #include "OrientedBox.h"
 
-#ifdef MACOSX
+#ifndef HAVE_XDR_HYPER
 /*
  * XDR hyper integers
  * same as xdr_u_hyper - open coded to save a proc call!
@@ -87,7 +89,7 @@ xdr_u_hyper (XDR *xdrs, u_quad_t *ullp)
 
   return FALSE;
 }
-#endif /*MACOSX*/
+#endif
 
 inline bool_t xdr_template(XDR* xdrs, unsigned char* val) {
 	return xdr_u_char(xdrs, val);
