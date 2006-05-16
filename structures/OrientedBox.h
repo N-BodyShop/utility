@@ -52,6 +52,11 @@ public:
 	
 	~OrientedBox() { }
 	
+	void reset() {
+		lesser_corner = Vector3D<T>(HUGE_VAL, HUGE_VAL, HUGE_VAL);
+		greater_corner = Vector3D<T>(-HUGE_VAL, -HUGE_VAL, -HUGE_VAL);
+	}
+	
 	bool initialized() const {
 		return lesser_corner.x <= greater_corner.x && lesser_corner.y <= greater_corner.y && lesser_corner.z <= greater_corner.z;
 	}
