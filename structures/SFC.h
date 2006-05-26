@@ -74,9 +74,9 @@ inline Key makeKey() {
   //unsigned int ix = *reinterpret_cast<unsigned int *>(&exchangeKey[0]);
   //unsigned int iy = *reinterpret_cast<unsigned int *>(&exchangeKey[1]);
   //unsigned int iz = *reinterpret_cast<unsigned int *>(&exchangeKey[2]);
-  unsigned int ix = exchangeKey[0]*(1<<21) - exchangeKey[0];
-  unsigned int iy = exchangeKey[1]*(1<<21) - exchangeKey[1];
-  unsigned int iz = exchangeKey[2]*(1<<21) - exchangeKey[2];
+  unsigned int ix = (unsigned int)(exchangeKey[0]*(1<<21) - exchangeKey[0]);
+  unsigned int iy = (unsigned int)(exchangeKey[1]*(1<<21) - exchangeKey[1]);
+  unsigned int iz = (unsigned int)(exchangeKey[2]*(1<<21) - exchangeKey[2]);
 	Key key = 0;
 	for(unsigned int mask = (1 << 20); mask > 0; mask >>= 1) {
 		key <<= 3;
