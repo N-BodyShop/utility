@@ -59,22 +59,17 @@ namespace Tipsy {
 
 bool TipsyReader::loadHeader() {
 	ok = false;
+	int iPad = 0;
 	
 	if(!(*tipsyStream))
 		return false;
 	
 	//read the header in
-	tipsyStream->read(reinterpret_cast<char *>(&h), header::sizeBytes);
+	tipsyStream->read(reinterpret_cast<char *>(&h), sizeof(h));
 	if(!*tipsyStream)
 		return false;
 	
 	if(h.ndim != MAXDIM) { //perhaps it's XDR
-		//endian-ness check
-		unsigned int bob = 3;
-		unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
-		if(c[3] == bob) //we're big-endian, can't do xdr from little-endian
-			return false;
-		
 		XDR xdrs;
 		xdrmem_create(&xdrs, reinterpret_cast<char *>(&h), header::sizeBytes, XDR_DECODE);
 		if(!xdr_template(&xdrs, &h) || h.ndim != MAXDIM) { //wasn't xdr format either			
@@ -85,9 +80,17 @@ bool TipsyReader::loadHeader() {
 		xdr_destroy(&xdrs);
 		
 		native = false;
-		//xdr format has an integer pad in the header, which we don't need, but must skip
-		int pad = 0;
-		tipsyStream->read(reinterpret_cast<char *>(&pad), 4);
+		// xdr format has an integer pad in the header,
+		// which we don't need, but must skip.
+		// However, if the native format has the pad (the compiler
+		// pads structures, then we already took in the pad above.
+		if(sizeof(h) != 32) {
+		    int pad = 0;
+                    assert(sizeof(h) == 28); // Assume that native format
+					     // is unpadded.
+		    tipsyStream->read(reinterpret_cast<char *>(&pad), 4);
+		    }
+		
 		if(!*tipsyStream)
 			return false;
 		
@@ -296,15 +299,14 @@ bool TipsyReader::readAllParticles(std::vector<gas_particle>& gas, std::vector<d
  */
 bool TipsyReader::seekParticleNum(unsigned int num) {
 	int padSize = 0;
-	//endian-ness check
-	unsigned int bob = 3;
-	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
-	if(c[3] == bob || !native) //we're big-endian, can't do xdr from little-endian
+	if(!native)
 		padSize = 4;
+	else
+		padSize = sizeof(h) - header::sizeBytes;
 
 	unsigned int preface = header::sizeBytes + padSize;
 	int64_t seek_position;
-	if(num < h.nsph) {
+	if(num < (unsigned int) h.nsph) {
 		seek_position = preface + num * gas_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
@@ -312,7 +314,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numGasRead = num;
 		numDarksRead = 0;
 		numStarsRead = 0;
-	} else if(num < h.nsph + h.ndark) {
+	} else if(num < (unsigned int) (h.nsph + h.ndark)) {
 		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
@@ -320,7 +322,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numGasRead = h.nsph;
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
-	} else if(num < h.nsph + h.ndark + h.nstar) {
+	} else if(num < (unsigned int) (h.nsph + h.ndark + h.nstar)) {
 		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))

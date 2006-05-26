@@ -53,14 +53,7 @@ int main(int argc, char** argv) {
 	h.ndark = darkIter - gasIter;
 	h.nstar = h.nbodies - h.nsph - h.ndark;
 	
-	cout.write(reinterpret_cast<const char *>(&h), header::sizeBytes);
-	//endian-ness check
-	unsigned int bob = 3;
-	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
-	if(c[3] == bob) { //we're big-endian, write the pad
-		bob = 0;
-		cout.write(reinterpret_cast<const char *>(&bob), 4);
-	}
+	cout.write(reinterpret_cast<const char *>(&h), sizeof(h));
 	
 	gas_particle gp;
 	dark_particle dp;

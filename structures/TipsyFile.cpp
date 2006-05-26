@@ -342,19 +342,9 @@ void write_vector(std::ostream& os, Iterator begin, Iterator end) {
 bool TipsyFile::saveAll(std::ostream& os) const {
 	if(!os)
 		return false;
-	os.write(reinterpret_cast<const char *>(&h), header::sizeBytes); //write out the header
+	os.write(reinterpret_cast<const char *>(&h), sizeof(h)); //write out the header
 	if(!os)
 		return false;
-	
-	//endian-ness check
-	unsigned int bob = 3;
-	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
-	if(c[3] == bob) { //we're big-endian, write the pad
-		bob = 0;
-		os.write(reinterpret_cast<const char *>(&bob), 4);
-		if(!os)
-			return false;
-	}
 	
 	write_vector(os, gas.begin(), gas.end());
 	if(!os)
@@ -395,20 +385,10 @@ bool TipsyFile::save(std::ostream& os) const {
 
 	if(!os)
 		return false;
-	os.write(reinterpret_cast<const char *>(&newh), header::sizeBytes); //write out the header
+	os.write(reinterpret_cast<const char *>(&newh), sizeof(newh)); //write out the header
 	if(!os)
 		return false;
 	
-	//endian-ness check
-	unsigned int bob = 3;
-	unsigned char* c = reinterpret_cast<unsigned char *>(&bob);
-	if(c[3] == bob) { //we're big-endian, write the pad
-		bob = 0;
-		os.write(reinterpret_cast<const char *>(&bob), 4);
-		if(!os)
-			return false;
-	}
-
 	int n;
 	if(markedGas.size() == 0) {
 		write_vector(os, gas.begin(), gas.end());

@@ -20,7 +20,7 @@ namespace Tipsy {
 /** The header in a tipsy format file. */
 class header {
 public:	
-	static const unsigned int sizeBytes = 28;
+	static const unsigned int sizeBytes = 28; // Only for an x86 machine
 	
 	/// The time of the output
     double time;
