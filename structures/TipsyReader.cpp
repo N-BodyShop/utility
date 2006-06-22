@@ -4,6 +4,7 @@
  @version 1.0
  */
 
+#include <assert.h>
 #include "config.h"
 #include "xdr_template.h"
 
