@@ -244,6 +244,35 @@ public:
 	virtual ~SimulationWriter() { }
 };
 
+class SimulationHandlingException : public std::exception {
+  public:
+    ~SimulationHandlingException() throw() { }; 
+    SimulationHandlingException();
+    SimulationHandlingException(const std::string & desc);
+    virtual std::string getText() const throw();
+    virtual const char* what() const throw();
+  private:
+    std::string d;
+  };
+
+class FileError : public SimulationHandlingException {
+  public:
+    ~FileError() throw() { }; 
+    FileError(std::string fn);
+    std::string getText() const throw();
+    std::string fileName;
+  };
+
+class NameError : public SimulationHandlingException {
+  public:
+    ~NameError() throw() { }; 
+    NameError(std::string fn);
+    std::string getText() const throw();
+    std::string badName;
+  };
+
+extern std::ostream & operator <<(std::ostream &os, SimulationHandlingException &e);
+
 } //close namespace SimulationHandling
 
 #endif //SIMULATION_H__iunfediunhtew8976378042iuhnrvge9o43

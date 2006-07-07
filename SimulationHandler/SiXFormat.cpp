@@ -23,6 +23,16 @@ SiXFormatReader::SiXFormatReader(const string& directoryname) {
 	loadFromXMLFile(directoryname);
 }
 
+string makeString(const XMLCh* toConvert) {
+	if(toConvert) {
+		char* transcoded = XMLString::transcode(toConvert);
+		string s(transcoded);
+		XMLString::release(&transcoded);
+		return s;
+	} else
+		return "";
+}
+
 bool SiXFormatReader::loadFromXMLFile(string directoryname) {
 	//erase any previous contents
 	release();
@@ -65,7 +75,9 @@ bool SiXFormatReader::loadFromXMLFile(string directoryname) {
 		//the xml file is inside the directory we were given
 		parser->parse((directoryname + "/description.xml").c_str());
 	} catch(const SAXException& toCatch) {
-		//cerr << "An error occurred: " << StrX(toCatch.getMessage()) << endl;
+	    // throw(FileError(makeString(toCatch.getMessage())));
+		std::cerr << "An XML error occurred: "
+			  << makeString(toCatch.getMessage()) << std::endl;
 		return false;
 	}
 	
@@ -80,17 +92,6 @@ const XMLCh linkString[] = {chLatin_l, chLatin_i, chLatin_n, chLatin_k, chNull};
 const XMLCh attributeString[] = {chLatin_a, chLatin_t, chLatin_t, chLatin_r, chLatin_i, chLatin_b, chLatin_u, chLatin_t, chLatin_e, chNull};
 const XMLCh familyString[] = {chLatin_f, chLatin_a, chLatin_m, chLatin_i, chLatin_l, chLatin_y, chNull};
 const XMLCh treeString[] = {chLatin_t, chLatin_r, chLatin_e, chLatin_e, chNull};
-
-string makeString(const XMLCh* toConvert) {
-	if(toConvert) {
-		char* transcoded = XMLString::transcode(toConvert);
-		string s(transcoded);
-		XMLString::release(&transcoded);
-		return s;
-	} else
-		return "";
-}
-
 void SiXFormatReader::startElement(const XMLCh *const uri, const XMLCh *const localname, const XMLCh *const qname, const Attributes& attrs) {
 	if(XMLString::equals(localname, familyString)) {
 		const XMLCh* familyName = attrs.getValue(nameString);
@@ -105,6 +106,11 @@ void SiXFormatReader::startElement(const XMLCh *const uri, const XMLCh *const lo
 				//get fully qualified path to the attribute file
 				string filename = pathPrefix + "/" + makeString(link);
 				FILE* infile = fopen(filename.c_str(), "rb");
+				if(!infile) {  // try without prefix
+				    filename = makeString(link);
+				    infile = fopen(filename.c_str(), "rb");
+				    }
+				
 				if(infile) {
 					XDR xdrs;
 					xdrstdio_create(&xdrs, infile, XDR_DECODE);
@@ -131,6 +137,10 @@ void SiXFormatReader::startElement(const XMLCh *const uri, const XMLCh *const lo
 						fclose(infile);
 					}
 				}
+				else {
+				    throw(FileError(filename));
+				    }
+				
 			}
 		}
 	}
@@ -147,8 +157,10 @@ void SiXFormatReader::endElement(const XMLCh *const uri, const XMLCh *const loca
 
 bool SiXFormatReader::loadAttribute(const string& familyName, const string& attributeName, int64_t numParticles, const u_int64_t startParticle) {
 	iterator familyIter = find(familyName);
-	if(familyIter == end())
-		return false;
+	if(familyIter == end()) {
+	    throw(NameError(familyName));
+	    return false;
+	    }
 	ParticleFamily& family = familyIter->second;
 	//if asked for a negative number of particles, load them all
 	if(numParticles < 0)
@@ -157,13 +169,23 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 	if(family.count.numParticles == 0) {
 		family.count.numParticles = numParticles;
 		family.count.startParticle = startParticle;
-	} else if(family.count.numParticles != numParticles || family.count.startParticle != startParticle)
-		return false;
-	if(numParticles + startParticle > family.count.totalNumParticles)
-		return false;
+	    }
+	else if(family.count.numParticles != numParticles || family.count.startParticle != startParticle) {
+	    std::cerr << "Bad Particle Number: " << numParticles << std::endl;
+	    return false;
+	    }
+	
+	if(numParticles + startParticle > family.count.totalNumParticles) {
+	    std::cerr << "Bad Particle Number: " << numParticles << std::endl;
+	    return false;
+	    }
+	
 	AttributeMap::iterator attrIter = family.attributes.find(attributeName);
-	if(attrIter == family.attributes.end())
-		return false;
+	if(attrIter == family.attributes.end()) {
+	    throw(NameError(attributeName));
+	    return false;
+	    }
+	
 	//if you asked for zero particles, we're done
 	if(numParticles == 0)
 		return true;
@@ -181,10 +203,21 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 				&& array.dimensions == fh.dimensions
 				&& array.code == fh.code
 				&& readAttributes(&xdrs, array, family.count.numParticles, family.count.startParticle)
-				)
-					value = true;
+		   ) {
+		    value = true;
+		    }
+		else{
+		    std::cerr << "loadAttribute: Failed to read Attributes"
+			      << std::endl;
+		    }
+		
 		xdr_destroy(&xdrs);
 	}
+	else {
+	    std::cerr << "loadAttribute: Failed to open file" << std::endl;
+	    throw(FileError(attributeFiles[familyName + ":" + attributeName].c_str()));
+	    }
+	
 	fclose(infile);
 	return value;
 }
@@ -234,6 +267,45 @@ bool SiXFormatWriter::save(const Simulation* sim, const std::string& path) {
 	xmlfile << "</simulation>\n";
 	xmlfile.close();
 	return true;
+}
+
+    // Exceptions: should go in separate file
+    //#include <iostream>
+
+std::ostream & operator <<(std::ostream &os, SimulationHandlingException &e) {
+   os << e.getText();
+   return os;
+}
+
+SimulationHandlingException::SimulationHandlingException() : d("") {
+}
+
+SimulationHandlingException::SimulationHandlingException(const string & desc)  : d(desc) {
+}
+
+string SimulationHandlingException::getText() const throw() {
+  if(d=="")
+    return "Unknown Simulation exception";
+  else
+    return d;
+}
+
+const char* SimulationHandlingException::what() const throw() {
+  return getText().c_str();
+}
+
+FileError::FileError(string fn) : fileName(fn) {
+}
+
+string FileError::getText() const throw() {
+  return "Error in file: " + fileName;
+}
+
+NameError::NameError(string fn) : badName(fn) {
+}
+
+string NameError::getText() const throw() {
+  return "Error in attribute or family Name: " + badName;
 }
 
 } //close namespace SimulationHandling
