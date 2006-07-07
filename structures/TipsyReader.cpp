@@ -60,7 +60,6 @@ namespace Tipsy {
 
 bool TipsyReader::loadHeader() {
 	ok = false;
-	int iPad = 0;
 	
 	if(!(*tipsyStream))
 		return false;
@@ -306,9 +305,9 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		padSize = sizeof(h) - header::sizeBytes;
 
 	unsigned int preface = header::sizeBytes + padSize;
-	int64_t seek_position;
+	std::streampos seek_position;
 	if(num < (unsigned int) h.nsph) {
-		seek_position = preface + num * gas_particle::sizeBytes;
+		seek_position = preface + num * (std::streampos) gas_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
@@ -316,7 +315,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numDarksRead = 0;
 		numStarsRead = 0;
 	} else if(num < (unsigned int) (h.nsph + h.ndark)) {
-		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
+		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + (num - h.nsph) * (std::streampos) dark_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
@@ -324,7 +323,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
 	} else if(num < (unsigned int) (h.nsph + h.ndark + h.nstar)) {
-		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
+		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + h.ndark * (std::streampos) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (std::streampos) star_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
