@@ -13,6 +13,58 @@
 #include "xdr_template.h"
 #include "TypedArray.h"
 
+class XDRException : public std::exception {
+  public:
+    ~XDRException() throw() { }; 
+    XDRException();
+    XDRException(const std::string & desc);
+    virtual std::string getText() const throw();
+    virtual const char* what() const throw();
+  private:
+    std::string d;
+  };
+
+class XDRReadError : public XDRException {
+  public:
+    ~XDRReadError() throw() { }; 
+    XDRReadError(std::string s, int64_t w);
+    std::string getText() const throw();
+ private:
+    std::string oper;
+    int64_t where;
+  };
+
+inline std::ostream & operator <<(std::ostream &os, XDRException &e) {
+   os << e.getText();
+   return os;
+}
+
+inline XDRException::XDRException() : d("") {
+}
+
+inline XDRException::XDRException(const std::string & desc)  : d(desc) {
+}
+
+inline std::string XDRException::getText() const throw() {
+  if(d=="")
+    return "Unknown XDR exception";
+  else
+    return d;
+}
+
+inline const char* XDRException::what() const throw() {
+  return getText().c_str();
+}
+
+inline XDRReadError::XDRReadError(std::string s, int64_t w) : oper(s),
+     where(w) {
+}
+
+inline std::string XDRReadError::getText() const throw() {
+    char sWhere[128];
+    sprintf(sWhere, "%ld", where) ;
+  return oper + " Error at " + sWhere;
+}
 /** The header present in every tree file. 
  In conjunction with the positions file, provides all the information 
  needed to perform a tree-based region query on the particle data 
@@ -429,15 +481,15 @@ inline bool_t xdr_template(XDR* xdrs, BasicTreeNode* node) {
 template <typename T>
 inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int64_t N, const u_int64_t start = 0) {
 	//seek to just past the header
-	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes))
-		//throw FileReadException;
-		return false;
-	
+	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes)) {
+	    throw XDRReadError("Seek", FieldHeader::sizeBytes);
+	    return false;
+	    }
 	//allocate for and read the minimum value
 	T* minVal = new T;
 	if(!xdr_template(xdrs, minVal)) {
 		delete minVal;
-		//throw FileReadException;
+		throw XDRReadError("ReadMin", FieldHeader::sizeBytes);
 		return false;
 	}
 	//set the minimum value
@@ -446,7 +498,7 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 	T* maxVal = new T;
 	if(!xdr_template(xdrs, maxVal)) {
 		delete maxVal;
-		//throw FileReadException;
+		throw XDRReadError("ReadMax", xdr_getpos(xdrs));
 		return false;
 	}
 	//set the minimum value
@@ -470,8 +522,8 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 					SEEK_CUR);
 			}
 			if(fseek((FILE *)xdrs->x_private, offset, SEEK_CUR) != 0) {
-			   std::cerr << "readAttributes_typed seek failed: " << offset << std::endl;
-				return false;
+			   throw XDRReadError("fseek", offset);
+			   return false;
 			}
 			//seek to the starting value
 #if 0
@@ -484,7 +536,7 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 			for(u_int64_t i = 0; i < N; ++i) {
 				if(!xdr_template(xdrs, data + i)) {
 					delete[] data;
-					//throw FileReadException;
+					throw XDRReadError("data read", i);
 					return false;
 				}
 			}
@@ -539,9 +591,10 @@ inline bool readAttributes(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int
 template <typename T, typename PromotedT>
 inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const u_int64_t N, const u_int64_t start = 0) {
 	//seek to just past the header
-	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes))
-		//throw FileReadException;
-		return false;
+	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes)) {
+	    throw XDRReadError("Seek", FieldHeader::sizeBytes);
+	    return false;
+	    }
 	
 	//read the values in, then convert them to the promoted type
 		
@@ -550,7 +603,7 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 	T value;
 	if(!xdr_template(xdrs, &value)) {
 		delete minVal;
-		//throw FileReadException;
+		throw XDRReadError("ReadMin", FieldHeader::sizeBytes);
 		return false;
 	}
 	*minVal = value;
@@ -560,7 +613,7 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 	PromotedT* maxVal = new PromotedT;
 	if(!xdr_template(xdrs, &value)) {
 		delete maxVal;
-		//throw FileReadException;
+		throw XDRReadError("ReadMax", xdr_getpos(xdrs));
 		return false;
 	}
 	*maxVal = value;
@@ -584,8 +637,8 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 				SEEK_CUR);
 		}
 		if(fseek((FILE *)xdrs->x_private, offset, SEEK_CUR) != 0) {
-		   std::cerr << "seekField failed: " << offset << std::endl;
-			return false;
+		    throw XDRReadError("fseek", offset);
+		    return false;
 		}
 		//seek to the starting value
 #if 0
@@ -598,7 +651,7 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 		for(u_int64_t i = 0; i < N; ++i) {
 			if(!xdr_template(xdrs, &value)) {
 				delete[] data;
-				//throw FileReadException;
+				throw XDRReadError("data read", i);
 				return false;
 			}
 			data[i] = value;
