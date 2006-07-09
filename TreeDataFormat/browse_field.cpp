@@ -68,10 +68,16 @@ int main(int argc, char** argv) {
 	TypedArray arr;
 	arr.dimensions = fh.dimensions;
 	arr.code = fh.code;
-	if(!readAttributes(&xdrs, arr, fh.numParticles)) {
+	try {
+	    if(!readAttributes(&xdrs, arr, fh.numParticles)) {
 		cerr << "Had problems reading in the field" << endl;
 		return 5;
-	}
+		}
+	    }
+	catch(XDRReadError &e) {
+	    cerr << "Problems in readAttributes: " << e << endl;
+	    return 5;
+	    }
 	
 	xdr_destroy(&xdrs);
 	fclose(infile);

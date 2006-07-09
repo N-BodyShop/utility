@@ -10,6 +10,7 @@ all:: $(TARGETS)
 
 tipsy2tree.o: $(STRUCTURES_PATH)/libTipsy.a
 ss2salsa.o: $(STRUCTURES_PATH)/libTipsy.a
+browse_field.o: ../structures/tree_xdr.h
 
 merge_tipsy_array.o: CXXFLAGS += -I../SimulationHandler -I$(XERCESCROOT)/include
 merge_tipsy_array: LDFLAGS += -L$(XERCESCROOT)/lib
