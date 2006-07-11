@@ -170,7 +170,8 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 		family.count.numParticles = numParticles;
 		family.count.startParticle = startParticle;
 	    }
-	else if(family.count.numParticles != numParticles || family.count.startParticle != startParticle) {
+	else if(family.count.numParticles != (u_int64_t) numParticles
+		|| family.count.startParticle != startParticle) {
 	    std::cerr << "Bad Particle Number: " << numParticles << std::endl;
 	    return false;
 	    }
@@ -191,31 +192,50 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 		return true;
 	TypedArray& array = attrIter->second;
 	array.release();
-	bool value = false;
-	FILE* infile = fopen(attributeFiles[familyName + ":" + attributeName].c_str(), "rb");
+	bool value = true;
+	std::string sFileName((attributeFiles[familyName +":"+ attributeName]));
+	FILE* infile = fopen(sFileName.c_str(), "rb");
 	if(infile) {
 		XDR xdrs;
 		xdrstdio_create(&xdrs, infile, XDR_DECODE);
 		FieldHeader fh;
-		if(xdr_template(&xdrs, &fh)
-				&& fh.magic == FieldHeader::MagicNumber
-				&& fh.numParticles == family.count.totalNumParticles
-				&& array.dimensions == fh.dimensions
-				&& array.code == fh.code
-				&& readAttributes(&xdrs, array, family.count.numParticles, family.count.startParticle)
-		   ) {
-		    value = true;
+		if(!xdr_template(&xdrs, &fh)) {
+		    std::string message(sFileName + ": XDR error");
+		    throw(FileError(message.c_str()));
+		    value = false;
 		    }
-		else{
-		    std::cerr << "loadAttribute: Failed to read Attributes"
-			      << std::endl;
+		if(fh.magic != FieldHeader::MagicNumber) {
+		    std::string message(sFileName + ": bad magic");
+		    throw(FileError(message.c_str()));
+		    value = false;
 		    }
-		
+		if(fh.numParticles != family.count.totalNumParticles) {
+		    std::string message(sFileName + ": bad particle number");
+		    throw(FileError(message.c_str()));
+		    value = false;
+		    }
+		if(array.dimensions != fh.dimensions) {
+		    std::string message(sFileName + ": bad dimensions");
+		    throw(FileError(message.c_str()));
+		    value = false;
+		    }
+		if(array.code != fh.code) {
+		    std::string message(sFileName + ": bad type");
+		    throw(FileError(message.c_str()));
+		    value = false;
+		    }
+		if(!readAttributes(&xdrs, array, family.count.numParticles,
+				   family.count.startParticle)) {
+		    std::string message(sFileName + ": bad readAttributes");
+		    throw(FileError(message.c_str()));
+		    value = false;
+		    }
 		xdr_destroy(&xdrs);
 	}
 	else {
 	    std::cerr << "loadAttribute: Failed to open file" << std::endl;
-	    throw(FileError(attributeFiles[familyName + ":" + attributeName].c_str()));
+	    throw(FileError(sFileName.c_str()));
+	    value = false;
 	    }
 	
 	fclose(infile);

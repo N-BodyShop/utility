@@ -112,7 +112,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
 			gas_particle gp;
-			for(u_int64_t i = 0; i < numParticles; ++i) {
+			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextGasParticle(gp))
 					return false;
 				masses[i] = gp.mass;
@@ -143,7 +143,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
 			dark_particle dp;
-			for(u_int64_t i = 0; i < numParticles; ++i) {
+			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextDarkParticle(dp)) {
 					cerr << "BAD READ OF TIPSY FILE" <<endl;
 					return false;
@@ -170,7 +170,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
 			star_particle sp;
-			for(u_int64_t i = 0; i < numParticles; ++i) {
+			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextStarParticle(sp))
 					return false;
 				masses[i] = sp.mass;
