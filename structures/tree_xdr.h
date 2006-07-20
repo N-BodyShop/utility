@@ -62,7 +62,7 @@ inline XDRReadError::XDRReadError(std::string s, int64_t w) : oper(s),
 
 inline std::string XDRReadError::getText() const throw() {
     char sWhere[128];
-    sprintf(sWhere, "%ld", where) ;
+    sprintf(sWhere, "%ld", (long) where) ;
   return oper + " Error at " + sWhere;
 }
 /** The header present in every tree file. 
