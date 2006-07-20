@@ -14,6 +14,7 @@
 
 #include "TipsyParticles.h"
 #include "Vector3D.h"
+#include "xdr_template.h"
 
 namespace Tipsy {
 
@@ -164,6 +165,64 @@ public:
 	unsigned int tellParticleNum() const {
 		return numGasRead + numDarksRead + numStarsRead;
 	}
+};
+
+class TipsyWriter {
+	bool native;
+	bool ok;
+	FILE *tipsyFp;
+	XDR xdrs;
+	header h;
+	
+ public:
+	
+	bool writeHeader();
+	
+	/// Write to a file
+	TipsyWriter(const std::string& filename, header &parh,
+		    bool pnative=false)
+	    : native(pnative), ok(false), h(parh) {
+	    tipsyFp = fopen(filename.c_str(), "a");  // Create file
+	    if(tipsyFp == NULL) {
+		ok = false;
+		assert(0);
+		return;
+		}
+	    fclose(tipsyFp);
+	    tipsyFp = fopen(filename.c_str(), "rb+");
+	    if(tipsyFp == NULL) {
+		ok = false;
+		assert(0);
+		return;
+		}
+	    if(!native)
+		xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
+	    ok = true;
+	}
+	
+	~TipsyWriter() {
+	    if(!native)
+		xdr_destroy(&xdrs);
+	    fclose(tipsyFp);
+	}
+	
+	bool putNextGasParticle(gas_particle& p);
+	bool putNextDarkParticle(dark_particle& p);
+	bool putNextStarParticle(star_particle& p);
+	
+	//	bool writeAllParticles(gas_particle* gas, dark_particle* darks, star_particle* stars);
+	//	bool writeAllParticles(std::vector<gas_particle>& gas, std::vector<dark_particle>& darks, std::vector<star_particle>& stars);
+	
+	/// Is this file in native byte-order
+	bool isNative() const {
+		return native;
+	}
+	
+	bool status() const {
+		return ok;
+	}
+	
+	bool seekParticleNum(unsigned int num);
 };
 
 } //close namespace Tipsy

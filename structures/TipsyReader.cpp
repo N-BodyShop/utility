@@ -362,4 +362,93 @@ bool TipsyReader::skipParticles(unsigned int num) {
 	return true;
 }
 
+bool TipsyWriter::writeHeader() {
+	
+	if(!tipsyFp)
+	    return false;
+	
+	if(native) {
+	    fwrite(&h, sizeof(h), 1, tipsyFp);
+	    }
+	else {
+	    xdr_template(&xdrs, &h);
+	    }
+	return true;
+}
+
+/** Write the next gas particle.
+ Returns false if the write failed.
+ */
+bool TipsyWriter::putNextGasParticle(gas_particle& p) {
+	if(!tipsyFp)
+		return false;
+	
+	if(native) {
+	    fwrite(&p, gas_particle::sizeBytes, 1, tipsyFp);
+	    }
+	else {
+	    if(!xdr_template(&xdrs, &p))
+		return false;
+	    }
+	
+	return true;
+}
+
+bool TipsyWriter::putNextDarkParticle(dark_particle& p) {
+	if(!tipsyFp)
+		return false;
+	
+	if(native) {
+	    fwrite(&p, dark_particle::sizeBytes, 1, tipsyFp);
+	    }
+	else {
+	    if(!xdr_template(&xdrs, &p))
+		return false;
+	    }
+	
+	return true;
+}
+
+bool TipsyWriter::putNextStarParticle(star_particle& p) {
+	if(!tipsyFp)
+		return false;
+	
+	if(native) {
+	    fwrite(&p, star_particle::sizeBytes, 1, tipsyFp);
+	    }
+	else {
+	    if(!xdr_template(&xdrs, &p))
+		return false;
+	    }
+	
+	return true;
+}
+
+/** Seek to the requested particle in the file.
+ Returns false if the file seek fails, or if you request too large a particle.
+ */
+bool TipsyWriter::seekParticleNum(unsigned int num) {
+	int padSize = 0;
+	if(!native)
+		padSize = 4;
+	else
+		padSize = sizeof(h) - header::sizeBytes;
+
+	unsigned int preface = header::sizeBytes + padSize;
+	int64_t seek_position;
+	xdr_destroy(&xdrs);
+	
+	if(num < (unsigned int) h.nsph) {
+		seek_position = preface + num * gas_particle::sizeBytes;
+	} else if(num < (unsigned int) (h.nsph + h.ndark)) {
+		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
+	} else if(num < (unsigned int) (h.nsph + h.ndark + h.nstar)) {
+		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
+	} else
+		return false;
+	fseek(tipsyFp, seek_position, 0);
+	xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
+	
+	return true;
+}
 } //close namespace Tipsy
