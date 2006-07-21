@@ -15,6 +15,7 @@
 #include "TipsyParticles.h"
 #include "Vector3D.h"
 #include "xdr_template.h"
+#include "assert.h"
 
 namespace Tipsy {
 
