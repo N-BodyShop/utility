@@ -34,12 +34,13 @@ public:
 	 for a mass distributed with this kernel. \vec{a} = -m \vec{r} evaluateAcceleration(r, \epsilon)
 	 */
 	virtual double evaluateAcceleration(double r, double epsilon) const = 0;
+	virtual ~Kernel() {}
 };
 
+static const double spline_PI = 3.14159265358979323846;
 /** The standard cubic kernel used in SPH calculations.
  */
 class SplineKernel : public Kernel {
-	static const double spline_PI = 3.14159265358979323846;
 	
 	inline static double f(double x) {
 		return (0.5 + 13.0 / 4 * x * x) * sqrt(1 - x * x) - (3 + 3.0 / 4 * x * x) * x * x * log((1 + sqrt(1 - x * x)) / x);
