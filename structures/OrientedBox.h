@@ -94,6 +94,22 @@ public:
 			greater_corner.z = point.z;		
 	}
 	
+	void grow(const OrientedBox<T>& box) {
+		if(box.lesser_corner.x < lesser_corner.x)
+			lesser_corner.x = box.lesser_corner.x;
+		if(box.lesser_corner.y < lesser_corner.y)
+			lesser_corner.y = box.lesser_corner.y;
+		if(box.lesser_corner.z < lesser_corner.z)
+			lesser_corner.z = box.lesser_corner.z;
+		
+		if(box.greater_corner.x > greater_corner.x)
+			greater_corner.x = box.greater_corner.x;
+		if(box.greater_corner.y > greater_corner.y)
+			greater_corner.y = box.greater_corner.y;
+		if(box.greater_corner.z > greater_corner.z)
+			greater_corner.z = box.greater_corner.z;		
+	}
+	
 	virtual T volume() const {
 		return static_cast<T>((greater_corner.x - lesser_corner.x) * (greater_corner.y - lesser_corner.y) * (greater_corner.z - lesser_corner.z));
 	}
