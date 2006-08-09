@@ -4,7 +4,7 @@ NAME = structures
 VERSION = 1.1
 INSTALL_LOCATION = $(HOME)/my_stuff/bin/
 LIBTARGETS = TipsyReader.o TipsyFile.o SS.o
-EXECTARGETS = browse see_header random_sample tipsy2ifrit ss2ifrit
+EXECTARGETS = browse see_header see_treexdr random_sample tipsy2ifrit ss2ifrit
 
 .PHONY: all docs dist clean
 
