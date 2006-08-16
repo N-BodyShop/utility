@@ -128,7 +128,7 @@ public:
 		}
 		return g;
 	}
-	
+
 	ParticleGroup& createGroup(const std::string& groupName, const std::string& attributeName, void* minData, void* maxData) {
 		ParticleGroup& g = groups[groupName];
 		g.clear();
@@ -146,13 +146,13 @@ public:
 						return createGroup(groupName, attributeName, *static_cast<short *>(minData), *static_cast<short *>(maxData));
 					case uint16:
 						return createGroup(groupName, attributeName, *static_cast<unsigned short *>(minData), *static_cast<unsigned short *>(maxData));
-					case int32:
+					case TypeHandling::int32:
 						return createGroup(groupName, attributeName, *static_cast<int *>(minData), *static_cast<int *>(maxData));
-					case uint32:
+					case TypeHandling::uint32:
 						return createGroup(groupName, attributeName, *static_cast<unsigned int *>(minData), *static_cast<unsigned int *>(maxData));
-					case int64:
+					case TypeHandling::int64:
 						return createGroup(groupName, attributeName, *static_cast<int64_t *>(minData), *static_cast<int64_t *>(maxData));
-					case uint64:
+					case TypeHandling::uint64:
 						return createGroup(groupName, attributeName, *static_cast<u_int64_t *>(minData), *static_cast<u_int64_t *>(maxData));
 					case float32:
 						return createGroup(groupName, attributeName, *static_cast<float *>(minData), *static_cast<float *>(maxData));
@@ -170,13 +170,13 @@ public:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<short> *>(minData), *static_cast<Vector3D<short> *>(maxData));
 					case uint16:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<unsigned short> *>(minData), *static_cast<Vector3D<unsigned short> *>(maxData));
-					case int32:
+					case TypeHandling::int32:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<int> *>(minData), *static_cast<Vector3D<int> *>(maxData));
-					case uint32:
+					case TypeHandling::uint32:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<unsigned int> *>(minData), *static_cast<Vector3D<unsigned int> *>(maxData));
-					case int64:
+					case TypeHandling::int64:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<int64_t> *>(minData), *static_cast<Vector3D<int64_t> *>(maxData));
-					case uint64:
+					case TypeHandling::uint64:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<u_int64_t> *>(minData), *static_cast<Vector3D<u_int64_t> *>(maxData));
 					case float32:
 						return createGroup(groupName, attributeName, *static_cast<Vector3D<float> *>(minData), *static_cast<Vector3D<float> *>(maxData));
