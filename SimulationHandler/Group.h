@@ -234,17 +234,17 @@ boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, boost::
 					case uint16:
 						p.reset(new AttributeRangeGroup<Code2Type<uint16>::type>(sim, parent, attributeName, static_cast<Code2Type<uint16>::type>(minValue), static_cast<Code2Type<uint16>::type>(maxValue)));
 						break;
-					case int32:
-						p.reset(new AttributeRangeGroup<Code2Type<int32>::type>(sim, parent, attributeName, static_cast<Code2Type<int32>::type>(minValue), static_cast<Code2Type<int32>::type>(maxValue)));
+					case TypeHandling::int32:
+						p.reset(new AttributeRangeGroup<Code2Type<TypeHandling::int32>::type>(sim, parent, attributeName, static_cast<Code2Type<TypeHandling::int32>::type>(minValue), static_cast<Code2Type<TypeHandling::int32>::type>(maxValue)));
 						break;
-					case uint32:
-						p.reset(new AttributeRangeGroup<Code2Type<uint32>::type>(sim, parent, attributeName, static_cast<Code2Type<uint32>::type>(minValue), static_cast<Code2Type<uint32>::type>(maxValue)));
+					case TypeHandling::uint32:
+						p.reset(new AttributeRangeGroup<Code2Type<TypeHandling::uint32>::type>(sim, parent, attributeName, static_cast<Code2Type<TypeHandling::uint32>::type>(minValue), static_cast<Code2Type<TypeHandling::uint32>::type>(maxValue)));
 						break;
-					case int64:
-						p.reset(new AttributeRangeGroup<Code2Type<int64>::type>(sim, parent, attributeName, static_cast<Code2Type<int64>::type>(minValue), static_cast<Code2Type<int64>::type>(maxValue)));
+					case TypeHandling::int64:
+						p.reset(new AttributeRangeGroup<Code2Type<TypeHandling::int64>::type>(sim, parent, attributeName, static_cast<Code2Type<TypeHandling::int64>::type>(minValue), static_cast<Code2Type<TypeHandling::int64>::type>(maxValue)));
 						break;
-					case uint64:
-						p.reset(new AttributeRangeGroup<Code2Type<uint64>::type>(sim, parent, attributeName, static_cast<Code2Type<uint64>::type>(minValue), static_cast<Code2Type<uint64>::type>(maxValue)));
+					case TypeHandling::uint64:
+						p.reset(new AttributeRangeGroup<Code2Type<TypeHandling::uint64>::type>(sim, parent, attributeName, static_cast<Code2Type<TypeHandling::uint64>::type>(minValue), static_cast<Code2Type<TypeHandling::uint64>::type>(maxValue)));
 						break;
 					case float32:
 						p.reset(new AttributeRangeGroup<Code2Type<float32>::type>(sim, parent, attributeName, static_cast<Code2Type<float32>::type>(minValue), static_cast<Code2Type<float32>::type>(maxValue)));
@@ -376,17 +376,17 @@ boost::shared_ptr<Group> make_SphericalGroup(Simulation const& sim, boost::share
 					case uint16:
 						p.reset(new SphericalGroup<Code2Type<uint16>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint16>::type> >(centerVector), static_cast<Code2Type<uint16>::type>(radiusValue)));
 						break;
-					case int32:
-						p.reset(new SphericalGroup<Code2Type<int32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int32>::type> >(centerVector), static_cast<Code2Type<int32>::type>(radiusValue)));
+					case TypeHandling::int32:
+						p.reset(new SphericalGroup<Code2Type<TypeHandling::int32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(centerVector), static_cast<Code2Type<TypeHandling::int32>::type>(radiusValue)));
 						break;
-					case uint32:
-						p.reset(new SphericalGroup<Code2Type<uint32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint32>::type> >(centerVector), static_cast<Code2Type<uint32>::type>(radiusValue)));
+					case TypeHandling::uint32:
+						p.reset(new SphericalGroup<Code2Type<TypeHandling::uint32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(centerVector), static_cast<Code2Type<TypeHandling::uint32>::type>(radiusValue)));
 						break;
-					case int64:
-						p.reset(new SphericalGroup<Code2Type<int64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int64>::type> >(centerVector), static_cast<Code2Type<int64>::type>(radiusValue)));
+					case TypeHandling::int64:
+						p.reset(new SphericalGroup<Code2Type<TypeHandling::int64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(centerVector), static_cast<Code2Type<TypeHandling::int64>::type>(radiusValue)));
 						break;
-					case uint64:
-						p.reset(new SphericalGroup<Code2Type<uint64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint64>::type> >(centerVector), static_cast<Code2Type<uint64>::type>(radiusValue)));
+					case TypeHandling::uint64:
+						p.reset(new SphericalGroup<Code2Type<TypeHandling::uint64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(centerVector), static_cast<Code2Type<TypeHandling::uint64>::type>(radiusValue)));
 						break;
 					case float32:
 						p.reset(new SphericalGroup<Code2Type<float32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<float32>::type> >(centerVector), static_cast<Code2Type<float32>::type>(radiusValue)));
@@ -515,17 +515,17 @@ boost::shared_ptr<Group> make_BoxGroup(Simulation const& sim, boost::shared_ptr<
 					case uint16:
 						p.reset(new BoxGroup<Code2Type<uint16>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint16>::type> >(cornerVector), static_cast<Vector3D<Code2Type<uint16>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<uint16>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<uint16>::type> >(edge3Vector)));
 						break;
-					case int32:
-						p.reset(new BoxGroup<Code2Type<int32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int32>::type> >(cornerVector), static_cast<Vector3D<Code2Type<int32>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<int32>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<int32>::type> >(edge3Vector)));
+					case TypeHandling::int32:
+						p.reset(new BoxGroup<Code2Type<TypeHandling::int32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(cornerVector), static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(edge3Vector)));
 						break;
-					case uint32:
-						p.reset(new BoxGroup<Code2Type<uint32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint32>::type> >(cornerVector), static_cast<Vector3D<Code2Type<uint32>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<uint32>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<uint32>::type> >(edge3Vector)));
+					case TypeHandling::uint32:
+						p.reset(new BoxGroup<Code2Type<TypeHandling::uint32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(cornerVector), static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(edge3Vector)));
 						break;
-					case int64:
-						p.reset(new BoxGroup<Code2Type<int64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int64>::type> >(cornerVector), static_cast<Vector3D<Code2Type<int64>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<int64>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<int64>::type> >(edge3Vector)));
+					case TypeHandling::int64:
+						p.reset(new BoxGroup<Code2Type<TypeHandling::int64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(cornerVector), static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(edge3Vector)));
 						break;
-					case uint64:
-						p.reset(new BoxGroup<Code2Type<uint64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint64>::type> >(cornerVector), static_cast<Vector3D<Code2Type<uint64>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<uint64>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<uint64>::type> >(edge3Vector)));
+					case TypeHandling::uint64:
+						p.reset(new BoxGroup<Code2Type<TypeHandling::uint64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(cornerVector), static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(edge3Vector)));
 						break;
 					case float32:
 						p.reset(new BoxGroup<Code2Type<float32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<float32>::type> >(cornerVector), static_cast<Vector3D<Code2Type<float32>::type> >(edge1Vector), static_cast<Vector3D<Code2Type<float32>::type> >(edge2Vector), static_cast<Vector3D<Code2Type<float32>::type> >(edge3Vector)));
