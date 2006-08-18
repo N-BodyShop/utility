@@ -51,6 +51,11 @@ bool SiXFormatReader::loadFromXMLFile(string directoryname) {
 	else
 		name = directoryname.substr(slashPos + 1);
 	
+	// Test for file existence before going into XML
+	FILE *fp = fopen((directoryname + "/description.xml").c_str(), "r");
+	if(fp == NULL)
+		return false;
+	fclose(fp);
 	//initialize XML system
     try {
 		XMLPlatformUtils::Initialize();
