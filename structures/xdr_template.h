@@ -19,6 +19,7 @@
 
 #include "config.h"
 
+#include <assert.h>
 #include <rpc/rpc.h>
 
 #include "Vector3D.h"
@@ -116,11 +117,13 @@ inline bool_t xdr_template(XDR* xdrs, int* val) {
 }
 
 inline bool_t xdr_template(XDR* xdrs, u_int64_t* val) {
-	return xdr_u_hyper(xdrs, val);
+	assert(sizeof(u_int64_t) == sizeof(u_quad_t));
+	return xdr_u_hyper(xdrs, (u_quad_t *) val);
 }
 
 inline bool_t xdr_template(XDR* xdrs, int64_t* val) {
-	return xdr_hyper(xdrs, val);
+	assert(sizeof(int64_t) == sizeof(quad_t));
+	return xdr_hyper(xdrs, (quad_t *)val);
 }
 
 inline bool_t xdr_template(XDR* xdrs, float* val) {
