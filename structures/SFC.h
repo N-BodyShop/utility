@@ -59,8 +59,6 @@ const Key firstPossibleKey = static_cast<Key>(0);
 /** The very last possible key a particle can take on. */
 const Key lastPossibleKey = ~(static_cast<Key>(1) << 63);
 
-float exchangeKey[3];
-
 /** Given the floating point numbers for the location, construct the key. 
  The key uses 21 of the 23 bits for the floats of the x, y, and z coordinates
  of the position vector.  This process will only make sense if the position
@@ -70,7 +68,7 @@ float exchangeKey[3];
  The second parameter is the bounding Box used to normalize the position vectors
  between 1 and 2.
  */
-inline Key makeKey() {
+inline Key makeKey(float exchangeKey[3]) {
   //unsigned int ix = *reinterpret_cast<unsigned int *>(&exchangeKey[0]);
   //unsigned int iy = *reinterpret_cast<unsigned int *>(&exchangeKey[1]);
   //unsigned int iz = *reinterpret_cast<unsigned int *>(&exchangeKey[2]);
@@ -94,10 +92,12 @@ inline Key makeKey() {
 
 inline Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& boundingBox){
   Vector3D<float> d = (v - boundingBox.lesser_corner) / (boundingBox.greater_corner - boundingBox.lesser_corner); //+ Vector3D<float>(1, 1, 1);
+
+  float exchangeKey[3];
   exchangeKey[0] = d.x;
   exchangeKey[1] = d.y;
   exchangeKey[2] = d.z;
-  return makeKey();
+  return makeKey(exchangeKey);
 }
 
 /** Given a key, create a vector of floats representing a position.
