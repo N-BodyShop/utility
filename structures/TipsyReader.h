@@ -228,4 +228,31 @@ class TipsyWriter {
 
 } //close namespace Tipsy
 
+#ifdef __CHARMC__
+#include "pup.h"
+#include "charm++.h"
+
+inline void operator|(PUP::er& p, Tipsy::header& h) {
+	p | h.time;
+	p | h.nbodies;
+	p | h.ndim;
+	p | h.nsph;
+	p | h.ndark;
+	p | h.nstar;
+}
+
+class CkOStream;
+
+CkOStream& operator<<(CkOStream& os, const Tipsy::header& h) {
+    return os << "Time: " << h.time
+	      << "\nnBodies: " << h.nbodies
+	      << "\nnDim: " << h.ndim
+	      << "\nnSPH: " << h.nsph
+	      << "\nnDark: " << h.ndark
+	      << "\nnStar: " << h.nstar;
+	return os;
+}
+
+#endif //__CHARMC__
+
 #endif //TIPSYREADER_H
