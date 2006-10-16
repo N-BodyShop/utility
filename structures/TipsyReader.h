@@ -243,7 +243,7 @@ inline void operator|(PUP::er& p, Tipsy::header& h) {
 
 class CkOStream;
 
-CkOStream& operator<<(CkOStream& os, const Tipsy::header& h) {
+inline CkOStream& operator<<(CkOStream& os, const Tipsy::header& h) {
     return os << "Time: " << h.time
 	      << "\nnBodies: " << h.nbodies
 	      << "\nnDim: " << h.ndim
