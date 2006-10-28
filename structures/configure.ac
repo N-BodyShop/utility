@@ -8,7 +8,7 @@ AC_CONFIG_SRCDIR([TipsyFile.cpp])
 AC_CONFIG_HEADER([config.h])
 
 # Checks for header files.
-AC_CHECK_HEADERS([stdint.h endian.h machine/endian.h])
+AC_CHECK_HEADERS([stdint.h endian.h machine/endian.h sys/bitypes.h])
 
 # Checks for typedefs, structures, and compiler characteristics.
 AC_HEADER_STDBOOL
