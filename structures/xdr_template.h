@@ -117,11 +117,19 @@ inline bool_t xdr_template(XDR* xdrs, int* val) {
 }
 
 inline bool_t xdr_template(XDR* xdrs, u_int64_t* val) {
+#ifdef _LONG_LONG
+	return xdr_u_hyper(xdrs, (unsigned long long *)val);
+#else
 	return xdr_u_hyper(xdrs, val);
+#endif
 }
 
 inline bool_t xdr_template(XDR* xdrs, int64_t* val) {
+#ifdef _LONG_LONG
+	return xdr_hyper(xdrs, (long long *)val);
+#else
 	return xdr_hyper(xdrs, val);
+#endif
 }
 
 inline bool_t xdr_template(XDR* xdrs, float* val) {
