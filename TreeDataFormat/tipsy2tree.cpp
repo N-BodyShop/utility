@@ -333,7 +333,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.numParticles = numParticles;
 	
 	fh.dimensions = 1;
-	fh.code = uint32;
+	fh.code = TypeHandling::uint32;
 	unsigned int minUID = 0;
 	unsigned int maxUID = numParticles - 1;
 	outfile = fopen("gas/uid", "wb");
@@ -454,7 +454,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.numParticles = numParticles;
 	
 	fh.dimensions = 1;
-	fh.code = uint32;
+	fh.code = TypeHandling::uint32;
 	unsigned int minUID = numParticlesBefore;
 	unsigned int maxUID = numParticlesBefore + numParticles - 1;
 	outfile = fopen("dark/uid", "wb");
@@ -551,7 +551,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 	fh.numParticles = numParticles;
 	
 	fh.dimensions = 1;
-	fh.code = uint32;
+	fh.code = TypeHandling::uint32;
 	unsigned int minUID = numParticlesBefore;
 	unsigned int maxUID = numParticlesBefore + numParticles - 1;
 	outfile = fopen("star/uid", "wb");
