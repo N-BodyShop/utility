@@ -1,4 +1,5 @@
 CXXFLAGS += -O3 -DMACOSX
+CXX = @CXX@
 
 NAME = structures
 VERSION = 1.1
