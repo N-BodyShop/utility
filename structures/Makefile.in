@@ -1,11 +1,14 @@
-CXXFLAGS += -O3
+CXXFLAGS += -O3 @CPPFLAGS@
 CXX = @CXX@
+CC = @CC@
 
 NAME = structures
 VERSION = 1.1
 INSTALL_LOCATION = $(HOME)/my_stuff/bin/
 LIBTARGETS = TipsyReader.o TipsyFile.o SS.o
 EXECTARGETS = browse see_header see_treexdr random_sample tipsy2ifrit ss2ifrit
+LDFLAGS += -L../libs
+LDLIBS += @LIBS@
 
 .PHONY: all docs dist clean
 

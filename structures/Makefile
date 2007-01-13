@@ -1,14 +1,20 @@
-CXXFLAGS += -O3 -Wall 
+CXXFLAGS += -O3  -I..
+CXX = /opt/ibmcmp/vacpp/bg/8.0/bin/blrts_xlC 
+CC = /opt/ibmcmp/vac/bg/8.0/bin/blrts_xlc -qcpluscmt 
 
 NAME = structures
 VERSION = 1.1
 INSTALL_LOCATION = $(HOME)/my_stuff/bin/
 LIBTARGETS = TipsyReader.o TipsyFile.o SS.o
 EXECTARGETS = browse see_header see_treexdr random_sample tipsy2ifrit ss2ifrit
+LDFLAGS += -L../libs
+LDLIBS += -lxdr 
 
 .PHONY: all docs dist clean
 
 all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  # SFC.o
+
+libTipsy.a: libTipsy.a($(LIBTARGETS))
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
