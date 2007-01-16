@@ -1,4 +1,4 @@
-/** @file xdr_template.h
+12/** @file xdr_template.h
  Provides inline functions xdr_template() which perform
  XDR conversion of a value.  Numerous overloads
  of this function are provided for many common types, including
@@ -120,7 +120,11 @@ inline bool_t xdr_template(XDR* xdrs, u_int64_t* val) {
 #ifdef _LONG_LONG
 	return xdr_u_hyper(xdrs, (unsigned long long *)val);
 #else
+#ifdef HAVE_BOTH_INT64_AND_QUAD_T
+	return xdr_u_hyper(xdrs, (u_quad_t *)val);
+#else
 	return xdr_u_hyper(xdrs, val);
+#endif
 #endif
 }
 
@@ -128,7 +132,11 @@ inline bool_t xdr_template(XDR* xdrs, int64_t* val) {
 #ifdef _LONG_LONG
 	return xdr_hyper(xdrs, (long long *)val);
 #else
+#ifdef HAVE_BOTH_INT64_AND_QUAD_T
+	return xdr_u_hyper(xdrs, (quad_t *)val);
+#else
 	return xdr_hyper(xdrs, val);
+#endif
 #endif
 }
 
