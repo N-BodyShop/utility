@@ -51,8 +51,8 @@
 /* Define to 1 if the system has the type `u_quad_t'. */
 #undef HAVE_U_QUAD_T
 
-#ifdef HAVE_U_INT64_T
-#ifdef HAVE_U_QUAD_T
+#if HAVE_U_INT64_T
+#if HAVE_U_QUAD_T
 #define HAVE_BOTH_INT64_AND_QUAD_T
 #endif
 #endif
@@ -78,7 +78,14 @@
 /* Define to `unsigned' if <sys/types.h> does not define. */
 #undef size_t
 
+/* Define to 1 if the system has the type `quad'. */
+#undef HAVE_QUAD
+
 #if !HAVE_U_QUAD_T
 #include <sys/types.h>
+#if HAVE_QUAD
 typedef quad u_quad_t;
+#else
+typedef unsigned long long u_quad_t;
+#endif
 #endif
