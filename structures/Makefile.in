@@ -1,6 +1,7 @@
 CXXFLAGS += -O3 @CPPFLAGS@
 CXX = @CXX@
 CC = @CC@
+AR = @AR@
 
 NAME = structures
 VERSION = 1.1
@@ -14,7 +15,9 @@ LDLIBS += @LIBS@
 
 all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  # SFC.o
 
-libTipsy.a: libTipsy.a($(LIBTARGETS))
+libTipsy.a: $(LIBTARGETS)
+	-rm libTipsy.a
+	$(AR) libTipsy.a $(LIBTARGETS)
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
@@ -35,7 +38,7 @@ dist:
 	cp Makefile *.h *.cpp structures.doxygen $(NAME)-$(VERSION)/
 	tar zcf $(NAME)-$(VERSION).tar.gz $(NAME)-$(VERSION)
 	rm -Rf $(NAME)-$(VERSION)
-	
+
 clean:
 	rm -f core* *.o *~ $(TARGETS) libTipsy.a
 
