@@ -20,6 +20,7 @@
 #include "config.h"
 
 #include <assert.h>
+#include <stdio.h>
 #include <rpc/rpc.h>
 
 #include "Vector3D.h"
