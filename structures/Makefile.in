@@ -18,6 +18,7 @@ all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  # SFC.o
 libTipsy.a: $(LIBTARGETS)
 	-rm libTipsy.a
 	$(AR) libTipsy.a $(LIBTARGETS)
+	ranlib libTipsy.a
 
 TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
 
