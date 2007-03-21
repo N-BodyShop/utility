@@ -21,7 +21,7 @@
 
 #include <assert.h>
 #include <stdio.h>
-#include <rpc/rpc.h>
+#include <rpc/xdr.h>
 
 #include "Vector3D.h"
 #include "OrientedBox.h"
