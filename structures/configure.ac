@@ -7,6 +7,8 @@ AC_INIT(FULL-PACKAGE-NAME, VERSION, BUG-REPORT-ADDRESS)
 AC_CONFIG_SRCDIR([TipsyFile.cpp])
 AC_CONFIG_HEADER([config.h])
 
+AC_PROG_CXX
+
 # Checks for header files.
 AC_CHECK_HEADERS([stdint.h endian.h machine/endian.h sys/bitypes.h])
 
@@ -20,5 +22,7 @@ AC_CHECK_TYPES([u_quad_t, u_int64_t])
 # Checks for library functions.
 AC_HEADER_STDC
 AC_CHECK_FUNCS([floor memset sqrt xdr_hyper])
+
+AC_CONFIG_FILES([Makefile])
 
 AC_OUTPUT
