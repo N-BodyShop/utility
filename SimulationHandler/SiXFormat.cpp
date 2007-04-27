@@ -229,9 +229,14 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 		    throw(FileError(message.c_str()));
 		    value = false;
 		    }
-		if(!readAttributes(&xdrs, array, family.count.numParticles,
-				   family.count.startParticle)) {
-		    std::string message(sFileName + ": bad readAttributes");
+		try {
+		    readAttributes(&xdrs, array, family.count.numParticles,
+				   family.count.startParticle);
+		    }
+		catch(XDRReadError &e) {
+		    
+		    std::string message(sFileName + ": bad readAttributes "
+					+ e.getText());
 		    throw(FileError(message.c_str()));
 		    value = false;
 		    }
