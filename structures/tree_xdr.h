@@ -483,14 +483,12 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 	//seek to just past the header
 	if(!xdr_setpos(xdrs, FieldHeader::sizeBytes)) {
 	    throw XDRReadError("Seek", FieldHeader::sizeBytes);
-	    return false;
 	    }
 	//allocate for and read the minimum value
 	T* minVal = new T;
 	if(!xdr_template(xdrs, minVal)) {
 		delete minVal;
 		throw XDRReadError("ReadMin", FieldHeader::sizeBytes);
-		return false;
 	}
 	//set the minimum value
 	arr.minValue = minVal;
@@ -499,7 +497,6 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 	if(!xdr_template(xdrs, maxVal)) {
 		delete maxVal;
 		throw XDRReadError("ReadMax", xdr_getpos(xdrs));
-		return false;
 	}
 	//set the minimum value
 	arr.maxValue = maxVal;
@@ -523,7 +520,6 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 			}
 			if(fseek((FILE *)xdrs->x_private, offset, SEEK_CUR) != 0) {
 			   throw XDRReadError("fseek", offset);
-			   return false;
 			}
 			//seek to the starting value
 #if 0
@@ -537,7 +533,6 @@ inline bool readAttributes_typed(XDR* xdrs, TypeHandling::TypedArray& arr, const
 				if(!xdr_template(xdrs, data + i)) {
 					delete[] data;
 					throw XDRReadError("data read", i);
-					return false;
 				}
 			}
 		}
