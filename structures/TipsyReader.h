@@ -250,7 +250,6 @@ inline CkOStream& operator<<(CkOStream& os, const Tipsy::header& h) {
 	      << "\nnSPH: " << h.nsph
 	      << "\nnDark: " << h.ndark
 	      << "\nnStar: " << h.nstar;
-	return os;
 }
 
 #endif //__CHARMC__
