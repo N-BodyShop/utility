@@ -51,11 +51,28 @@
 /* Define to 1 if the system has the type `u_quad_t'. */
 #undef HAVE_U_QUAD_T
 
+/* Define to 1 if the system has the type `int64_t'. */
+#undef HAVE_INT64_T
+
+/* Define to 1 if the system has the type `quad_t'. */
+#undef HAVE_QUAD_T
+
 #if HAVE_U_INT64_T
 #if HAVE_U_QUAD_T
 #define HAVE_BOTH_INT64_AND_QUAD_T
 #endif
 #endif
+
+#if !defined(HAVE_U_INT64_T) && defined(HAVE_U_QUAD_T)
+#include <sys/types.h>
+typedef u_quad_t u_int64_t;
+#endif
+
+#if !defined(HAVE_INT64_T) && defined(HAVE_QUAD_T)
+#include <sys/types.h>
+typedef quad_t int64_t;
+#endif
+
 
 /* Define to 1 if you have the `xdr_hyper' function. */
 #undef HAVE_XDR_HYPER
