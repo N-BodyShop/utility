@@ -37,7 +37,7 @@ public:
 
 class SiXFormatWriter : public SimulationWriter {
 public:
-	virtual bool save(const Simulation* sim, const std::string& path);
+	virtual bool save(Simulation* sim, const std::string& path, int thisIndex);
 };
 
 } //close namespace SimulationHandling

@@ -11,6 +11,8 @@
 #include <xercesc/util/PlatformUtils.hpp>
 #include <xercesc/sax2/SAX2XMLReader.hpp>
 #include <xercesc/sax2/XMLReaderFactory.hpp>
+#include <sys/types.h>
+#include <sys/stat.h>
 
 #include "SiXFormat.h"
 
@@ -252,50 +254,76 @@ bool SiXFormatReader::loadAttribute(const string& familyName, const string& attr
 	return value;
 }
 
-bool SiXFormatWriter::save(const Simulation* sim, const std::string& path) {
+bool SiXFormatWriter::save( Simulation* sim, const std::string& passedPath, int thisIndex) {
 	const SiXFormatReader* six_sim = dynamic_cast<const SiXFormatReader *>(sim);
 	if(!six_sim) {
 		std::cerr << "Writing a SiX format that wasn't SiX format to begin with not yet supported!" << std::endl;
 		return false;
 	}
-	std::ofstream xmlfile((six_sim->pathPrefix + "/description.xml").c_str());
-	if(!xmlfile) {
-		//problem opening xml file
-		return false;
+	std::string path;
+	if(passedPath == "") path = six_sim->pathPrefix;
+	else path = passedPath;
+	std::ofstream xmlfile;
+	if(thisIndex == 0){
+	  std::cerr << "In save" << "\n";
+	  std::cerr << "path: " << path << "\n";
+	  std::cerr << "six_sim->pathPrefix: " << six_sim->pathPrefix << "\n";
+	  struct stat buf;
+	  if(stat(path.c_str(),&buf) < 0){
+	    std::cerr << "making directory: " << path << "\n";
+	    if(mkdir(path.c_str(),0755) < 0) throw(FileError("mkdir fails for "+path));
+	  }
+	  xmlfile.open((path + "/description.xml").c_str());
+	  if(!xmlfile) throw(FileError("problem opening xml file.\n"));
+	  xmlfile << "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n";
+	  xmlfile << "<simulation>\n";
 	}
-	xmlfile << "<?xml version=\"1.0\" encoding=\"iso-8859-1\"?>\n";
-	xmlfile << "<simulation>\n";
 	for(Simulation::const_iterator iter = sim->begin(); iter != sim->end(); ++iter) {
-		xmlfile << "\t<family name=\"" << iter->first << "\">\n";
-		for(AttributeMap::const_iterator attrIter = iter->second.attributes.begin(); attrIter != iter->second.attributes.end(); ++attrIter) {
-			if(attrIter->second.data) { //values are allocated
-				FILE* outfile = fopen((six_sim->pathPrefix + "/" + iter->first + "/" + attrIter->first).c_str(), "wb");
-				XDR xdrs;
-				xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-				writeAttributes(&xdrs, attrIter->second);
-				xdr_destroy(&xdrs);
-				fclose(outfile);
-			}
-			//write attribute xml tag
-			string filename;
-			std::map<std::string, std::string>::const_iterator mapIter = six_sim->attributeFiles.find(iter->first + ":" + attrIter->first);
-			if(mapIter == six_sim->attributeFiles.end()) { //didn't have an entry before
-				filename = six_sim->pathPrefix + "/" + iter->first + "/" + attrIter->first;
-				//attributeFiles[iter->first + ":" + attrIter->first] = filename;
-			} else
-				filename = mapIter->second;
-			string::size_type index = filename.rfind(iter->first + "/");
-			if(index == string::npos) {
-				std::cerr << "Couldn't find family directory in attribute filename" << std::endl;
-			} else {
-				filename = filename.substr(index);
-				xmlfile << "\t\t<attribute name=\"" << attrIter->first << "\" link=\"" << filename << "\"/>\n";
-			}
-		}
-		xmlfile << "\t</family>\n";
+	  std::string achDirName=path +"/"+ iter->first;
+	  if(thisIndex == 0){
+	    xmlfile << "<family name=\"" << iter->first << "\">\n";
+	    struct stat buf;
+	    if(stat(achDirName.c_str(),&buf) < 0){
+	      std::cerr << "making directory: " << achDirName << "\n" << endl;
+	      if(mkdir(achDirName.c_str(),0755) < 0) throw(FileError("mkdir fails for "+achDirName));
+	    }
+	  }
+	  for(AttributeMap::const_iterator attrIter = iter->second.attributes.begin(); attrIter != iter->second.attributes.end(); ++attrIter) {
+	    if(attrIter->second.data == NULL){   //make sure values are allocated
+	      sim->loadAttribute(iter->first, attrIter->first, 
+				 iter->second.count.numParticles, 
+				 iter->second.count.startParticle);
+	    }
+	    FILE* outfile = fopen((path + "/" + iter->first + "/" + attrIter->first).c_str(), "wb");
+	    if(!outfile) throw(FileError("unable to create "+achDirName+attrIter->first));
+	    XDR xdrs;
+	    xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+	    writeAttributes(&xdrs, attrIter->second, 
+			    iter->second.count.startParticle);
+	    xdr_destroy(&xdrs);
+	    fclose(outfile);
+	    //write attribute xml tag
+	    string filename;
+	    std::map<std::string, std::string>::const_iterator mapIter = six_sim->attributeFiles.find(iter->first + ":" + attrIter->first);
+	    if(mapIter == six_sim->attributeFiles.end()) { //didn't have an entry before
+	      filename = path + "/" + iter->first + "/" + attrIter->first;
+	      //attributeFiles[iter->first + ":" + attrIter->first] = filename;
+	    } else
+	      filename = mapIter->second;
+	    string::size_type index = filename.rfind(iter->first + "/");
+	    if(index == string::npos) {
+	      std::cerr << "Couldn't find family directory in attribute filename" << std::endl;
+	    } else {
+	      filename = filename.substr(index);
+	      if(thisIndex == 0) xmlfile << "\t\t<attribute name=\"" << attrIter->first << "\" link=\"" << filename << "\"/>\n";
+	    }
+	  }
+	  if(thisIndex == 0) xmlfile << "\t</family>\n";
 	}
-	xmlfile << "</simulation>\n";
-	xmlfile.close();
+	if(thisIndex == 0) {
+	  xmlfile << "</simulation>\n";
+	  xmlfile.close();
+	}
 	return true;
 }
 

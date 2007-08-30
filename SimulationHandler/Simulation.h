@@ -237,7 +237,7 @@ public:
 	/** Write the given simulation to disk in a format determined by the implementing sub-class.
 	All non-null attribute arrays will be written to disk.  To prevent an attribute
 	from being written do disk, explicitly release it before calling this method. */
-	virtual bool save(const Simulation*, const std::string&) = 0;
+	virtual bool save(Simulation*, const std::string&, int thisIndex) = 0;
 
 	//virtual bool write(const Simulation*, const std::string&) = 0;
 
