@@ -662,59 +662,73 @@ inline bool readAttributesPromote_typed(XDR* xdrs, TypeHandling::TypedArray& arr
 }
 
 template <typename T>
-inline bool writeAttributes_typed(XDR* xdrs, const TypeHandling::TypedArray& arr) {
+inline bool writeAttributes_typed(XDR* xdrs, const TypeHandling::TypedArray& arr, const u_int64_t startParticle = 0) {
 	FieldHeader fh(arr);
-	//write the header
-	if(!xdr_template(xdrs, &fh))
-		return false;
-	
-	//write minimum and maximum values
-	if(!xdr_template(xdrs, reinterpret_cast<T *>(arr.minValue)) || !xdr_template(xdrs, reinterpret_cast<T *>(arr.maxValue)))
-		return false;
-	
+        if(startParticle == 0){
+            //write the header
+            if(!xdr_template(xdrs, &fh))
+                    return false;
+            
+            //write minimum and maximum values
+            if(!xdr_template(xdrs, reinterpret_cast<T *>(arr.minValue)) || !xdr_template(xdrs, reinterpret_cast<T *>(arr.maxValue)))
+                    return false;
+	} else {
+            //seek to the starting value
+            int64_t offset = FieldHeader::sizeBytes + 
+                    (startParticle + 2) * TypeHandling::Type2Dimensions<T>::dimensions * mySizeof(TypeHandling::Type2Code<T>::code);
+	/* XXX NASTY kludge to get around 4 byte limit of xdr functions */
+            fseek((FILE *)xdrs->x_private, 0, 0);
+            while(offset > __BILLION) {
+                    offset -= __BILLION;
+                    fseek((FILE *)xdrs->x_private, __BILLION,
+                            SEEK_CUR);
+            }
+            if(fseek((FILE *)xdrs->x_private, offset, SEEK_CUR) != 0) {
+               throw XDRReadError("fseek", offset);
+            }
+        }
+        
 	//write the attribute values
-	if(*reinterpret_cast<T *>(arr.minValue) != *reinterpret_cast<T *>(arr.maxValue)) {
-		T* data = reinterpret_cast<T *>(arr.data);
-		for(u_int64_t i = 0; i < arr.length; ++i)
-			if(!xdr_template(xdrs, data + i))
-				return false;
-	}
+        T* data = reinterpret_cast<T *>(arr.data);
+        for(u_int64_t i = 0; i < arr.length; ++i)
+                if(!xdr_template(xdrs, data + i))
+                        return false;
 	return true;
 }
 
 template <typename T>
-inline bool writeAttributes_dimensions(XDR* xdrs, const TypeHandling::TypedArray& arr) {
+inline bool writeAttributes_dimensions(XDR* xdrs, const TypeHandling::TypedArray& arr, const u_int64_t startParticle = 0) {
 	if(arr.dimensions == 1)
-		return writeAttributes_typed<T>(xdrs, arr);
+		return writeAttributes_typed<T>(xdrs, arr, startParticle);
 	else if(arr.dimensions == 3)
-		return writeAttributes_typed<Vector3D<T> >(xdrs, arr);
+		return writeAttributes_typed<Vector3D<T> >(xdrs, arr, startParticle);
 	else
 		//throw UnsupportedDimensionalityException;
 		return false;
 }
 
-inline bool writeAttributes(XDR* xdrs, const TypeHandling::TypedArray& arr) {
+inline bool writeAttributes(XDR* xdrs, const TypeHandling::TypedArray& arr, const u_int64_t startParticle = 0) {
 	switch(arr.code) {
 		case TypeHandling::int8:
-			return writeAttributes_dimensions<char>(xdrs, arr);
+			return writeAttributes_dimensions<char>(xdrs, arr, startParticle);
 		case TypeHandling::uint8:
-			return writeAttributes_dimensions<unsigned char>(xdrs, arr);
+			return writeAttributes_dimensions<unsigned char>(xdrs, arr, startParticle);
 		case TypeHandling::int16:
-			return writeAttributes_dimensions<short>(xdrs, arr);
+			return writeAttributes_dimensions<short>(xdrs, arr, startParticle);
 		case TypeHandling::uint16:
-			return writeAttributes_dimensions<unsigned short>(xdrs, arr);
+			return writeAttributes_dimensions<unsigned short>(xdrs, arr, startParticle);
 		case TypeHandling::int32:
-			return writeAttributes_dimensions<int>(xdrs, arr);
+			return writeAttributes_dimensions<int>(xdrs, arr, startParticle);
 		case TypeHandling::uint32:
-			return writeAttributes_dimensions<unsigned int>(xdrs, arr);
+			return writeAttributes_dimensions<unsigned int>(xdrs, arr, startParticle);
 		case TypeHandling::int64:
-			return writeAttributes_dimensions<int64_t>(xdrs, arr);
+			return writeAttributes_dimensions<int64_t>(xdrs, arr, startParticle);
 		case TypeHandling::uint64:
-			return writeAttributes_dimensions<u_int64_t>(xdrs, arr);
+			return writeAttributes_dimensions<u_int64_t>(xdrs, arr, startParticle);
 		case TypeHandling::float32:
-			return writeAttributes_dimensions<float>(xdrs, arr);
+			return writeAttributes_dimensions<float>(xdrs, arr, startParticle);
 		case TypeHandling::float64:
-			return writeAttributes_dimensions<double>(xdrs, arr);
+			return writeAttributes_dimensions<double>(xdrs, arr, startParticle);
 		default:
 			//throw UnsupportedTypeException;
 			return false;
