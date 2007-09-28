@@ -419,7 +419,9 @@ public:
 	
 	BoxIterator(GroupIterator parentBegin, Vector3D<T> cornerVector_, Vector3D<T> edge1Vector_, Vector3D<T> edge2Vector_, Vector3D<T> edge3Vector_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), cornerVector(cornerVector_), edge1Vector(edge1Vector_), edge2Vector(edge2Vector_), edge3Vector(edge3Vector_), array(array_), length(length_) {
 	    while(*parentIter < length) {
-		Vector3D<T> vec = array[*parentIter]-cornerVector;
+		// signed type is needed in order for subtraction and
+		// comparision to make sense
+		Vector3D<double> vec = array[*parentIter]-cornerVector;
 		if((dot(vec,edge1Vector) < edge1Vector.lengthSquared()) &&
 		   (dot(vec,edge1Vector) >= 0)  &&
 		   (dot(vec,edge2Vector) < edge2Vector.lengthSquared()) &&
@@ -434,7 +436,9 @@ public:
 	void increment() {
 	    if(*parentIter < length) {
 		for(++parentIter; *parentIter < length; ++parentIter) {
-		    Vector3D<T> vec = array[*parentIter]-cornerVector;
+		    // signed type is needed in order for subtraction and
+		    // comparision to make sense
+		    Vector3D<double> vec = array[*parentIter]-cornerVector;
 		    if((dot(vec,edge1Vector) < edge1Vector.lengthSquared()) &&
 		       (dot(vec,edge1Vector) >= 0)  &&
 		       (dot(vec,edge2Vector) < edge2Vector.lengthSquared()) &&
