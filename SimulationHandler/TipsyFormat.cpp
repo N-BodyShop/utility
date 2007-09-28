@@ -189,7 +189,8 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			family.addAttribute("softening", softenings);
 			family.addAttribute("potential", potentials);
 		}
-	} else if(family.count.numParticles != numParticles || family.count.startParticle != startParticle)
+	    } else if(family.count.numParticles != (u_int64_t) numParticles
+		      || family.count.startParticle != startParticle)
 		return false;
 	AttributeMap::iterator attrIter = family.attributes.find(attributeName);
 	if(attrIter == family.attributes.end())
