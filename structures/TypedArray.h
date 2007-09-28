@@ -82,17 +82,20 @@ public:
 	
 	template <typename T>
 	T* getArray(Type2Type<T>) {
-		if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code)
-			//throw TypeMismatchException;
-			return 0;
+	    if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code) {
+		throw TypeMismatchException("dimensions wrong");
+		return 0;
+		}
+	    
 		return reinterpret_cast<T *>(data);
 	}
 
 	template <typename T>
 	T const* getArray(Type2Type<T>) const {
-		if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code)
-			//throw TypeMismatchException;
-			return 0;
+	    if(Type2Dimensions<T>::dimensions != dimensions || Type2Code<T>::code != code) {
+		throw TypeMismatchException("dimensions wrong");
+		return 0;
+		}
 		return reinterpret_cast<T const*>(data);
 	}
 

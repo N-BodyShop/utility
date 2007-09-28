@@ -11,6 +11,49 @@
 
 namespace TypeHandling {
 
+class TypeHandlingException : public std::exception {
+    public:
+	~TypeHandlingException() throw() { }; 
+	TypeHandlingException();
+	TypeHandlingException(const std::string & desc);
+	virtual std::string getText() const throw();
+	virtual const char* what() const throw();
+    private:
+	std::string d;
+  };
+
+class TypeMismatchException : public TypeHandlingException {
+    public:
+	~TypeMismatchException() throw() { }; 
+	TypeMismatchException();
+	TypeMismatchException(const std::string & desc);
+  };
+
+inline std::ostream & operator <<(std::ostream &os, TypeHandlingException &e) {
+   os << e.getText();
+   return os;
+}
+
+inline TypeHandlingException::TypeHandlingException() : d("") {
+}
+
+inline TypeHandlingException::TypeHandlingException(const std::string & desc)  : d(desc) {
+}
+
+inline std::string TypeHandlingException::getText() const throw() {
+  if(d=="")
+    return "Unknown TypeHandling exception";
+  else
+    return d;
+}
+
+inline const char* TypeHandlingException::what() const throw() {
+  return getText().c_str();
+}
+
+ inline TypeMismatchException::TypeMismatchException(const std::string & desc)  : TypeHandlingException(desc) {
+}
+
 enum DataTypeCode {
 	int8 = 1,
 	uint8,
