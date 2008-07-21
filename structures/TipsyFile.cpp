@@ -568,25 +568,32 @@ bool TipsyFile::loadfile() {
 	return true;
 }
 
-PartialTipsyFile::PartialTipsyFile(const std::string& fn, const int begin, const int end) : myReader(fn) {
+PartialTipsyFile::PartialTipsyFile(const std::string& fn,
+				   const unsigned int begin,
+				   const unsigned int end) : myReader(fn) {
 	loadPartial(begin, end);
 }
 
-PartialTipsyFile::PartialTipsyFile(std::istream& is, const int begin, const int end) : myReader(is) {
+PartialTipsyFile::PartialTipsyFile(std::istream& is, const unsigned int begin,
+				   const unsigned int end) : myReader(is) {
 	loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::reloadIndex(const std::string& fn, const int begin, const int end) {
+bool PartialTipsyFile::reloadIndex(const std::string& fn,
+				   const unsigned int begin,
+				   const unsigned int end) {
 	myReader.reload(fn);
 	return loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::reloadIndex(std::istream& is, const int begin, const int end) {
+bool PartialTipsyFile::reloadIndex(std::istream& is, const unsigned int begin,
+				   const unsigned int end) {
 	myReader.reload(is);
 	return loadPartial(begin, end);
 }
 
-bool PartialTipsyFile::loadPartial(const int beginParticle, int endParticle) {
+bool PartialTipsyFile::loadPartial(const unsigned int beginParticle,
+				   unsigned int endParticle) {
 	success = false;
 	
 	if(!myReader.status())
@@ -613,9 +620,9 @@ bool PartialTipsyFile::loadPartial(const int beginParticle, int endParticle) {
 	h.ndim = fullHeader.ndim;
 	h.time = fullHeader.time;
 	//figure out the left and right boundaries of each type of particle
-	h.nsph = std::max(std::min(fullHeader.nsph, endParticle) - beginParticle, 0);
-	h.ndark = std::max(std::min(endParticle, fullHeader.nsph + fullHeader.ndark) - std::max(fullHeader.nsph, beginParticle), 0);
-	h.nstar = std::max(endParticle - std::max(fullHeader.nsph + fullHeader.ndark, beginParticle), 0);
+	h.nsph = std::max(std::min(fullHeader.nsph, endParticle) - beginParticle, (unsigned int) 0);
+	h.ndark = std::max(std::min(endParticle, fullHeader.nsph + fullHeader.ndark) - std::max(fullHeader.nsph, beginParticle), (unsigned int) 0);
+	h.nstar = std::max(endParticle - std::max(fullHeader.nsph + fullHeader.ndark, beginParticle), (unsigned int) 0);
 	
 	if(!myReader.seekParticleNum(beginParticle))
 		return false;

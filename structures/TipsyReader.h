@@ -27,15 +27,15 @@ public:
 	/// The time of the output
     double time;
 	/// The number of particles of all types in this file
-    int nbodies;
+    unsigned int nbodies;
 	/// The number of dimensions, must be equal to MAXDIM
     int ndim;
 	/// The number of SPH (gas) particles in this file
-    int nsph;
+    unsigned int nsph;
 	/// The number of dark matter particles in this file
-    int ndark;
+    unsigned int ndark;
 	/// The number of star particles in this file
-    int nstar;
+    unsigned int nstar;
     //int pad; //unused on x86
 	
 	header(int nGas = 0, int nDark = 0, int nStar = 0) : time(0), nbodies(nGas + nDark + nStar), ndim(MAXDIM), nsph(nGas), ndark(nDark), nstar(nStar) { }
@@ -59,7 +59,7 @@ class TipsyReader {
 	bool native;
 	bool ok;
 	
-	int numGasRead, numDarksRead, numStarsRead;
+	unsigned int numGasRead, numDarksRead, numStarsRead;
 	
 	header h;
 	

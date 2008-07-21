@@ -240,7 +240,8 @@ public:
 class PartialTipsyFile {
 private:
 		
-	bool loadPartial(const int beginParticle, const int endParticle);
+	bool loadPartial(const unsigned int beginParticle,
+			 const unsigned int endParticle);
 	bool loadMark(std::istream& markstream);
 	bool native;
 	bool success;
@@ -278,12 +279,15 @@ public:
 	}
 	
 	/// Read in part of a tipsy file, taking particles between given on-disk indices
-	PartialTipsyFile(const std::string& fn, const int begin = 0, const int end = 1);
-	PartialTipsyFile(std::istream& is, const int begin = 0, const int end = 1);
+	PartialTipsyFile(const std::string& fn, const unsigned int begin = 0,
+			 const unsigned int end = 1);
+	PartialTipsyFile(std::istream& is, const unsigned int begin = 0,
+			 const unsigned int end = 1);
 
 	//reloading a partial file from indices
-	bool reloadIndex(const std::string& fn, const int begin = 0, const int end = 1);
-	bool reloadIndex(std::istream& is, const int begin = 0, const int end = 1);
+	bool reloadIndex(const std::string& fn, const unsigned int begin = 0,
+			 const unsigned int end = 1);
+	bool reloadIndex(std::istream& is, const unsigned int begin = 0, const unsigned int end = 1);
 		
 	/// Load only the marked particles from a file
 	PartialTipsyFile(const std::string& fn, const std::string& markfilename);

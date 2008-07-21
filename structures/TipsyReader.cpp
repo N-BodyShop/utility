@@ -306,7 +306,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 
 	unsigned int preface = header::sizeBytes + padSize;
 	std::streampos seek_position;
-	if(num < (unsigned int) h.nsph) {
+	if(num < h.nsph) {
 		seek_position = preface + num * (std::streampos) gas_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
@@ -314,7 +314,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numGasRead = num;
 		numDarksRead = 0;
 		numStarsRead = 0;
-	} else if(num < (unsigned int) (h.nsph + h.ndark)) {
+	} else if(num < (h.nsph + h.ndark)) {
 		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + (num - h.nsph) * (std::streampos) dark_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
@@ -322,7 +322,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numGasRead = h.nsph;
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
-	} else if(num < (unsigned int) (h.nsph + h.ndark + h.nstar)) {
+	} else if(num < (h.nsph + h.ndark + h.nstar)) {
 		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + h.ndark * (std::streampos) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (std::streampos) star_particle::sizeBytes;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
@@ -440,9 +440,9 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 	
 	if(num < (unsigned int) h.nsph) {
 		seek_position = preface + num * gas_particle::sizeBytes;
-	} else if(num < (unsigned int) (h.nsph + h.ndark)) {
+	} else if(num < (h.nsph + h.ndark)) {
 		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
-	} else if(num < (unsigned int) (h.nsph + h.ndark + h.nstar)) {
+	} else if(num < (h.nsph + h.ndark + h.nstar)) {
 		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
 	} else
 		return false;
