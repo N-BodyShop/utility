@@ -13,7 +13,8 @@ using namespace std;
 using namespace Tipsy;
 
 TipsyFormatReader::TipsyFormatReader(const string& filename) {
-	loadFromTipsyFile(filename);
+	if(!loadFromTipsyFile(filename))
+	    cerr << "loadFromTipsyFile failed\n" ;
 }
 
 bool TipsyFormatReader::loadFromTipsyFile(const string& filename) {
