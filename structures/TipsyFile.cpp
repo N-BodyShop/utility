@@ -620,9 +620,9 @@ bool PartialTipsyFile::loadPartial(const unsigned int beginParticle,
 	h.ndim = fullHeader.ndim;
 	h.time = fullHeader.time;
 	//figure out the left and right boundaries of each type of particle
-	h.nsph = std::max(std::min(fullHeader.nsph, endParticle) - beginParticle, (unsigned int) 0);
-	h.ndark = std::max(std::min(endParticle, fullHeader.nsph + fullHeader.ndark) - std::max(fullHeader.nsph, beginParticle), (unsigned int) 0);
-	h.nstar = std::max(endParticle - std::max(fullHeader.nsph + fullHeader.ndark, beginParticle), (unsigned int) 0);
+	h.nsph = std::max(std::min(fullHeader.nsph, endParticle) - (int64_t) beginParticle, (int64_t) 0);
+	h.ndark = std::max(std::min(endParticle, fullHeader.nsph + fullHeader.ndark) - (int64_t) std::max(fullHeader.nsph, beginParticle), (int64_t) 0);
+	h.nstar = std::max(endParticle - (int64_t) std::max(fullHeader.nsph + fullHeader.ndark, beginParticle), (int64_t) 0);
 	
 	if(!myReader.seekParticleNum(beginParticle))
 		return false;
