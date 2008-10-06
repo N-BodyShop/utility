@@ -13,7 +13,7 @@ LDLIBS += @LIBS@
 
 .PHONY: all docs dist clean
 
-all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  # SFC.o
+all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  SFC.o
 
 libTipsy.a: $(LIBTARGETS)
 	-rm libTipsy.a
@@ -26,8 +26,9 @@ TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_tem
 
 SS.o: xdr_template.h Vector3D.h
 
-#SFC.o: SFC.cpp SFC.h
-#	$(CXX) -O -ffloat-store -c SFC.cpp
+# SFC.o is only used by TreeDataFormat/tipsy2tree:
+SFC.o: SFC.cpp SFC.h
+	$(CXX) -O -ffloat-store -c SFC.cpp
 
 $(EXECTARGETS): libTipsy.a
 
