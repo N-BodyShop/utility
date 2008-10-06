@@ -27,6 +27,8 @@
 #include "aggregate_xdr.h"
 #include "SFC.h"
 
+int peanoKey=1; /* used by SFC.h */
+
 using namespace std;
 using namespace Tipsy;
 using namespace SFC;
