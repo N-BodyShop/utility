@@ -64,9 +64,11 @@ bool mergeScalarAttribute(Simulation* sim, const string& familyName, const strin
 			}
 		} else {
 			for(unsigned int i = 0; i < family.count.totalNumParticles; ++i) {
-				infile >> values[i];
+				double tmp;
+				infile >> tmp;	// Avoid format errors
+				values[i] = (T) tmp;
 				if(!infile) {
-					cerr << "Problem reading values from array file" << endl;
+					cerr << "Problem reading values from array file at " << i << endl;
 					return false;
 				}
 			}
