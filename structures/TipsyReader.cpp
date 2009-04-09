@@ -439,11 +439,11 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 	xdr_destroy(&xdrs);
 	
 	if(num < (unsigned int) h.nsph) {
-		seek_position = preface + num * gas_particle::sizeBytes;
+		seek_position = preface + num * (int64_t) gas_particle::sizeBytes;
 	} else if(num < (h.nsph + h.ndark)) {
-		seek_position = preface + h.nsph * gas_particle::sizeBytes + (num - h.nsph) * dark_particle::sizeBytes;
+		seek_position = preface + h.nsph * (int64_t) gas_particle::sizeBytes + (num - h.nsph) * (int64_t) dark_particle::sizeBytes;
 	} else if(num < (h.nsph + h.ndark + h.nstar)) {
-		seek_position = preface + h.nsph * gas_particle::sizeBytes + h.ndark * dark_particle::sizeBytes + (num - h.ndark - h.nsph) * star_particle::sizeBytes;
+		seek_position = preface + h.nsph * (int64_t) gas_particle::sizeBytes + h.ndark * (int64_t) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (int64_t) star_particle::sizeBytes;
 	} else
 		return false;
 	fseek(tipsyFp, seek_position, 0);
