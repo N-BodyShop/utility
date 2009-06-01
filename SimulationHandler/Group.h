@@ -102,7 +102,7 @@ public:
 	Group(boost::shared_ptr<Group> const& parent = boost::shared_ptr<Group>()) : parentGroup(parent) { }
 	virtual ~Group() { }
 		
-	typedef std::vector<std::string> GroupFamilies;
+	typedef std::set<std::string> GroupFamilies;
 	GroupFamilies families;
 	
 	virtual GroupIterator make_begin_iterator(std::string const& familyName) = 0;
@@ -121,9 +121,8 @@ class AllGroup : public Group {
 public:
 		
 	AllGroup(Simulation const& s) : sim(s) {
-		families.reserve(sim.size());
 		for(Simulation::const_iterator iter = sim.begin(); iter != sim.end(); ++iter)
-			families.push_back(iter->first);
+			families.insert(iter->first);
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
@@ -132,9 +131,10 @@ public:
 	}
 
 	GroupIterator make_end_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end())
+		GroupFamilies::const_iterator famIter = families.find(familyName);
+		if(famIter == families.end())
 			return make_begin_iterator(familyName);
+		Simulation::const_iterator simIter = sim.find(familyName);
 		boost::shared_ptr<AllGroupIterator> p(new AllGroupIterator(simIter->second.count.numParticles));
 		return GroupIterator(p);
 	}
@@ -191,14 +191,15 @@ public:
 		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
 			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 			if(attrIter != simIter->second.attributes.end())
-				families.push_back(simIter->first);
+				families.insert(simIter->first);
 		}
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end())
+		GroupFamilies::const_iterator famIter = families.find(familyName);
+		if(famIter == families.end())
 			return make_end_iterator(familyName);
+		Simulation::const_iterator simIter = sim.find(familyName);
 		TypedArray const& array = simIter->second.attributes.find(attributeName)->second;
 		//parent group idiom: start with parent group's begin iterator
 		GroupIterator parentBegin = parentGroup->make_begin_iterator(familyName);
@@ -333,15 +334,16 @@ public:
 		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
 			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 			if(attrIter != simIter->second.attributes.end())
-				families.push_back(simIter->first);
+				families.insert(simIter->first);
 		}
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end()) {
+		GroupFamilies::const_iterator famIter = families.find(familyName);
+		if(famIter == families.end()) {
 		    return make_end_iterator(familyName);
 		    }
+		Simulation::const_iterator simIter = sim.find(familyName);
 		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 		TypedArray const& array = attrIter->second;
 		GroupIterator parentBegin = parentGroup->make_begin_iterator(familyName);
@@ -476,15 +478,16 @@ public:
 		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
 			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 			if(attrIter != simIter->second.attributes.end())
-				families.push_back(simIter->first);
+				families.insert(simIter->first);
 		}
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end()) {
+		GroupFamilies::const_iterator famIter = families.find(familyName);
+		if(famIter == families.end()) {
 		    return make_end_iterator(familyName);
 		    }
+		Simulation::const_iterator simIter = sim.find(familyName);
 		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
 		TypedArray const& array = attrIter->second;
 		GroupIterator parentBegin = parentGroup->make_begin_iterator(familyName);
@@ -550,12 +553,12 @@ class FamilyGroup : public Group {
 public:
 		
 	FamilyGroup(Simulation const& s, boost::shared_ptr<Group> const& parent, std::string const& familyName) : Group(parent), sim(s) {
-		families.push_back(familyName);
+		families.insert(familyName);
 	}
 	
 	GroupIterator make_begin_iterator(std::string const& familyName) {
-		Simulation::const_iterator simIter = sim.find(familyName);
-		if(simIter == sim.end())
+		GroupFamilies::const_iterator simIter = families.find(familyName);
+		if(simIter == families.end())
 			return make_end_iterator(familyName);
 		return parentGroup->make_begin_iterator(familyName);
 	}
