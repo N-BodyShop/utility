@@ -9,6 +9,7 @@
 
 #include <string>
 #include <vector>
+#include <set>
 
 #include <boost/shared_ptr.hpp>
 #include <boost/iterator/iterator_facade.hpp>
