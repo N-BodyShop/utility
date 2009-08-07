@@ -436,7 +436,8 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 
 	unsigned int preface = header::sizeBytes + padSize;
 	int64_t seek_position;
-	xdr_destroy(&xdrs);
+	if(!native)
+	    xdr_destroy(&xdrs);
 	
 	if(num < (unsigned int) h.nsph) {
 		seek_position = preface + num * (int64_t) gas_particle::sizeBytes;
@@ -447,7 +448,8 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 	} else
 		return false;
 	fseek(tipsyFp, seek_position, 0);
-	xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
+	if(!native)
+	    xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
 	
 	return true;
 }
