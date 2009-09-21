@@ -201,6 +201,7 @@ class Simulation : public std::map<std::string, ParticleFamily> {
 public:
 		
 	std::string name;
+	double time;
 	
 	ParticleFamily& getFamily(const std::string& familyName) {
 		return operator[](familyName);
