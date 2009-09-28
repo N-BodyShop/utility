@@ -29,6 +29,7 @@ bool TipsyFormatReader::loadFromTipsyFile(const string& filename) {
 		return false;
 	
 	h = r.getHeader();
+	time = h.time;
 	
 	float* empty = 0;
 	Vector3D<float>* emptyVector = 0;
@@ -112,6 +113,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* metals = new float[numParticles];
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
+			int64_t* index = new int64_t[numParticles];
 			gas_particle gp;
 			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextGasParticle(gp))
@@ -124,6 +126,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 				metals[i] = gp.metals;
 				softenings[i] = gp.hsmooth;
 				potentials[i] = gp.phi;
+				index[i] = startParticle + i;
 			}
 			family.addAttribute("mass", masses);
 			family.addAttribute("position", positions);
@@ -133,6 +136,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			family.addAttribute("metals", metals);
 			family.addAttribute("softening", softenings);
 			family.addAttribute("potential", potentials);
+			family.addAttribute("index", index);
 		} else if(familyName == "dark") {
 			if(!r.seekParticleNum(startParticle + h.nsph)) {
 			    cerr << "dark SEEK FAILED" << endl;
@@ -143,6 +147,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			Vector3D<float>* velocities = new Vector3D<float>[numParticles];
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
+			int64_t* index = new int64_t[numParticles];
 			dark_particle dp;
 			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextDarkParticle(dp)) {
@@ -154,12 +159,14 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 				velocities[i] = dp.vel;
 				softenings[i] = dp.eps;
 				potentials[i] = dp.phi;
+				index[i] = h.nsph + startParticle + i;
 			}
 			family.addAttribute("mass", masses);
 			family.addAttribute("position", positions);
 			family.addAttribute("velocity", velocities);
 			family.addAttribute("softening", softenings);
 			family.addAttribute("potential", potentials);
+			family.addAttribute("index", index);
 		} else if(familyName == "star") {
 			if(!r.seekParticleNum(startParticle + h.nsph + h.ndark))
 				return false;
@@ -170,6 +177,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			float* formations = new float[numParticles];
 			float* softenings = new float[numParticles];
 			float* potentials = new float[numParticles];
+			int64_t* index = new int64_t[numParticles];
 			star_particle sp;
 			for(int64_t i = 0; i < numParticles; ++i) {
 				if(!r.getNextStarParticle(sp))
@@ -181,6 +189,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 				formations[i] = sp.tform;
 				softenings[i] = sp.eps;
 				potentials[i] = sp.phi;
+				index[i] = h.nsph + h.ndark + startParticle + i;
 			}
 			family.addAttribute("mass", masses);
 			family.addAttribute("position", positions);
@@ -189,6 +198,7 @@ bool TipsyFormatReader::loadAttribute(const string& familyName, const string& at
 			family.addAttribute("formationtime", formations);
 			family.addAttribute("softening", softenings);
 			family.addAttribute("potential", potentials);
+			family.addAttribute("index", index);
 		}
 	    } else if(family.count.numParticles != (u_int64_t) numParticles
 		      || family.count.startParticle != startParticle)
