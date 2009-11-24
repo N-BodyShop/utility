@@ -16,6 +16,7 @@
 #endif
 
 #ifdef PEANO
+#include "hilbert.h"
 extern int peanoKey;
 #endif
 
@@ -237,21 +238,30 @@ inline void peano_hilbert_key_inverse(Key key, int bits, unsigned int *x, unsign
  coordinates are in the range [1,2).  The mantissa bits are taken, and interleaved
  in xyz order to form the key.  This makes the key a position on the z-ordering
  space-filling curve. 
- The second parameter is the bounding Box used to normalize the position vectors
- between 1 and 2.
+ */
+/*
+ * This function expects positions to be between [0,1).  The first
+ * lines turn these into integers from 0 to 2^21.
  */
 inline Key makeKey(float exchangeKey[3]) {
-  //unsigned int ix = *reinterpret_cast<unsigned int *>(&exchangeKey[0]);
-  //unsigned int iy = *reinterpret_cast<unsigned int *>(&exchangeKey[1]);
-  //unsigned int iz = *reinterpret_cast<unsigned int *>(&exchangeKey[2]);
   unsigned int ix = (unsigned int)(exchangeKey[0]*(1<<21) - exchangeKey[0]);
   unsigned int iy = (unsigned int)(exchangeKey[1]*(1<<21) - exchangeKey[1]);
   unsigned int iz = (unsigned int)(exchangeKey[2]*(1<<21) - exchangeKey[2]);
   Key key;
 #ifdef PEANO
-  if (peanoKey) {
-    key = peano_hilbert_key(ix, iy, iz, 21);
-  } else {
+  switch (peanoKey) {
+  case 1:
+      key = peano_hilbert_key(ix, iy, iz, 21);
+      break;
+  case 2:
+      /* Joachim's hilberts want inputs between 1 and 2 */
+      key = hilbert2d(exchangeKey[0]+1.0f, exchangeKey[1]+1.0f);
+      break;
+  case 3:
+      key = hilbert3d(exchangeKey[0]+1.0f, exchangeKey[1]+1.0f,
+	  exchangeKey[2]+1.0f);
+      break;
+  case 0:
 #endif
 	key = 0;
 	for(unsigned int mask = (1 << 20); mask > 0; mask >>= 1) {

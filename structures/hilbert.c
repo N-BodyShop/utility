@@ -7,6 +7,7 @@
 #include <stdint.h>
 #include <assert.h>
 
+#include "hilbert.h"
 
 /*
 ** x and y must have range [1,2) !
@@ -49,15 +50,19 @@ uint64_t hilbert2d(float x,float y) {
     }
 
 
+void ihilbert2d(uint64_t s,float *px,float *py,float *pz) {
+    /*
+     * Function not implemented yet.
+     */
+    assert(0);
+    }
+
 /*
 ** x, y and z must have range [1,2) !
 */
 uint64_t hilbert3d(float x,float y,float z) {
     uint64_t s = 0;
     uint32_t m,ux,uy,uz,ut;
-
-    ux = (*(uint32_t *)&x);
-    printf("%x\n",ux);
 
     ux = (*(uint32_t *)&x)>>2;
     uy = (*(uint32_t *)&y)>>2;
@@ -134,7 +139,6 @@ uint64_t hilbert3d(float x,float y,float z) {
 	}
     return s;
     }
-
 
 void ihilbert3d(uint64_t s,float *px,float *py,float *pz) {
     uint32_t m,ux=0,uy=0,uz=0,ut;
@@ -312,19 +316,5 @@ int main(void) {
 	TipsyAddDark(out,&dp);
 	}
     TipsyWriteAll(out,0.0,NULL);
-    }
-#else
-int main(void) {
-    uint64_t k;
-    float x,y,z;
-
-    x = 1.2;
-    y = 1.3;
-    z = 1.4;
-
-    k = hilbert3d(x,y,z);
-
-    ihilbert3d(k,&x,&y,&z);
-    printf("%.10g %.10g %.10g\n",x,y,z);
     }
 #endif
