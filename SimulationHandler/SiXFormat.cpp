@@ -15,6 +15,9 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include "Group.h"
+
+
 #include "SiXFormat.h"
 
 namespace SimulationHandling {
@@ -63,7 +66,6 @@ bool SiXFormatReader::loadFromXMLFile(string directoryname) {
     try {
 		XMLPlatformUtils::Initialize();
     } catch(const XMLException& toCatch) {
-         //std::cerr << "Error during initialization! :\n" << StrX(toCatch.getMessage()) << std::endl;
 		 return false;
     }
 	
@@ -285,7 +287,8 @@ bool SiXFormatWriter::save( Simulation* sim, const std::string& passedPath, int 
 	    xmlfile << "<family name=\"" << iter->first << "\">\n";
 	    struct stat buf;
 	    if(stat(achDirName.c_str(),&buf) < 0){
-	      std::cerr << "making directory: " << achDirName << "\n" << std::endl;
+	      std::cerr << "making directory: " << achDirName << "\n"
+			<< std::endl;
 	      if(mkdir(achDirName.c_str(),0755) < 0) throw(FileError("mkdir fails for "+achDirName));
 	    }
 	  }
