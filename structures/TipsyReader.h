@@ -204,7 +204,8 @@ class TipsyWriter {
 	~TipsyWriter() {
 	    if(!native)
 		xdr_destroy(&xdrs);
-	    fclose(tipsyFp);
+	    int result = fclose(tipsyFp);
+	    assert(result == 0);
 	}
 	
 	bool putNextGasParticle(gas_particle& p);
