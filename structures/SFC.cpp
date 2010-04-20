@@ -7,6 +7,7 @@
  */
 
 #include "config.h"
+#include <stdint.h>
 #include "SFC.h"
 
 namespace SFC {

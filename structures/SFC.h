@@ -22,7 +22,7 @@ extern int peanoKey;
 
 namespace SFC {
 
-typedef u_int64_t Key;
+typedef uint64_t Key;
 
 inline void printFloatBits(float f, std::ostream& os) {
 	int i = *reinterpret_cast<int *>(&f);
