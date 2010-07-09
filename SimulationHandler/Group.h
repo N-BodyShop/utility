@@ -406,6 +406,135 @@ boost::shared_ptr<Group> make_SphericalGroup(Simulation const& sim, boost::share
 }
 
 template <typename T>
+class ShellIterator : public GroupIteratorInstance {
+	template <typename>
+	friend class ShellGroup;
+	
+	GroupIterator parentIter;
+	Vector3D<T> centerVector;
+	T radiusMin;
+	T radiusMax;
+	Vector3D<T> const* array; //bare pointer is okay here, default copy constructor will do what we want
+	u_int64_t length;
+	
+public:
+	
+	ShellIterator(GroupIterator parentBegin, Vector3D<T> centerVector_, T radiusMin_, T radiusMax_, Vector3D<T> const* array_, u_int64_t length_) : parentIter(parentBegin), centerVector(centerVector_), radiusMin(radiusMin_) ,radiusMax(radiusMax_), array(array_), length(length_) {
+	    while(*parentIter < length
+		  && ((array[*parentIter]-centerVector).length() >= radiusMax
+		      || (array[*parentIter]-centerVector).length() < radiusMin))
+		++parentIter;
+	    }
+
+	void increment() {
+	    if(*parentIter < length)
+		for(++parentIter; *parentIter < length
+			&& ((array[*parentIter]-centerVector).length() >= radiusMax
+			    || (array[*parentIter]-centerVector).length() < radiusMin);
+		    ++parentIter);
+	}
+	
+	bool equal(GroupIteratorInstance* const& other) const {
+		if(ShellIterator* const o = dynamic_cast<ShellIterator* const>(other))
+			return centerVector == o->centerVector
+			    && radiusMax == o->radiusMax
+			    && radiusMin == o->radiusMin
+			    && array == o->array
+			    && parentIter == o->parentIter;
+		else
+			return false;
+	}
+	
+	u_int64_t dereference() const {
+		return *parentIter;
+	}
+};
+
+template <typename T>
+class ShellGroup : public Group {
+	Simulation const& sim;
+	std::string attributeName;
+	Vector3D<T> centerVector;
+	T radiusMin;
+	T radiusMax;
+public:
+		
+	ShellGroup(Simulation const& s, boost::shared_ptr<Group> const& parent, std::string const& attributeName_, Vector3D<T> centerVector_, T radiusMin_, T radiusMax_) :
+	    Group(parent), sim(s), attributeName(attributeName_), centerVector(centerVector_), radiusMin(radiusMin_), radiusMax(radiusMax_) {
+		for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
+			AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+			if(attrIter != simIter->second.attributes.end())
+				families.insert(simIter->first);
+		}
+	}
+	
+	GroupIterator make_begin_iterator(std::string const& familyName) {
+		GroupFamilies::const_iterator famIter = families.find(familyName);
+		if(famIter == families.end()) {
+		    return make_end_iterator(familyName);
+		    }
+		Simulation::const_iterator simIter = sim.find(familyName);
+		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+		TypedArray const& array = attrIter->second;
+		GroupIterator parentBegin = parentGroup->make_begin_iterator(familyName);
+		boost::shared_ptr<ShellIterator<T> > p(new ShellIterator<T>(parentBegin, centerVector, radiusMin, radiusMax, array.getArray(Type2Type<Vector3D<T> >()), array.length));
+		return GroupIterator(p);
+	}
+
+	GroupIterator make_end_iterator(std::string const& familyName) {
+		return parentGroup->make_end_iterator(familyName);
+	}
+};
+
+static
+boost::shared_ptr<Group> make_ShellGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, Vector3D<double> centerVector, double radiusMin, double radiusMax) {
+	boost::shared_ptr<Group> p;
+	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
+		AttributeMap::const_iterator attrIter = simIter->second.attributes.find(attributeName);
+		if(attrIter != simIter->second.attributes.end()) {
+			//found a family with the attribute
+			TypedArray const& arr = attrIter->second;
+			if(arr.dimensions == 3) {
+				switch(arr.code) {
+					case int8:
+						p.reset(new ShellGroup<Code2Type<int8>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int8>::type> >(centerVector), static_cast<Code2Type<int8>::type>(radiusMin), static_cast<Code2Type<int8>::type>(radiusMax)));
+						break;
+					case uint8:
+						p.reset(new ShellGroup<Code2Type<uint8>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint8>::type> >(centerVector), static_cast<Code2Type<uint8>::type>(radiusMin), static_cast<Code2Type<uint8>::type>(radiusMax)));
+						break;
+					case int16:
+						p.reset(new ShellGroup<Code2Type<int16>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<int16>::type> >(centerVector), static_cast<Code2Type<int16>::type>(radiusMin), static_cast<Code2Type<int16>::type>(radiusMax)));
+						break;
+					case uint16:
+						p.reset(new ShellGroup<Code2Type<uint16>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<uint16>::type> >(centerVector), static_cast<Code2Type<uint16>::type>(radiusMin), static_cast<Code2Type<uint16>::type>(radiusMax)));
+						break;
+					case TypeHandling::int32:
+						p.reset(new ShellGroup<Code2Type<TypeHandling::int32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int32>::type> >(centerVector), static_cast<Code2Type<TypeHandling::int32>::type>(radiusMin), static_cast<Code2Type<TypeHandling::int32>::type>(radiusMax)));
+						break;
+					case TypeHandling::uint32:
+						p.reset(new ShellGroup<Code2Type<TypeHandling::uint32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint32>::type> >(centerVector), static_cast<Code2Type<TypeHandling::uint32>::type>(radiusMin), static_cast<Code2Type<TypeHandling::uint32>::type>(radiusMax)));
+						break;
+					case TypeHandling::int64:
+						p.reset(new ShellGroup<Code2Type<TypeHandling::int64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::int64>::type> >(centerVector), static_cast<Code2Type<TypeHandling::int64>::type>(radiusMin), static_cast<Code2Type<TypeHandling::int64>::type>(radiusMax)));
+						break;
+					case TypeHandling::uint64:
+						p.reset(new ShellGroup<Code2Type<TypeHandling::uint64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<TypeHandling::uint64>::type> >(centerVector), static_cast<Code2Type<TypeHandling::uint64>::type>(radiusMin), static_cast<Code2Type<TypeHandling::uint64>::type>(radiusMax)));
+						break;
+					case float32:
+						p.reset(new ShellGroup<Code2Type<float32>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<float32>::type> >(centerVector), static_cast<Code2Type<float32>::type>(radiusMin), static_cast<Code2Type<float32>::type>(radiusMax)));
+						break;
+					case float64:
+						p.reset(new ShellGroup<Code2Type<float64>::type>(sim, parent, attributeName, static_cast<Vector3D<Code2Type<float64>::type> >(centerVector), static_cast<Code2Type<float64>::type>(radiusMin), static_cast<Code2Type<float64>::type>(radiusMax)));
+						break;
+				}
+			}
+			break;
+		}
+	}
+	return p;
+}
+
+template <typename T>
 class BoxIterator : public GroupIteratorInstance {
 	template <typename>
 	friend class BoxGroup;
