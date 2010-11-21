@@ -80,6 +80,7 @@ public:
 	/// Load from a file
 	TipsyReader(const std::string& filename) : ok(false), responsible(true) {
 		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
+		if(!(*tipsyStream)) throw std::ios_base::failure("Bad file open");
 		loadHeader();
 	}
 	
