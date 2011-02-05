@@ -24,7 +24,12 @@ bool TipsyFormatReader::loadFromTipsyFile(const string& filename) {
 	
 	name = filename;
 	
-	r.reload(filename);
+	try {
+	    r.reload(filename);
+	    }
+	catch (std::ios_base::failure e) {
+	    return false;
+	    }
 	if(!r.status())
 		return false;
 	
