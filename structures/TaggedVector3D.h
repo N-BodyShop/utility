@@ -11,6 +11,7 @@ class TaggedVector3D{
   unsigned int myNumParticles, numActiveParticles;
   unsigned int activeRung;
   int prevActiveRung;
+  int tp;
   int tag;
 
   TaggedVector3D(Vector3D<float> &v, LDObjHandle &i) : vec(v), handle(i){}

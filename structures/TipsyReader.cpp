@@ -61,8 +61,10 @@ namespace Tipsy {
 bool TipsyReader::loadHeader() {
 	ok = false;
 	
-	if(!(*tipsyStream))
+	if(!(*tipsyStream)) {
+		throw std::ios_base::failure("Bad file open");
 		return false;
+	    }
 	
 	//read the header in
 	tipsyStream->read(reinterpret_cast<char *>(&h), sizeof(h));
