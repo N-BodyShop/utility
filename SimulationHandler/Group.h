@@ -48,6 +48,11 @@ public:
 	virtual u_int64_t dereference() const {
 		return index;
 	}
+	
+	/// Return the number of particles between here and there
+	virtual long distance_to(GroupIteratorInstance* const& other) {
+		return other->index-index;
+	}
 };
 
 /** A concrete class that uses the pimpl idiom to handle many types of
@@ -57,30 +62,25 @@ public:
  */
 class GroupIterator : public boost::iterator_facade<GroupIterator, u_int64_t, boost::forward_traversal_tag, u_int64_t> {
 public:
-	
+	// Create an uninitialized iterator--any use of this will immediately crash.
 	GroupIterator() { }
-
+	
+	// Typical constructor.
 	explicit GroupIterator(boost::shared_ptr<GroupIteratorInstance> impl_) : impl(impl_) { }
 	
-	void setImplementation(boost::shared_ptr<GroupIteratorInstance> impl_) {
-		impl = impl_;
-	}
-	
 private:
-		
 	friend class boost::iterator_core_access;
 
-	void increment() {
-		if(impl)
-			impl->increment();
-	}
+	void increment() { impl->increment(); }
 	
 	bool equal(GroupIterator const& other) const {
-		return (impl.get() ? (other.impl.get() ? impl->equal(other.impl.get()) : false) : false);
+		return impl->equal(other.impl.get());
 	}
 	
-	u_int64_t dereference() const {
-		return (impl.get() ? impl->dereference() : 0);
+	u_int64_t dereference() const { return impl->dereference(); }
+	
+	long distance_to(GroupIterator const& other) const {
+		return impl->distance_to(other.impl.get());
 	}
 
 	boost::shared_ptr<GroupIteratorInstance> impl;
@@ -178,6 +178,12 @@ public:
 		//parent group idiom: instead of index value, dereference iterator
 		return *parentIter;
 	}
+	
+	/// Return the number of particles between here and there
+	long distance_to(GroupIteratorInstance* const& other) {
+		long distance=0; while (!equal(other)) { distance++; increment(); }
+		return distance;
+	}
 };
 
 template <typename T>
@@ -214,7 +220,7 @@ public:
 	}
 };
 
-static
+inline
 boost::shared_ptr<Group> make_AttributeRangeGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, double minValue, double maxValue) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
@@ -320,6 +326,12 @@ public:
 	u_int64_t dereference() const {
 		return *parentIter;
 	}
+	
+	/// Return the number of particles between here and there
+	long distance_to(GroupIteratorInstance* const& other) {
+		long distance=0; while (!equal(other)) { distance++; increment(); }
+		return distance;
+	}
 };
 
 template <typename T>
@@ -357,7 +369,7 @@ public:
 	}
 };
 
-static
+inline
 boost::shared_ptr<Group> make_SphericalGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, Vector3D<double> centerVector, double radiusValue) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
@@ -448,6 +460,12 @@ public:
 	u_int64_t dereference() const {
 		return *parentIter;
 	}
+	
+	/// Return the number of particles between here and there
+	long distance_to(GroupIteratorInstance* const& other) {
+		long distance=0; while (!equal(other)) { distance++; increment(); }
+		return distance;
+	}
 };
 
 template <typename T>
@@ -486,7 +504,7 @@ public:
 	}
 };
 
-static
+inline
 boost::shared_ptr<Group> make_ShellGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, Vector3D<double> centerVector, double radiusMin, double radiusMax) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
@@ -592,6 +610,12 @@ public:
 	u_int64_t dereference() const {
 		return *parentIter;
 	}
+	
+	/// Return the number of particles between here and there
+	long distance_to(GroupIteratorInstance* const& other) {
+		long distance=0; while (!equal(other)) { distance++; increment(); }
+		return distance;
+	}
 };
 
 template <typename T>
@@ -630,7 +654,7 @@ public:
 	}
 };
 
-static
+inline
 boost::shared_ptr<Group> make_BoxGroup(Simulation const& sim, boost::shared_ptr<Group> const& parent, std::string const& attributeName, Vector3D<double> cornerVector, Vector3D<double> edge1Vector, Vector3D<double> edge2Vector, Vector3D<double> edge3Vector) {
 	boost::shared_ptr<Group> p;
 	for(Simulation::const_iterator simIter = sim.begin(); simIter != sim.end(); ++simIter) {
