@@ -69,6 +69,7 @@ class TipsyReader {
 	
 	bool loadHeader();
 	
+ private:
 	//copy constructor and equals operator are private to prevent their use (use takeOverStream instead)
 	TipsyReader(const TipsyReader& r);
 	TipsyReader& operator=(const TipsyReader& r);
@@ -175,6 +176,9 @@ class TipsyWriter {
 	FILE *tipsyFp;
 	XDR xdrs;
 	header h;
+	/* hide copy constructor and assignment */
+	TipsyWriter(const TipsyWriter& r);
+	TipsyWriter& operator=(const TipsyWriter& r);
 	
  public:
 	
@@ -203,6 +207,8 @@ class TipsyWriter {
 	}
 	
 	~TipsyWriter() {
+	    if(tipsyFp == NULL)
+		return;		/* file never opened */
 	    if(!native)
 		xdr_destroy(&xdrs);
 	    int result = fclose(tipsyFp);
