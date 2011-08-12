@@ -212,7 +212,7 @@ class TipsyWriter {
 	    if(!native)
 		xdr_destroy(&xdrs);
 	    int result = fclose(tipsyFp);
-		if (result!=0) CkAbort("TipsyWriter: error from fclose!");
+		if (result!=0) assert(0);
 	}
 	
 	bool putNextGasParticle(gas_particle& p);
