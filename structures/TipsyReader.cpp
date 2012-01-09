@@ -369,11 +369,18 @@ bool TipsyWriter::writeHeader() {
 	if(!tipsyFp)
 	    return false;
 	
+	int pad = 0;  // 4 byte pad
+	
 	if(native) {
 	    fwrite(&h, sizeof(h), 1, tipsyFp);
+	    if(sizeof(h) != 32) {
+		assert(sizeof(h) == 28);
+		fwrite(&pad, sizeof(pad), 1, tipsyFp);
+		}
 	    }
 	else {
 	    xdr_template(&xdrs, &h);
+	    xdr_template(&xdrs, &pad);
 	    }
 	return true;
 }
