@@ -1,7 +1,7 @@
 CXXFLAGS += -O3 @CPPFLAGS@
 CXX = @CXX@
 CC = @CC@
-AR = @AR@
+AR = @AR@ rv
 
 NAME = structures
 VERSION = 1.1
@@ -16,7 +16,7 @@ LDLIBS += @LIBS@
 all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  SFC.o
 
 libTipsy.a: $(LIBTARGETS)
-	-rm libTipsy.a
+	-rm -f libTipsy.a
 	$(AR) libTipsy.a $(LIBTARGETS)
 	ranlib libTipsy.a
 
