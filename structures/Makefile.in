@@ -1,7 +1,7 @@
 CXXFLAGS += -O3 @CPPFLAGS@
 CXX = @CXX@
 CC = @CC@
-AR = @AR@ rv
+AR = @AR@
 
 NAME = structures
 VERSION = 1.1
