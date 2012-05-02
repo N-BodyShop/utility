@@ -4,6 +4,7 @@
 
 #include <iostream>
 #include <cstdio>
+#include <string.h>
 
 #include "tree_xdr.h"
 #include "TipsyFile.h"
@@ -24,7 +25,7 @@ int64_t getCount(char *typedir // directory containing the data for
     char filename[FILELEN];
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/position");
+    strcat(filename, "/pos");
 
     FILE* infile = fopen(filename, "rb");
     if(!infile) {
@@ -55,7 +56,9 @@ void *readFieldData(char *filename, FieldHeader &fh, unsigned int dim)
 {
     FILE* infile = fopen(filename, "rb");
     if(!infile) {
-	throw XDRException("Couldn't open field file");
+	string smess("Couldn't open field file: ");
+	smess += filename;
+	throw XDRException(smess);
 	}
 
     XDR xdrs;
@@ -91,7 +94,7 @@ void getPos(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/position");
+    strcat(filename, "/pos");
     
     void *data = readFieldData(filename, fh, 3);
 
@@ -123,7 +126,7 @@ void getVel(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/velocity");
+    strcat(filename, "/vel");
     
     void *data = readFieldData(filename, fh, 3);
 
@@ -215,7 +218,7 @@ void getPhi(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/potential");
+    strcat(filename, "/pot");
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -245,7 +248,8 @@ void getHSmooth(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/softening");
+    strcat(filename, "/softening"); 	// N.B. the "hsmooth" gas field is
+					// really gravitational softening
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -275,7 +279,7 @@ void getRho(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/density");
+    strcat(filename, "/GasDensity");
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -325,8 +329,12 @@ void getTemp(PartVecT &p, // reference to particle array
     deleteField(fh, data);
     }
 
+// N.B. The following two routines assume that "metals" is the sum of Ox
+// and Fe, which was the Gasoline convention prior to summer 2011.
+// getMetalsOx has to be called first.
+
 template <class PartVecT>
-void getMetals(PartVecT &p, // reference to particle array
+void getMetalsOx(PartVecT &p, // reference to particle array
 	    char *typedir // directory with file
 	    )
 {
@@ -335,7 +343,7 @@ void getMetals(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/metals");
+    strcat(filename, "/OxMassFrac");
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -356,6 +364,36 @@ void getMetals(PartVecT &p, // reference to particle array
     }
 
 template <class PartVecT>
+void getMetalsFe(PartVecT &p, // reference to particle array
+	    char *typedir // directory with file
+	    )
+{
+    const int FILELEN = 256;
+    char filename[FILELEN];
+    FieldHeader fh;
+
+    strncpy(filename, typedir, FILELEN);
+    strcat(filename, "/FeMassFrac");
+    
+    void *data = readFieldData(filename, fh, 1);
+
+    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+	switch(fh.code) {
+	case float32:
+	    p[i].metals += static_cast<float *>(data)[fh.dimensions * i];
+	    break;
+	case float64:
+	    p[i].metals += static_cast<double *>(data)[fh.dimensions * i];
+	    break;
+	default:
+	    throw XDRException("I don't recognize the type of this field!");
+	    }
+	    }
+	
+    deleteField(fh, data);
+    }
+
+template <class PartVecT>
 void getTForm(PartVecT &p, // reference to particle array
 	    char *typedir // directory with file
 	    )
@@ -365,7 +403,7 @@ void getTForm(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/formationtime");
+    strcat(filename, "/timeform");
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -427,7 +465,8 @@ int main(int argc, char** argv) {
 	getHSmooth(tf.gas, filename);
 	getRho(tf.gas, filename);
 	getTemp(tf.gas, filename);
-	getMetals(tf.gas, filename);
+	getMetalsOx(tf.gas, filename);
+	getMetalsFe(tf.gas, filename);
 
 	strncpy(filename, argv[1], FILELEN);
 	strcat(filename, "/star");
@@ -436,7 +475,8 @@ int main(int argc, char** argv) {
 	getVel(tf.stars, filename);
 	getSoft(tf.stars, filename);
 	getPhi(tf.stars, filename);
-	getMetals(tf.stars, filename);
+	getMetalsOx(tf.stars, filename);
+	getMetalsFe(tf.stars, filename);
 	getTForm(tf.stars, filename);
 	
 	Tipsy::TipsyWriter w(argv[2], tf.h);
