@@ -16,7 +16,7 @@ LDLIBS += @LIBS@
 all: libTipsy.a($(LIBTARGETS)) $(EXECTARGETS)  SFC.o
 
 libTipsy.a: $(LIBTARGETS)
-	-rm libTipsy.a
+	-rm -f libTipsy.a
 	$(AR) libTipsy.a $(LIBTARGETS)
 	ranlib libTipsy.a
 
