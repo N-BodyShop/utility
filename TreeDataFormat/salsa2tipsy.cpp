@@ -1,10 +1,10 @@
 // Convert a salsa file into Tipsy format.
-// Still very incomplete: just reads dark, and doesn't get all the
-// fields.
+// Matches gasoline NChilada output.
 
 #include <iostream>
 #include <cstdio>
 #include <string.h>
+#include <assert.h>
 
 #include "tree_xdr.h"
 #include "TipsyFile.h"
@@ -483,11 +483,11 @@ int main(int argc, char** argv) {
 	w.writeHeader();
 	w.seekParticleNum(0);
 	for(int64_t i = 0; i < nSph; i++)
-	    w.putNextGasParticle(tf.gas[i]);
+	    assert(w.putNextGasParticle(tf.gas[i]));
 	for(int64_t i = 0; i < nDark; i++)
-	    w.putNextDarkParticle(tf.darks[i]);
+	    assert(w.putNextDarkParticle(tf.darks[i]));
 	for(int64_t i = 0; i < nStar; i++)
-	    w.putNextStarParticle(tf.stars[i]);
+	    assert(w.putNextStarParticle(tf.stars[i]));
 	    
 	cerr << "Done." << endl;	
     }
