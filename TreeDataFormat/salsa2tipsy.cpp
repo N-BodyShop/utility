@@ -98,7 +98,7 @@ void getPos(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 3);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    for(unsigned int j = 0; j < fh.dimensions; ++j)
@@ -130,7 +130,7 @@ void getVel(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 3);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    for(unsigned int j = 0; j < fh.dimensions; ++j)
@@ -162,7 +162,7 @@ void getMass(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].mass = static_cast<float *>(data)[fh.dimensions * i];
@@ -192,7 +192,7 @@ void getSoft(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].eps = static_cast<float *>(data)[fh.dimensions * i];
@@ -222,7 +222,7 @@ void getPhi(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].phi = static_cast<float *>(data)[fh.dimensions * i];
@@ -253,7 +253,7 @@ void getHSmooth(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].hsmooth = static_cast<float *>(data)[fh.dimensions * i];
@@ -283,7 +283,7 @@ void getRho(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].rho = static_cast<float *>(data)[fh.dimensions * i];
@@ -313,7 +313,7 @@ void getTemp(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].temp = static_cast<float *>(data)[fh.dimensions * i];
@@ -347,7 +347,7 @@ void getMetalsOx(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].metals = static_cast<float *>(data)[fh.dimensions * i];
@@ -377,7 +377,7 @@ void getMetalsFe(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].metals += static_cast<float *>(data)[fh.dimensions * i];
@@ -407,7 +407,7 @@ void getTForm(PartVecT &p, // reference to particle array
     
     void *data = readFieldData(filename, fh, 1);
 
-    for(unsigned int i = 0; i < fh.numParticles; ++i) {
+    for(uint64_t i = 0; i < fh.numParticles; ++i) {
 	switch(fh.code) {
 	case float32:
 	    p[i].tform = static_cast<float *>(data)[fh.dimensions * i];
