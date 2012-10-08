@@ -7,6 +7,7 @@
 #define SFC_H
 
 #include <iostream>
+#include <stdlib.h>
 
 #include "Vector3D.h"
 #include "OrientedBox.h"
@@ -22,8 +23,16 @@ extern int peanoKey;
 
 namespace SFC {
 
-//typedef uint64_t Key;
-typedef CmiUInt8 Key;
+#ifdef BIGKEYS
+    /* 128 bit key for large dynamic range problems.  This gives 42
+       (we will only use the first 126 bits)
+       bits per coordinate, or a dynamic range of 4e12. */
+typedef __uint128_t Key;
+#else   
+/* Standard 64 bit key: 21 bits per coordinate and a dynamic range of
+   2e6 */
+typedef uint64_t Key;
+#endif
 
 inline void printFloatBits(float f, std::ostream& os) {
 	int i = *reinterpret_cast<int *>(&f);
@@ -67,8 +76,14 @@ inline void printIntBits(int k, std::ostream& os) {
 /** The very first possible key a particle can take on. */
 const Key firstPossibleKey = static_cast<Key>(0);
 /** The very last possible key a particle can take on. */
+#ifdef BIGKEYS
+const Key lastPossibleKey = ~(static_cast<Key>(3) << 126);
+#else
 const Key lastPossibleKey = ~(static_cast<Key>(1) << 63);
+#endif
 
+#ifndef BIGKEYS
+/* Below only works for 63 bit keys. */
 #ifdef PEANO
 static int quadrants[24][2][2][2] = {
   /* rotx=0, roty=0-3 */
@@ -232,7 +247,102 @@ inline void peano_hilbert_key_inverse(Key key, int bits, unsigned int *x, unsign
     }
 }
 #endif
+#endif /* !BIGKEYS */
 
+#ifdef BIGKEYS
+/** Given the double floating point numbers for the location,
+ construct the key. 
+ The key uses 42 of the 53 bits for the doubles of the x, y, and z coordinates
+ of the position vector.  This process will only make sense if the position
+ coordinates are in the range [1,2).  The mantissa bits are taken, and interleaved
+ in xyz order to form the key.  This makes the key a position on the z-ordering
+ space-filling curve. 
+ */
+/*
+ * This function expects positions to be between [0,1).  The first
+ * lines turn these into integers from 0 to 2^42.
+ */
+inline Key makeKey(double exchangeKey[3]) {
+  uint64_t ix = (uint64_t)(exchangeKey[0]*(1ULL<<42) - exchangeKey[0]);
+  uint64_t iy = (uint64_t)(exchangeKey[1]*(1ULL<<42) - exchangeKey[1]);
+  uint64_t iz = (uint64_t)(exchangeKey[2]*(1ULL<<42) - exchangeKey[2]);
+  Key key;
+#ifdef PEANO
+  switch (peanoKey) {
+  case 1:
+      abort();
+      break;
+  case 2:
+      /* Joachim's hilberts want inputs between 1 and 2 */
+      key = hilbert2d_double(exchangeKey[0]+1.0, exchangeKey[1]+1.0);
+      break;
+  case 3:
+      key = hilbert3d_double(exchangeKey[0]+1.0, exchangeKey[1]+1.0,
+	  exchangeKey[2]+1.0);
+      break;
+  case 0:
+#endif
+	key = 0;
+	for(uint64_t mask = (1 << 41); mask > 0; mask >>= 1) {
+		key <<= 3;
+		if(ix & mask)
+			key += 4;
+		if(iy & mask)
+			key += 2;
+		if(iz & mask)
+			key += 1;
+	}
+#ifdef PEANO
+  }
+#endif
+	return key;
+}
+
+inline Key generateKey(const Vector3D<double>& v, const OrientedBox<double>& boundingBox){
+  Vector3D<double> d = (v - boundingBox.lesser_corner)
+      / (boundingBox.greater_corner - boundingBox.lesser_corner);
+
+  double exchangeKey[3];
+  exchangeKey[0] = d.x;
+  exchangeKey[1] = d.y;
+  exchangeKey[2] = d.z;
+  return makeKey(exchangeKey);
+}
+
+/** Given a key, create a vector of doubles representing a position.
+ This is almost the inverse of the makeKey() function.  Since the key
+ does not use all the bits, each double generated here will have its last
+ eleven mantissa bits set zero, regardless of the values when the key was
+ originally generated.
+ */
+inline Vector3D<double> makeVector(Key k){
+  uint64_t ix=0, iy=0, iz=0;
+#ifdef PEANO
+  if (peanoKey) {
+      abort("128 bit inverse peano key Unimplemented");
+    peano_hilbert_key_inverse(k, 22, &ix, &iy, &iz);
+  } else {
+#endif
+	for(int mask = (1 << 0); mask <= (1 << 41); mask <<= 1) {
+		if(k & 4)
+			ix |= mask;
+		if(k & 2)
+			iy |= mask;
+		if(k & 1)
+			iz |= mask;
+		k >>= 3;	
+	}
+#ifdef PEANO
+  }
+#endif
+  double x = ((double)ix) / ((1<<42)-1);
+  double y = ((double)iy) / ((1<<42)-1);
+  double z = ((double)iz) / ((1<<42)-1);
+	Vector3D<double> v(x, y, z);
+	return v;
+}
+
+#else /* !BIGKEYS */
 /** Given the floating point numbers for the location, construct the key. 
  The key uses 21 of the 23 bits for the floats of the x, y, and z coordinates
  of the position vector.  This process will only make sense if the position
@@ -280,8 +390,6 @@ inline Key makeKey(float exchangeKey[3]) {
 	return key;
 }
 
-//Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& boundingBox);
-
 inline Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& boundingBox){
   Vector3D<float> d = (v - boundingBox.lesser_corner) / (boundingBox.greater_corner - boundingBox.lesser_corner); //+ Vector3D<float>(1, 1, 1);
 
@@ -299,10 +407,6 @@ inline Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& bound
  originally generated.
  */
 inline Vector3D<float> makeVector(Key k){
-	//Vector3D<float> v(1.0, 1.0, 1.0);
-	//int* ix = reinterpret_cast<int *>(&v.x);
-	//int* iy = reinterpret_cast<int *>(&v.y);
-	//int* iz = reinterpret_cast<int *>(&v.z);
   unsigned int ix=0, iy=0, iz=0;
 #ifdef PEANO
   if (peanoKey) {
@@ -327,6 +431,8 @@ inline Vector3D<float> makeVector(Key k){
 	Vector3D<float> v(x, y, z);
 	return v;
 }
+
+#endif /* BIGKEYS */
 
 template <typename T>
 inline OrientedBox<T> cutBoxLeft(const OrientedBox<T>& box, const int axis) {
