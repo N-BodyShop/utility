@@ -49,6 +49,50 @@ uint64_t hilbert2d(float x,float y) {
     return s;
     }
 
+#ifdef BIGKEYS
+
+/*
+** x and y must have range [1,2) !
+*/
+__uint128_t hilbert2d_double(double x,double y) {
+    __uint128_t s = 0;
+    uint64_t m,ux,uy,ut;
+
+    ux = *(uint64_t *)&x;
+    uy = *(uint64_t *)&y;
+    
+    m = 0x00400000;
+    m = (1ULL << 52);
+
+    while (m) {
+	s = s << 2;
+	if (ux&m) {
+	    if (uy&m) {
+		s |= 2;
+		}
+	    else {
+		ut = ux;
+		ux = ~uy;
+		uy = ~ut;
+		s |= 3;
+		}
+	    }
+	else {
+	    if (uy&m) {
+		s |= 1;
+		}
+	    else {
+		ut = ux;
+		ux = uy;
+		uy = ut;
+		}
+	    }
+	m = m >> 1;
+	}
+    return s;
+    }
+
+#endif
 
 void ihilbert2d(uint64_t s,float *px,float *py,float *pz) {
     /*
@@ -139,6 +183,93 @@ uint64_t hilbert3d(float x,float y,float z) {
 	}
     return s;
     }
+
+#ifdef BIGKEYS
+/*
+** x, y and z must have range [1,2) !
+*/
+__uint128_t hilbert3d_double(double x,double y,double z) {
+    __uint128_t s = 0;
+    uint64_t m,ux,uy,uz,ut;
+
+    /* We can only use 42 bits.  Lose the last 10 bits. */
+    ux = (*(uint64_t *)&x)>>10;
+    uy = (*(uint64_t *)&y)>>10;
+    uz = (*(uint64_t *)&z)>>10;
+
+    m = (1ULL << 41);
+
+    while (m) {
+	s = s << 3;
+
+	if (ux&m) {
+	    if (uy&m) {
+		if (uz&m) {
+		    ut = ux;
+		    ux = uy;
+		    uy = ~uz;
+		    uz = ~ut;
+		    s |= 5;
+		    }
+		else {
+		    ut = uz;
+		    uz = ux;
+		    ux = uy;
+		    uy = ut;
+		    s |= 2;
+		    }
+		}
+	    else {
+		ux = ~ux;
+		uy = ~uy;
+		if (uz&m) {
+		    s |= 4;
+		    }
+		else {
+		    s |= 3;
+		    }
+		}
+	    }
+	else {
+	    if (uy&m) {
+		if (uz&m) {
+		    ut = ux;
+		    ux = uy;
+		    uy = ~uz;
+		    uz = ~ut;
+		    s |= 6;
+		    }
+		else {
+		    ut = uz;
+		    uz = ux;
+		    ux = uy;
+		    uy = ut;
+		    s |= 1;
+		    }
+		}
+	    else {
+		if (uz&m) {
+		    ut = uy;
+		    uy = ux;
+		    ux = ~uz;
+		    uz = ~ut;
+		    s |= 7;
+		    }
+		else {
+		    ut = uy;
+		    uy = ux;
+		    ux = uz;
+		    uz = ut;
+		    s |= 0;
+		    }
+		}
+	    }
+	m = m >> 1;
+	}
+    return s;
+    }
+
+#endif
 
 void ihilbert3d(uint64_t s,float *px,float *py,float *pz) {
     uint32_t m,ux=0,uy=0,uz=0,ut;

@@ -252,7 +252,7 @@ inline void peano_hilbert_key_inverse(Key key, int bits, unsigned int *x, unsign
 #ifdef BIGKEYS
 /** Given the double floating point numbers for the location,
  construct the key. 
- The key uses 42 of the 53 bits for the doubles of the x, y, and z coordinates
+ The key uses 42 of the 52 bits for the doubles of the x, y, and z coordinates
  of the position vector.  This process will only make sense if the position
  coordinates are in the range [1,2).  The mantissa bits are taken, and interleaved
  in xyz order to form the key.  This makes the key a position on the z-ordering
@@ -283,7 +283,7 @@ inline Key makeKey(double exchangeKey[3]) {
   case 0:
 #endif
 	key = 0;
-	for(uint64_t mask = (1 << 41); mask > 0; mask >>= 1) {
+	for(uint64_t mask = (1ULL << 41); mask > 0; mask >>= 1) {
 		key <<= 3;
 		if(ix & mask)
 			key += 4;
@@ -312,18 +312,17 @@ inline Key generateKey(const Vector3D<double>& v, const OrientedBox<double>& bou
 /** Given a key, create a vector of doubles representing a position.
  This is almost the inverse of the makeKey() function.  Since the key
  does not use all the bits, each double generated here will have its last
- eleven mantissa bits set zero, regardless of the values when the key was
+ ten mantissa bits set zero, regardless of the values when the key was
  originally generated.
  */
 inline Vector3D<double> makeVector(Key k){
   uint64_t ix=0, iy=0, iz=0;
 #ifdef PEANO
   if (peanoKey) {
-      abort("128 bit inverse peano key Unimplemented");
-    peano_hilbert_key_inverse(k, 22, &ix, &iy, &iz);
+      abort();
   } else {
 #endif
-	for(int mask = (1 << 0); mask <= (1 << 41); mask <<= 1) {
+	for(int64_t mask = (1 << 0); mask <= (1ULL << 41); mask <<= 1) {
 		if(k & 4)
 			ix |= mask;
 		if(k & 2)
@@ -335,9 +334,9 @@ inline Vector3D<double> makeVector(Key k){
 #ifdef PEANO
   }
 #endif
-  double x = ((double)ix) / ((1<<42)-1);
-  double y = ((double)iy) / ((1<<42)-1);
-  double z = ((double)iz) / ((1<<42)-1);
+  double x = ((double)ix) / ((1ULL<<42)-1);
+  double y = ((double)iy) / ((1ULL<<42)-1);
+  double z = ((double)iz) / ((1ULL<<42)-1);
 	Vector3D<double> v(x, y, z);
 	return v;
 }
