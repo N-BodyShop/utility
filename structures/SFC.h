@@ -28,10 +28,12 @@ namespace SFC {
        (we will only use the first 126 bits)
        bits per coordinate, or a dynamic range of 4e12. */
 typedef __uint128_t Key;
+static const int KeyBits = 126;
 #else   
 /* Standard 64 bit key: 21 bits per coordinate and a dynamic range of
    2e6 */
 typedef uint64_t Key;
+static const int KeyBits = 63;
 #endif
 
 inline void printFloatBits(float f, std::ostream& os) {
