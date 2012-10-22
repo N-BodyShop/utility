@@ -1,4 +1,5 @@
 CXXFLAGS += -O3 @CPPFLAGS@
+CFLAGS += -O3 @CPPFLAGS@
 CXX = @CXX@
 CC = @CC@
 AR = @AR@
