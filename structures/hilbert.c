@@ -61,7 +61,6 @@ __uint128_t hilbert2d_double(double x,double y) {
     ux = *(uint64_t *)&x;
     uy = *(uint64_t *)&y;
     
-    m = 0x00400000;
     m = (1ULL << 52);
 
     while (m) {
@@ -108,6 +107,10 @@ uint64_t hilbert3d(float x,float y,float z) {
     uint64_t s = 0;
     uint32_t m,ux,uy,uz,ut;
 
+    assert(x >= 1.0f && x < 2.0f);
+    assert(y >= 1.0f && y < 2.0f);
+    assert(z >= 1.0f && z < 2.0f);
+    
     ux = (*(uint32_t *)&x)>>2;
     uy = (*(uint32_t *)&y)>>2;
     uz = (*(uint32_t *)&z)>>2;
@@ -191,6 +194,10 @@ uint64_t hilbert3d(float x,float y,float z) {
 __uint128_t hilbert3d_double(double x,double y,double z) {
     __uint128_t s = 0;
     uint64_t m,ux,uy,uz,ut;
+
+    assert(x >= 1.0 && x < 2.0);
+    assert(y >= 1.0 && y < 2.0);
+    assert(z >= 1.0 && z < 2.0);
 
     /* We can only use 42 bits.  Lose the last 10 bits. */
     ux = (*(uint64_t *)&x)>>10;
