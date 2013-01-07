@@ -5,6 +5,7 @@
  */
 
 #include <assert.h>
+#include <errno.h>
 #include "config.h"
 #include "xdr_template.h"
 
@@ -456,7 +457,18 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 		seek_position = preface + h.nsph * (int64_t) gas_particle::sizeBytes + h.ndark * (int64_t) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (int64_t) star_particle::sizeBytes;
 	} else
 		return false;
-	fseek(tipsyFp, seek_position, 0);
+	
+	int status = 0;
+	while(1) {
+	    status = fseek(tipsyFp, seek_position, 0);
+	    if(status != 0 && errno == EINTR) {
+		printf("Warning: fseek retrying ...\n");
+		continue;
+		}
+	    else
+		break;
+	    }
+	if(status != 0) return false;
 	if(!native)
 	    xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
 	
