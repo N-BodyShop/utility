@@ -169,6 +169,17 @@ public:
 				&& v.z >= b.lesser_corner.z && v.z <= b.greater_corner.z;
 	}
 
+	/// Does an oriented box contain a sphere
+	template <typename T, typename T2>
+	static inline bool contains(const OrientedBox<T>& b, const Sphere<T2>& s) {
+		return s.origin.x - s.radius >= b.lesser_corner.x
+		    && s.origin.x + s.radius <= b.greater_corner.x
+		    && s.origin.y - s.radius >= b.lesser_corner.y
+		    && s.origin.y + s.radius <= b.greater_corner.y
+		    && s.origin.z - s.radius >= b.lesser_corner.z
+		    && s.origin.z + s.radius <= b.greater_corner.z;
+	}
+
 	/// Does an unaligned box contain a point
 	template <typename T, typename T2>
 	static inline bool contains(const Box<T>& box, const Vector3D<T2>& v) {
