@@ -64,6 +64,34 @@ class TipsyReader {
 	header h;
 	
 	bool responsible;
+        bool bDoublePos;
+        bool bDoubleVel;
+        
+        std::streampos gas_size;
+        std::streampos dark_size;
+        std::streampos star_size;
+        
+        void set_sizes()
+        {
+            if(bDoubleVel && bDoublePos) {
+                gas_size = gas_particle_t<double,double>::sizeBytes;
+                dark_size = dark_particle_t<double,double>::sizeBytes;
+                star_size = star_particle_t<double,double>::sizeBytes;
+            } else if (bDoublePos) {
+                gas_size = gas_particle_t<double,float>::sizeBytes;
+                dark_size = dark_particle_t<double,float>::sizeBytes;
+                star_size = star_particle_t<double,float>::sizeBytes;
+            } else if(bDoubleVel) {
+                gas_size = gas_particle_t<float,double>::sizeBytes;
+                dark_size = dark_particle_t<float,double>::sizeBytes;
+                star_size = star_particle_t<float,double>::sizeBytes;
+            } else {
+                gas_size = gas_particle_t<float,float>::sizeBytes;
+                dark_size = dark_particle_t<float,float>::sizeBytes;
+                star_size = star_particle_t<float,float>::sizeBytes;
+            }
+        }
+                
  public:
 	std::istream* tipsyStream;
 	
@@ -76,13 +104,16 @@ class TipsyReader {
 	
 public:
 	
-	TipsyReader() : native(true), ok(false), responsible(false), tipsyStream(0) { }
+	TipsyReader() : native(true), ok(false), responsible(false),
+            tipsyStream(0), bDoublePos(false), bDoubleVel(false) { set_sizes();
+            }
 
 	/// Load from a file
-	TipsyReader(const std::string& filename) : ok(false), responsible(true) {
+        TipsyReader(const std::string& filename, bool _bDP = false, bool _bDV = false) : ok(false), responsible(true), bDoublePos(_bDP), bDoubleVel(_bDV) {
 		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
 		if(!(*tipsyStream)) throw std::ios_base::failure("Bad file open");
 		loadHeader();
+                set_sizes();
 	}
 	
 	/** Load from a stream.
@@ -90,9 +121,10 @@ public:
 	 outlast your use of the reader object, since the original stream owns
 	 the buffer.  For the standard stream cin this is guaranteed.
 	 */
-	TipsyReader(std::istream& is) : ok(false), responsible(true) {
+        TipsyReader(std::istream& is, bool _bDP = false, bool _bDV = false) : ok(false), responsible(true), bDoublePos(_bDP), bDoubleVel(_bDV) {
 		tipsyStream = new std::istream(is.rdbuf());
 		loadHeader();
+                set_sizes();
 	}
 	
 	/// Use this instead of a copy constructor
@@ -108,6 +140,9 @@ public:
 		responsible = true;
 		r.responsible = false;
 		tipsyStream = r.tipsyStream;
+                bDoublePos = r.bDoublePos;
+                bDoubleVel = r.bDoubleVel;
+                set_sizes();
 	}
 	
 	/** Reload from a file.
@@ -144,10 +179,21 @@ public:
 	
 	bool getNextSimpleParticle(simple_particle& p);
 	
-	bool getNextGasParticle(gas_particle& p);
-	bool getNextDarkParticle(dark_particle& p);
-	bool getNextStarParticle(star_particle& p);
-	
+        template <typename TPos, typename TVel>
+            bool getNextGasParticle_t(gas_particle_t<TPos, TVel> & p);
+	bool getNextGasParticle(gas_particle& p)
+            { return getNextGasParticle_t<float,float>(p);}
+        
+        template <typename TPos, typename TVel>
+            bool getNextDarkParticle_t(dark_particle_t<TPos, TVel> & p);
+	bool getNextDarkParticle(dark_particle& p)
+            { return getNextDarkParticle_t<float,float>(p);}
+        
+        template <typename TPos, typename TVel>
+            bool getNextStarParticle_t(star_particle_t<TPos, TVel> & p);
+	bool getNextStarParticle(star_particle& p)
+            { return getNextStarParticle_t<float,float>(p);}
+        
 	bool readAllParticles(gas_particle* gas, dark_particle* darks, star_particle* stars);
 	bool readAllParticles(std::vector<gas_particle>& gas, std::vector<dark_particle>& darks, std::vector<star_particle>& stars);
 	
@@ -176,6 +222,34 @@ class TipsyWriter {
 	FILE *tipsyFp;
 	XDR xdrs;
 	header h;
+        bool bDoublePos;
+        bool bDoubleVel;
+
+        std::streampos gas_size;
+        std::streampos dark_size;
+        std::streampos star_size;
+
+        void set_sizes()
+        {
+            if(bDoubleVel && bDoublePos) {
+                gas_size = gas_particle_t<double,double>::sizeBytes;
+                dark_size = dark_particle_t<double,double>::sizeBytes;
+                star_size = star_particle_t<double,double>::sizeBytes;
+            } else if (bDoublePos) {
+                gas_size = gas_particle_t<double,float>::sizeBytes;
+                dark_size = dark_particle_t<double,float>::sizeBytes;
+                star_size = star_particle_t<double,float>::sizeBytes;
+            } else if(bDoubleVel) {
+                gas_size = gas_particle_t<float,double>::sizeBytes;
+                dark_size = dark_particle_t<float,double>::sizeBytes;
+                star_size = star_particle_t<float,double>::sizeBytes;
+            } else {
+                gas_size = gas_particle_t<float,float>::sizeBytes;
+                dark_size = dark_particle_t<float,float>::sizeBytes;
+                star_size = star_particle_t<float,float>::sizeBytes;
+            }
+        }
+
 	/* hide copy constructor and assignment */
 	TipsyWriter(const TipsyWriter& r);
 	TipsyWriter& operator=(const TipsyWriter& r);
@@ -186,8 +260,9 @@ class TipsyWriter {
 	
 	/// Write to a file
 	TipsyWriter(const std::string& filename, header &parh,
-		    bool pnative=false)
-	    : native(pnative), ok(false), h(parh) {
+                    bool pnative=false, bool _bDP = false, bool _bDV = false)
+	    : native(pnative), ok(false), h(parh), bDoublePos(_bDP),
+            bDoubleVel(_bDV) {
 	    tipsyFp = fopen(filename.c_str(), "a");  // Create file
 	    if(tipsyFp == NULL) {
 		ok = false;
@@ -204,6 +279,7 @@ class TipsyWriter {
 	    if(!native)
 		xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
 	    ok = true;
+            set_sizes();
 	}
 	
 	~TipsyWriter() {
@@ -215,9 +291,20 @@ class TipsyWriter {
 		if (result!=0) assert(0);
 	}
 	
-	bool putNextGasParticle(gas_particle& p);
-	bool putNextDarkParticle(dark_particle& p);
-	bool putNextStarParticle(star_particle& p);
+        template <typename TPos, typename TVel>
+            bool putNextGasParticle_t(gas_particle_t<TPos, TVel>& p);
+        bool putNextGasParticle(gas_particle& p)
+            { return putNextGasParticle_t<float,float>(p);}
+
+        template <typename TPos, typename TVel>
+            bool putNextDarkParticle_t(dark_particle_t<TPos, TVel>& p);
+        bool putNextDarkParticle(dark_particle& p)
+            { return putNextDarkParticle_t<float,float>(p);}
+
+        template <typename TPos, typename TVel>
+            bool putNextStarParticle_t(star_particle_t<TPos, TVel>& p);
+        bool putNextStarParticle(star_particle& p)
+            { return putNextStarParticle_t<float,float>(p);}
 	
 	//	bool writeAllParticles(gas_particle* gas, dark_particle* darks, star_particle* stars);
 	//	bool writeAllParticles(std::vector<gas_particle>& gas, std::vector<dark_particle>& darks, std::vector<star_particle>& stars);

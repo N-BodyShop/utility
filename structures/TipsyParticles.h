@@ -22,9 +22,11 @@ const int MAXDIM = 3;
 
 typedef float Real;
 
-class simple_particle {
+template <typename TPos = Real, typename TVel = Real>
+class simple_particle_t {
 public:
-	static const unsigned int sizeBytes = 28;
+    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+        + sizeof(Real);
 	
 	/** The mass of the particle. */
     Real mass;
@@ -33,14 +35,14 @@ public:
 	/** The velocity vector of this particle. */
     Vector3D<Real> vel;
 	
-	simple_particle() : mass(0) { }
+	simple_particle_t() : mass(0) { }
 	
-	bool operator==(const simple_particle& p) const {
+	bool operator==(const simple_particle_t& p) const {
 		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel);
 	}
 	
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const simple_particle& p) {
+	friend std::ostream& operator<< (std::ostream& os, const simple_particle_t& p) {
 		return os << "Mass: " << p.mass
 				<< "\nPosition: " << p.pos
 				<< "\nVelocity: " << p.vel;
@@ -48,11 +50,15 @@ public:
 	
 };
 
+typedef simple_particle_t<> simple_particle;
+
 /** A particle representing a blob of gas, this is used in SPH calculations. */
-class gas_particle : public simple_particle {
+template <typename TPos = Real, typename TVel = Real>
+class gas_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 
-	static const unsigned int sizeBytes = 48;
+    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
+                                            + 5*sizeof(Real);
 	
 	/** The local density of gas at this particle's location. */
     Real rho;
@@ -66,16 +72,17 @@ public:
     Real phi;
 
 	/// Default constructor sets all values to zero
-	gas_particle() : rho(0), temp(0), hsmooth(0), metals(0), phi(0) { }
+    gas_particle_t() : rho(0), temp(0), hsmooth(0), metals(0), phi(0) { }
 	
-	bool operator==(const gas_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel) && (rho == p.rho)
-				&& (temp == p.temp) && (hsmooth == p.hsmooth) && (metals == p.metals)
-				&& (phi == p.phi);
+    bool operator==(const gas_particle_t& p) const {
+        return (this->mass == p.mass) && (this->pos == p.pos)
+                && (this->vel == p.vel) && (rho == p.rho)
+                && (temp == p.temp) && (hsmooth == p.hsmooth)
+                && (metals == p.metals) && (phi == p.phi);
 	}
 	
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const gas_particle& p) {
+	friend std::ostream& operator<< (std::ostream& os, const gas_particle_t& p) {
 		return os << "Mass: " << p.mass
 			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
 			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
@@ -87,11 +94,15 @@ public:
 	}
 };
 
+typedef gas_particle_t<> gas_particle;
+
 /** A particle of dark matter, this interacts via gravity only. */
-class dark_particle : public simple_particle {
+template <typename TPos = Real, typename TVel = Real>
+class dark_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 	
-	static const unsigned int sizeBytes = 36;
+    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
+                                            + 2*sizeof(Real);
 	
 	/** The gravitational softening length of this particle. */
     Real eps;
@@ -99,15 +110,16 @@ public:
     Real phi;
 
 	/// Default constructor sets all values to zero
-	dark_particle() : eps(0), phi(0) { }
+    dark_particle_t() : eps(0), phi(0) { }
 	
-	bool operator==(const dark_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel)
-				&& (eps == p.eps) && (phi == p.phi);
+    bool operator==(const dark_particle_t& p) const {
+		return (this->mass == p.mass) && (this->pos == p.pos)
+                        && (this->vel == p.vel)
+                        && (eps == p.eps) && (phi == p.phi);
 	}
 	
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<< (std::ostream& os, const dark_particle& p) {
+        friend std::ostream& operator<< (std::ostream& os, const dark_particle_t& p) {
 		return os << "Mass: " << p.mass
 			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
 			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
@@ -116,11 +128,15 @@ public:
 	}
 };
 
+typedef dark_particle_t<> dark_particle;
+
 /** A star particle interacts via gravity, and has some extra properties. */
-class star_particle : public simple_particle {
+template <typename TPos = Real, typename TVel = Real>
+class star_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 	
-	static const unsigned int sizeBytes = 44;
+    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
+                                            + 4*sizeof(Real);
 	
 	/** The metallicity of this star particle. */
     Real metals;
@@ -132,16 +148,17 @@ public:
     Real phi;
 
 	/// Default constructor sets all values to zero
-	star_particle() : metals(0), tform(0), eps(0), phi(0) { }
+    star_particle_t() : metals(0), tform(0), eps(0), phi(0) { }
 	
-	bool operator==(const star_particle& p) const {
-		return (mass == p.mass) && (pos == p.pos) && (vel == p.vel)
-				&& (metals == p.metals) && (tform == p.tform) && (eps == p.eps)
-				&& (phi == p.phi);
+    bool operator==(const star_particle_t& p) const {
+        return (this->mass == p.mass) && (this->pos == p.pos)
+                && (this->vel == p.vel)
+                && (metals == p.metals) && (tform == p.tform) && (eps == p.eps)
+                && (phi == p.phi);
 	}
 
 	/// Output operator, used for formatted display
-	friend std::ostream& operator<<(std::ostream& os, const star_particle& p) {
+    friend std::ostream& operator<<(std::ostream& os, const star_particle_t& p) {
 		return os << "Mass: " << p.mass
 			<< "\nPosition: " << p.pos << "  Magnitude: " << p.pos.length()
 			<< "\nVelocity: " << p.vel << "  Magnitude: " << p.vel.length()
@@ -151,6 +168,8 @@ public:
 			<< "\nPhi: " << p.phi;
 	}
 };
+
+typedef star_particle_t<> star_particle;
 
 /** A particle representing a group of other particles.
  This class is an extension, it is not used in Tipsy.

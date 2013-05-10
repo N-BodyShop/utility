@@ -27,7 +27,8 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::simple_particle* p) {
 		&& xdr_template(xdrs, &(p->vel)));
 }
 
-inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle_t<TPos,TVel>* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
 		&& xdr_template(xdrs, &(p->vel))
@@ -38,7 +39,8 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle* p) {
 		&& xdr_template(xdrs, &(p->phi)));
 }
 
-inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle_t<TPos,TVel>* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
 		&& xdr_template(xdrs, &(p->vel))
@@ -46,7 +48,8 @@ inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle* p) {
 		&& xdr_template(xdrs, &(p->phi)));
 }
 
-inline bool_t xdr_template(XDR* xdrs, Tipsy::star_particle* p) {
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::star_particle_t<TPos,TVel>* p) {
 	return (xdr_template(xdrs, &(p->mass))
 		&& xdr_template(xdrs, &(p->pos))
 		&& xdr_template(xdrs, &(p->vel))
@@ -149,18 +152,21 @@ bool TipsyReader::getNextSimpleParticle(simple_particle& p) {
 /** Get the next gas particle.
  Returns false if the read failed, or already read all the gas particles in this file.
  */
-bool TipsyReader::getNextGasParticle(gas_particle& p) {
+template <typename TPos, typename TVel>
+bool TipsyReader::getNextGasParticle_t(gas_particle_t<TPos, TVel>& p) {
 	if(!ok || !(*tipsyStream))
 		return false;
+        assert(p.sizeBytes == gas_size);
 	
 	if(numGasRead < h.nsph) {
 		++numGasRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), gas_particle::sizeBytes);
+		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
 		if(numGasRead < h.nsph && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), gas_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
+                                      p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -171,12 +177,17 @@ bool TipsyReader::getNextGasParticle(gas_particle& p) {
 	return true;
 }
 
+template bool TipsyReader::getNextGasParticle_t(gas_particle_t<double,float>& p);
+template bool TipsyReader::getNextGasParticle_t(gas_particle_t<double,double>& p);
+
 /** Get the next dark particle.
  Returns false if the read failed, or already read all the dark particles in this file.
  */
-bool TipsyReader::getNextDarkParticle(dark_particle& p) {
+template <typename TPos, typename TVel>
+bool TipsyReader::getNextDarkParticle_t(dark_particle_t<TPos, TVel>& p) {
 	if(!ok || !(*tipsyStream))
 		return false;
+        assert(p.sizeBytes == dark_size);
 	
 	if(numGasRead != h.nsph) { //some gas still not read, skip them
 		if(!seekParticleNum(h.nsph))
@@ -186,13 +197,14 @@ bool TipsyReader::getNextDarkParticle(dark_particle& p) {
 	
 	if(numDarksRead < h.ndark) {
 		++numDarksRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), dark_particle::sizeBytes);
+		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
 	// Hack to fix end of stream problem on Macs --trq
 		if(numDarksRead < h.ndark && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), dark_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
+                                      p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -203,12 +215,17 @@ bool TipsyReader::getNextDarkParticle(dark_particle& p) {
 	return true;
 }
 
+template bool TipsyReader::getNextDarkParticle_t(dark_particle_t<double,float>& p);
+template bool TipsyReader::getNextDarkParticle_t(dark_particle_t<double,double>& p);
+
 /** Get the next star particle.
  Returns false if the read failed, or already read all the star particles in this file.
  */
-bool TipsyReader::getNextStarParticle(star_particle& p) {
+template <typename TPos, typename TVel>
+bool TipsyReader::getNextStarParticle_t(star_particle_t<TPos, TVel>& p) {
 	if(!ok || !(*tipsyStream))
 		return false;
+        assert(p.sizeBytes == star_size);
 	
 	if(numGasRead != h.nsph || numDarksRead != h.ndark) { //some gas and dark still not read, skip them
 		if(!seekParticleNum(h.nsph + h.ndark))
@@ -219,13 +236,14 @@ bool TipsyReader::getNextStarParticle(star_particle& p) {
 	
 	if(numStarsRead < h.nstar) {
 		++numStarsRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), star_particle::sizeBytes);
+		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
 	// Hack to fix end of stream problem on Macs --trq
 		if(numStarsRead < h.nstar && !(*tipsyStream))
 			return false;
 		if(!native) {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p), star_particle::sizeBytes, XDR_DECODE);
+			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
+                                      p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
@@ -235,6 +253,9 @@ bool TipsyReader::getNextStarParticle(star_particle& p) {
 	
 	return true;
 }
+
+template bool TipsyReader::getNextStarParticle_t(star_particle_t<double,float>& p);
+template bool TipsyReader::getNextStarParticle_t(star_particle_t<double,double>& p);
 
 /** Read all the particles into arrays.
  Returns false if the read fails.
@@ -309,7 +330,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 	unsigned int preface = header::sizeBytes + padSize;
 	std::streampos seek_position;
 	if(num < h.nsph) {
-		seek_position = preface + num * (std::streampos) gas_particle::sizeBytes;
+		seek_position = preface + num * gas_size;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
@@ -317,7 +338,8 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numDarksRead = 0;
 		numStarsRead = 0;
 	} else if(num < (h.nsph + h.ndark)) {
-		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + (num - h.nsph) * (std::streampos) dark_particle::sizeBytes;
+		seek_position = preface + h.nsph * gas_size
+                    + (num - h.nsph) * dark_size;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
@@ -325,7 +347,7 @@ bool TipsyReader::seekParticleNum(unsigned int num) {
 		numDarksRead = num - h.nsph;
 		numStarsRead = 0;
 	} else if(num < (h.nsph + h.ndark + h.nstar)) {
-		seek_position = preface + h.nsph * (std::streampos) gas_particle::sizeBytes + h.ndark * (std::streampos) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (std::streampos) star_particle::sizeBytes;
+		seek_position = preface + h.nsph * gas_size + h.ndark * dark_size + (num - h.ndark - h.nsph) * star_size;
 		tipsyStream->seekg(seek_position);
 		if(!(*tipsyStream))
 			return false;
@@ -342,20 +364,20 @@ bool TipsyReader::skipParticles(unsigned int num) {
 	for(unsigned int skipped = 0; skipped < num; ++skipped) {
 		if(numGasRead < h.nsph) {
 			++numGasRead;
-			gas_particle gp;
-			tipsyStream->read(reinterpret_cast<char *>(&gp),  gas_particle::sizeBytes);
+			gas_particle_t<double,double> gp;
+			tipsyStream->read(reinterpret_cast<char *>(&gp),  gas_size);
 			if(!(*tipsyStream))
 				return false;
 		} else if(numDarksRead < h.ndark) {
 			++numDarksRead;
-			dark_particle dp;
-			tipsyStream->read(reinterpret_cast<char *>(&dp),  dark_particle::sizeBytes);
+			dark_particle_t<double,double> dp;
+			tipsyStream->read(reinterpret_cast<char *>(&dp),  dark_size);
 			if(!(*tipsyStream))
 				return false;
 		} else if(numStarsRead < h.nstar) {
 			++numStarsRead;
-			star_particle sp;
-			tipsyStream->read(reinterpret_cast<char *>(&sp),  star_particle::sizeBytes);
+			star_particle_t<double,double> sp;
+			tipsyStream->read(reinterpret_cast<char *>(&sp),  star_size);
 			if(!(*tipsyStream))
 				return false;
 		} else
@@ -388,12 +410,14 @@ bool TipsyWriter::writeHeader() {
 /** Write the next gas particle.
  Returns false if the write failed.
  */
-bool TipsyWriter::putNextGasParticle(gas_particle& p) {
+template <typename TPos, typename TVel>
+bool TipsyWriter::putNextGasParticle_t(gas_particle_t<TPos, TVel>& p) {
 	if(!tipsyFp)
 		return false;
+        assert(p.sizeBytes == gas_size);
 	
 	if(native) {
-	    fwrite(&p, gas_particle::sizeBytes, 1, tipsyFp);
+	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))
@@ -403,12 +427,18 @@ bool TipsyWriter::putNextGasParticle(gas_particle& p) {
 	return true;
 }
 
-bool TipsyWriter::putNextDarkParticle(dark_particle& p) {
+template bool TipsyWriter::putNextGasParticle_t(gas_particle_t<float,float>& p);
+template bool TipsyWriter::putNextGasParticle_t(gas_particle_t<double,float>& p);
+template bool TipsyWriter::putNextGasParticle_t(gas_particle_t<double,double>& p);
+
+template <typename TPos, typename TVel>
+bool TipsyWriter::putNextDarkParticle_t(dark_particle_t<TPos,TVel>& p) {
 	if(!tipsyFp)
 		return false;
+        assert(p.sizeBytes == dark_size);
 	
 	if(native) {
-	    fwrite(&p, dark_particle::sizeBytes, 1, tipsyFp);
+	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))
@@ -418,12 +448,18 @@ bool TipsyWriter::putNextDarkParticle(dark_particle& p) {
 	return true;
 }
 
-bool TipsyWriter::putNextStarParticle(star_particle& p) {
+template bool TipsyWriter::putNextDarkParticle_t(dark_particle_t<float,float>& p);
+template bool TipsyWriter::putNextDarkParticle_t(dark_particle_t<double,float>& p);
+template bool TipsyWriter::putNextDarkParticle_t(dark_particle_t<double,double>& p);
+
+template <typename TPos, typename TVel>
+bool TipsyWriter::putNextStarParticle_t(star_particle_t<TPos,TVel>& p) {
 	if(!tipsyFp)
 		return false;
+        assert(p.sizeBytes == star_size);
 	
 	if(native) {
-	    fwrite(&p, star_particle::sizeBytes, 1, tipsyFp);
+	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))
@@ -432,6 +468,10 @@ bool TipsyWriter::putNextStarParticle(star_particle& p) {
 	
 	return true;
 }
+
+template bool TipsyWriter::putNextStarParticle_t(star_particle_t<float,float>& p);
+template bool TipsyWriter::putNextStarParticle_t(star_particle_t<double,float>& p);
+template bool TipsyWriter::putNextStarParticle_t(star_particle_t<double,double>& p);
 
 /** Seek to the requested particle in the file.
  Returns false if the file seek fails, or if you request too large a particle.
@@ -449,11 +489,11 @@ bool TipsyWriter::seekParticleNum(unsigned int num) {
 	    xdr_destroy(&xdrs);
 	
 	if(num < (unsigned int) h.nsph) {
-		seek_position = preface + num * (int64_t) gas_particle::sizeBytes;
+		seek_position = preface + num * (int64_t) gas_size;
 	} else if(num < (h.nsph + h.ndark)) {
-		seek_position = preface + h.nsph * (int64_t) gas_particle::sizeBytes + (num - h.nsph) * (int64_t) dark_particle::sizeBytes;
+		seek_position = preface + h.nsph * (int64_t) gas_size + (num - h.nsph) * (int64_t) dark_size;
 	} else if(num < (h.nsph + h.ndark + h.nstar)) {
-		seek_position = preface + h.nsph * (int64_t) gas_particle::sizeBytes + h.ndark * (int64_t) dark_particle::sizeBytes + (num - h.ndark - h.nsph) * (int64_t) star_particle::sizeBytes;
+		seek_position = preface + h.nsph * (int64_t) gas_size + h.ndark * (int64_t) dark_size + (num - h.ndark - h.nsph) * (int64_t) star_size;
 	} else
 		return false;
 	fseek(tipsyFp, seek_position, 0);
