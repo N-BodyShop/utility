@@ -21,7 +21,8 @@ libTipsy.a: $(LIBTARGETS)
 	$(AR) libTipsy.a $(LIBTARGETS)
 	ranlib libTipsy.a
 
-TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyFile.cpp Vector3D.h OrientedBox.h
+TipsyFile.o: TipsyFile.h TipsyParticles.h TipsyReader.h TipsyFile.cpp \
+             Vector3D.h OrientedBox.h
 
 TipsyReader.o: TipsyReader.h TipsyReader.cpp TipsyParticles.h Vector3D.h xdr_template.h
 
