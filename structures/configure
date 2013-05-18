@@ -311,7 +311,7 @@ ac_includes_default="\
 # include <unistd.h>
 #endif"
 
-ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT AR ac_ct_AR CC CFLAGS ac_ct_CC CPP EGREP LIBOBJS LTLIBOBJS'
+ac_subst_vars='SHELL PATH_SEPARATOR PACKAGE_NAME PACKAGE_TARNAME PACKAGE_VERSION PACKAGE_STRING PACKAGE_BUGREPORT exec_prefix prefix program_transform_name bindir sbindir libexecdir datadir sysconfdir sharedstatedir localstatedir libdir includedir oldincludedir infodir mandir build_alias host_alias target_alias DEFS ECHO_C ECHO_N ECHO_T LIBS CXX CXXFLAGS LDFLAGS CPPFLAGS ac_ct_CXX EXEEXT OBJEXT AR ac_ct_AR CC CFLAGS ac_ct_CC CPP EGREP FLAG_BIGKEYS LIBOBJS LTLIBOBJS'
 ac_subst_files=''
 
 # Initialize some variables set by options.
@@ -848,6 +848,11 @@ if test -n "$ac_init_help"; then
      short | recursive ) echo "Configuration of FULL-PACKAGE-NAME VERSION:";;
    esac
   cat <<\_ACEOF
+
+Optional Features:
+  --disable-FEATURE       do not include FEATURE (same as --enable-FEATURE=no)
+  --enable-FEATURE[=ARG]  include FEATURE [ARG=yes]
+  --enable-bigkeys        enable 128 bit hash keys
 
 Some influential environment variables:
   CXX         C++ compiler command
@@ -4128,6 +4133,23 @@ fi
 done
 
 
+# 128 bit keys:
+# Check whether --enable-bigkeys or --disable-bigkeys was given.
+if test "${enable_bigkeys+set}" = set; then
+  enableval="$enable_bigkeys"
+  bigkeys=yes
+else
+  bigkeys=no
+fi;
+if test "$bigkeys" = "yes" ; then
+    echo "BIGKEYS selected"
+    FLAG_BIGKEYS="-DBIGKEYS"
+else
+    FLAG_BIGKEYS=""
+fi
+
+
+
           ac_config_files="$ac_config_files Makefile"
 
 
@@ -4755,6 +4777,7 @@ s,@CFLAGS@,$CFLAGS,;t t
 s,@ac_ct_CC@,$ac_ct_CC,;t t
 s,@CPP@,$CPP,;t t
 s,@EGREP@,$EGREP,;t t
+s,@FLAG_BIGKEYS@,$FLAG_BIGKEYS,;t t
 s,@LIBOBJS@,$LIBOBJS,;t t
 s,@LTLIBOBJS@,$LTLIBOBJS,;t t
 CEOF
