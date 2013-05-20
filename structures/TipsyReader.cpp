@@ -178,6 +178,7 @@ bool TipsyReader::getNextGasParticle_t(gas_particle_t<TPos, TVel>& p) {
 	return true;
 }
 
+template bool TipsyReader::getNextGasParticle_t(gas_particle_t<float,float>& p);
 template bool TipsyReader::getNextGasParticle_t(gas_particle_t<double,float>& p);
 template bool TipsyReader::getNextGasParticle_t(gas_particle_t<double,double>& p);
 
@@ -216,6 +217,7 @@ bool TipsyReader::getNextDarkParticle_t(dark_particle_t<TPos, TVel>& p) {
 	return true;
 }
 
+template bool TipsyReader::getNextDarkParticle_t(dark_particle_t<float,float>& p);
 template bool TipsyReader::getNextDarkParticle_t(dark_particle_t<double,float>& p);
 template bool TipsyReader::getNextDarkParticle_t(dark_particle_t<double,double>& p);
 
@@ -255,6 +257,7 @@ bool TipsyReader::getNextStarParticle_t(star_particle_t<TPos, TVel>& p) {
 	return true;
 }
 
+template bool TipsyReader::getNextStarParticle_t(star_particle_t<float,float>& p);
 template bool TipsyReader::getNextStarParticle_t(star_particle_t<double,float>& p);
 template bool TipsyReader::getNextStarParticle_t(star_particle_t<double,double>& p);
 
