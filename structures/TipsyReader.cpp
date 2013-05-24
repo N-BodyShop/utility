@@ -161,18 +161,28 @@ bool TipsyReader::getNextGasParticle_t(gas_particle_t<TPos, TVel>& p) {
 	
 	if(numGasRead < h.nsph) {
 		++numGasRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
-		if(numGasRead < h.nsph && !(*tipsyStream))
-			return false;
-		if(!native) {
+                if(native) {
+                    tipsyStream->read((char *)&p.mass, sizeof(Real));
+                    tipsyStream->read((char *)&p.pos, 3*sizeof(TPos));
+                    tipsyStream->read((char *)&p.vel, 3*sizeof(TVel));
+                    tipsyStream->read((char *)&p.rho, sizeof(Real));
+                    tipsyStream->read((char *)&p.temp, sizeof(Real));
+                    tipsyStream->read((char *)&p.hsmooth, sizeof(Real));
+                    tipsyStream->read((char *)&p.metals, sizeof(Real));
+                    tipsyStream->read((char *)&p.phi, sizeof(Real));
+                    }
+		else {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
-                                      p.sizeBytes, XDR_DECODE);
+                        char buf[p.sizeBytes];
+                        tipsyStream->read(buf, p.sizeBytes);
+			xdrmem_create(&xdrs, buf, p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
-		}
-	} else
+                    }
+                if(numGasRead < h.nsph && !(*tipsyStream))
+                    return false;
+        } else
 		return false;
 	
 	return true;
@@ -198,18 +208,25 @@ bool TipsyReader::getNextDarkParticle_t(dark_particle_t<TPos, TVel>& p) {
 	
 	if(numDarksRead < h.ndark) {
 		++numDarksRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
-	// Hack to fix end of stream problem on Macs --trq
-		if(numDarksRead < h.ndark && !(*tipsyStream))
-			return false;
-		if(!native) {
+                if(native) {
+                    tipsyStream->read((char *)&p.mass, sizeof(Real));
+                    tipsyStream->read((char *)&p.pos, 3*sizeof(TPos));
+                    tipsyStream->read((char *)&p.vel, 3*sizeof(TVel));
+                    tipsyStream->read((char *)&p.eps, sizeof(Real));
+                    tipsyStream->read((char *)&p.phi, sizeof(Real));
+                    }
+		else {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
-                                      p.sizeBytes, XDR_DECODE);
+                        char buf[p.sizeBytes];
+                        tipsyStream->read(buf, p.sizeBytes);
+			xdrmem_create(&xdrs, buf, p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
 		}
+	// Hack to fix end of stream problem on Macs --trq
+		if(numDarksRead < h.ndark && !(*tipsyStream))
+			return false;
 	} else
 		return false;
 	
@@ -237,18 +254,27 @@ bool TipsyReader::getNextStarParticle_t(star_particle_t<TPos, TVel>& p) {
 	
 	if(numStarsRead < h.nstar) {
 		++numStarsRead;
-		tipsyStream->read(reinterpret_cast<char *>(&p), p.sizeBytes);
-	// Hack to fix end of stream problem on Macs --trq
-		if(numStarsRead < h.nstar && !(*tipsyStream))
-			return false;
-		if(!native) {
+                if(native) {
+                    tipsyStream->read((char *) &p.mass, sizeof(Real));
+                    tipsyStream->read((char *) &p.pos, 3*sizeof(TPos));
+                    tipsyStream->read((char *) &p.vel, 3*sizeof(TVel));
+                    tipsyStream->read((char *) &p.metals, sizeof(Real));
+                    tipsyStream->read((char *) &p.tform, sizeof(Real));
+                    tipsyStream->read((char *) &p.eps, sizeof(Real));
+                    tipsyStream->read((char *) &p.phi, sizeof(Real));
+                    }
+		else {
 			XDR xdrs;
-			xdrmem_create(&xdrs, reinterpret_cast<char *>(&p),
-                                      p.sizeBytes, XDR_DECODE);
+                        char buf[p.sizeBytes];
+                        tipsyStream->read(buf, p.sizeBytes);
+			xdrmem_create(&xdrs, buf, p.sizeBytes, XDR_DECODE);
 			if(!xdr_template(&xdrs, &p))
 				return false;
 			xdr_destroy(&xdrs);
-		}
+                        }
+	// Hack to fix end of stream problem on Macs --trq
+		if(numStarsRead < h.nstar && !(*tipsyStream))
+			return false;
 	} else
 		return false;
 	
@@ -418,7 +444,14 @@ bool TipsyWriter::putNextGasParticle_t(gas_particle_t<TPos, TVel>& p) {
         assert(p.sizeBytes == gas_size);
 	
 	if(native) {
-	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
+	    fwrite(&p.mass, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.pos, 3*sizeof(TPos), 1, tipsyFp);
+	    fwrite(&p.vel, 3*sizeof(TVel), 1, tipsyFp);
+	    fwrite(&p.rho, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.temp, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.hsmooth, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.metals, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.phi, sizeof(Real), 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))
@@ -439,7 +472,11 @@ bool TipsyWriter::putNextDarkParticle_t(dark_particle_t<TPos,TVel>& p) {
         assert(p.sizeBytes == dark_size);
 	
 	if(native) {
-	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
+	    fwrite(&p.mass, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.pos, 3*sizeof(TPos), 1, tipsyFp);
+	    fwrite(&p.vel, 3*sizeof(TVel), 1, tipsyFp);
+	    fwrite(&p.eps, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.phi, sizeof(Real), 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))
@@ -460,7 +497,13 @@ bool TipsyWriter::putNextStarParticle_t(star_particle_t<TPos,TVel>& p) {
         assert(p.sizeBytes == star_size);
 	
 	if(native) {
-	    fwrite(&p, p.sizeBytes, 1, tipsyFp);
+	    fwrite(&p.mass, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.pos, 3*sizeof(TPos), 1, tipsyFp);
+	    fwrite(&p.vel, 3*sizeof(TVel), 1, tipsyFp);
+	    fwrite(&p.metals, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.tform, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.eps, sizeof(Real), 1, tipsyFp);
+	    fwrite(&p.phi, sizeof(Real), 1, tipsyFp);
 	    }
 	else {
 	    if(!xdr_template(&xdrs, &p))

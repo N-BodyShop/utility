@@ -31,9 +31,9 @@ public:
 	/** The mass of the particle. */
     Real mass;
 	/** The position of this particle. */
-    Vector3D<Real> pos;
+    Vector3D<TPos> pos;
 	/** The velocity vector of this particle. */
-    Vector3D<Real> vel;
+    Vector3D<TVel> vel;
 	
 	simple_particle_t() : mass(0) { }
 	
@@ -57,8 +57,8 @@ template <typename TPos = Real, typename TVel = Real>
 class gas_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 
-    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
-                                            + 5*sizeof(Real);
+    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+                                            + 6*sizeof(Real);
 	
 	/** The local density of gas at this particle's location. */
     Real rho;
@@ -101,8 +101,8 @@ template <typename TPos = Real, typename TVel = Real>
 class dark_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 	
-    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
-                                            + 2*sizeof(Real);
+    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+                                            + 3*sizeof(Real);
 	
 	/** The gravitational softening length of this particle. */
     Real eps;
@@ -135,8 +135,8 @@ template <typename TPos = Real, typename TVel = Real>
 class star_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 	
-    static const unsigned int sizeBytes = sizeof(simple_particle_t<TPos, TVel>)
-                                            + 4*sizeof(Real);
+    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+                                            + 5*sizeof(Real);
 	
 	/** The metallicity of this star particle. */
     Real metals;
