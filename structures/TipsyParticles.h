@@ -9,6 +9,7 @@
 #define TIPSYPARTICLES_H
 
 #include <iostream>
+#include <stdint.h>
 
 #include "Vector3D.h"
 
