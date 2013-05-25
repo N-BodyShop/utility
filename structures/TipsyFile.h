@@ -309,6 +309,10 @@ public:
 	bool loadedSuccessfully() const { return success; }
 	
 	bool operator!() const { return !success; }
+        /// double precision info
+        bool isDoublePos() const { return myReader.isDoublePos();}
+        bool isDoubleVel() const { return myReader.isDoubleVel();}
+            
 };
 
 

@@ -113,7 +113,6 @@ public:
 		tipsyStream = new std::ifstream(filename.c_str(), std::ios::in | std::ios::binary);
 		if(!(*tipsyStream)) throw std::ios_base::failure("Bad file open");
 		loadHeader();
-                set_sizes();
 	}
 	
 	/** Load from a stream.
@@ -124,7 +123,6 @@ public:
         TipsyReader(std::istream& is, bool _bDP = false, bool _bDV = false) : ok(false), responsible(true), bDoublePos(_bDP), bDoubleVel(_bDV) {
 		tipsyStream = new std::istream(is.rdbuf());
 		loadHeader();
-                set_sizes();
 	}
 	
 	/// Use this instead of a copy constructor
@@ -204,6 +202,12 @@ public:
 	
 	bool status() const {
 		return ok;
+	}
+	bool isDoublePos() const {
+		return bDoublePos;
+	}
+	bool isDoubleVel() const {
+		return bDoubleVel;
 	}
 	
 	bool seekParticleNum(unsigned int num);

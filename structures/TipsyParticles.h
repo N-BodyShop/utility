@@ -25,7 +25,7 @@ typedef float Real;
 template <typename TPos = Real, typename TVel = Real>
 class simple_particle_t {
 public:
-    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+    static const uint64_t sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
         + sizeof(Real);
 	
 	/** The mass of the particle. */
@@ -57,7 +57,7 @@ template <typename TPos = Real, typename TVel = Real>
 class gas_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 
-    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+    static const uint64_t sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
                                             + 6*sizeof(Real);
 	
 	/** The local density of gas at this particle's location. */
@@ -101,7 +101,7 @@ template <typename TPos = Real, typename TVel = Real>
 class dark_particle_t : public simple_particle_t<TPos, TVel> {
 public:
 	
-    static const unsigned int sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
+    static const uint64_t sizeBytes = 3*sizeof(TPos) + 3*sizeof(TVel)
                                             + 3*sizeof(Real);
 	
 	/** The gravitational softening length of this particle. */

@@ -609,7 +609,7 @@ bool PartialTipsyFile::loadPartial(const unsigned int beginParticle,
 	}
 	
 	//just read all the rest of the particles if endParticle is bogus
-	if(endParticle <= beginParticle || endParticle > fullHeader.nbodies)
+        if(endParticle < beginParticle || endParticle > fullHeader.nbodies)
 		endParticle = fullHeader.nbodies;
 	
 	//we will need to seek at least this far in the file

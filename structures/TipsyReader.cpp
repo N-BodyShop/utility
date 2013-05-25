@@ -102,7 +102,37 @@ bool TipsyReader::loadHeader() {
 		
 	} else
 		native = true;
+
+        // determine double/single from size of file.
+        std::streampos current = tipsyStream->tellg();
+        tipsyStream->seekg(0,tipsyStream->end);
+        // file size without header
+        uint64_t fsize = tipsyStream->tellg() - current;
+        tipsyStream->seekg(current,tipsyStream->beg);
+        if(fsize == (h.nsph*gas_particle_t<float,float>::sizeBytes +
+                     h.ndark*dark_particle_t<float,float>::sizeBytes +
+                     h.nstar*star_particle_t<float,float>::sizeBytes)) {
+            bDoublePos = false;
+            bDoubleVel = false;
+        }
+        else if(fsize == (h.nsph*gas_particle_t<double,float>::sizeBytes +
+                     h.ndark*dark_particle_t<double,float>::sizeBytes +
+                     h.nstar*star_particle_t<double,float>::sizeBytes)) {
+            bDoublePos = true;
+            bDoubleVel = false;
+            }
+        else if(fsize == (h.nsph*gas_particle_t<double,double>::sizeBytes +
+                     h.ndark*dark_particle_t<double,double>::sizeBytes +
+                     h.nstar*star_particle_t<double,double>::sizeBytes)) {
+            bDoublePos = true;
+            bDoubleVel = true;
+            }
+        else{
+            throw std::ios_base::failure("Bad file size");
+		return false;
+        }
 	
+        set_sizes();
 	numGasRead = numDarksRead = numStarsRead = 0;
 	ok = true;
 	return ok;
