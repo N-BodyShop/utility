@@ -220,6 +220,10 @@ public:
 	}
 };
 
+#ifdef __CHARMC__
+#include <converse.h>
+#endif
+
 class TipsyWriter {
 	bool native;
 	bool ok;
@@ -267,14 +271,23 @@ class TipsyWriter {
                     bool pnative=false, bool _bDP = false, bool _bDV = false)
 	    : native(pnative), ok(false), h(parh), bDoublePos(_bDP),
             bDoubleVel(_bDV) {
+#ifdef __CHARMC__
+	    tipsyFp = CmiFopen(filename.c_str(), "a");  // Create file
+#else
 	    tipsyFp = fopen(filename.c_str(), "a");  // Create file
+#endif
 	    if(tipsyFp == NULL) {
 		ok = false;
 		assert(0);
 		return;
 		}
+#ifdef __CHARMC__
+	    CmiFclose(tipsyFp);
+	    tipsyFp = CmiFopen(filename.c_str(), "rb+");
+#else
 	    fclose(tipsyFp);
 	    tipsyFp = fopen(filename.c_str(), "rb+");
+#endif
 	    if(tipsyFp == NULL) {
 		ok = false;
 		assert(0);
@@ -291,7 +304,11 @@ class TipsyWriter {
 		return;		/* file never opened */
 	    if(!native)
 		xdr_destroy(&xdrs);
+#ifdef __CHARMC__
+	    int result = CmiFclose(tipsyFp);
+#else
 	    int result = fclose(tipsyFp);
+#endif
 		if (result!=0) assert(0);
 	}
 	
