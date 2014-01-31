@@ -130,9 +130,13 @@ void SiXFormatReader::startElement(const XMLCh *const uri, const XMLCh *const lo
 						FieldHeader fh;
 						if(xdr_template(&xdrs, &fh) && fh.magic == FieldHeader::MagicNumber) {
 							//is this the first attribute for this family?
-							if(currentFamily->count.totalNumParticles == 0)
-								//then set the number of particles from the first attribute file
+                                                        if(currentFamily->count.totalNumParticles == 0) {
+								// then set the number of particles and time
+								// from the first attribute file
 								currentFamily->count.totalNumParticles = fh.numParticles;
+                                                                time = fh.time;
+                                                                }
+                                                    
 							//make sure the attribute file agrees on the number of particles
 							if(fh.numParticles == currentFamily->count.totalNumParticles) {
 								TypedArray attribute;
