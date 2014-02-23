@@ -3,6 +3,7 @@
 // set properly.
 
 #include <iostream>
+#include <limits>
 #include "tree_xdr.h"
 #include "TypeHandling.h"
 
@@ -32,10 +33,23 @@ void subFields(XDR* xdrs1, XDR* xdrs2, XDR* xdrso, FieldHeader fh)
 {
     int64_t i;
     // include min and max
-    int64_t nValues = (fh.numParticles + 2)*fh.dimensions;
+    int nHeader = fh.dimensions;
+    int64_t nValues = fh.numParticles*fh.dimensions;
     T sValue1;
     T sValue2;
     T sValueo;
+    for(i = 0; i < nHeader; i++) {
+        assert(xdr_template(xdrs1, &sValue1) == 1);
+        assert(xdr_template(xdrs2, &sValue2) == 1);
+        sValueo = std::numeric_limits<T>::min();
+        assert(xdr_template(xdrso, &sValueo) == 1);
+        }
+    for(i = 0; i < nHeader; i++) {
+        assert(xdr_template(xdrs1, &sValue1) == 1);
+        assert(xdr_template(xdrs2, &sValue2) == 1);
+        sValueo = std::numeric_limits<T>::max();
+        assert(xdr_template(xdrso, &sValueo) == 1);
+        }
     for(i = 0; i < nValues; i++) {
         assert(xdr_template(xdrs1, &sValue1) == 1);
         assert(xdr_template(xdrs2, &sValue2) == 1);
@@ -56,7 +70,7 @@ int main(int argc, char** argv) {
         std::cerr << "Couldn't open file \"" << argv[1] << "\"" << std::endl;
         return 3;
     }
-    FILE* infile2 = fopen(argv[1], "rb");
+    FILE* infile2 = fopen(argv[2], "rb");
     if(!infile2) {
         std::cerr << "Couldn't open file \"" << argv[2] << "\"" << std::endl;
         return 3;
