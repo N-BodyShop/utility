@@ -15,7 +15,7 @@ void reorder_array(IndexType* indexArray, LengthType N, ValueType* valueArray) {
 	for(LengthType i = 0; i < N; ++i) {
 		index = i;
 		while((index = indexArray[index]) < i);
-		swap(valueArray[i], valueArray[index]);
+		std::swap(valueArray[i], valueArray[index]);
 	}
 }
 
