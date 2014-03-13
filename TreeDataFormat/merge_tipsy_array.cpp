@@ -282,7 +282,7 @@ int main(int argc, char** argv) {
 	cerr << "Attribute merged from array file, writing to disk ..." << endl;
 	
 	SimulationWriter* writer = new SiXFormatWriter;
-	writer->save(sim, "");
+	writer->save(sim, "", 0);
 	
 	delete writer;
 	delete sim;
