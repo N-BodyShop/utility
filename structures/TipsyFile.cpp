@@ -204,7 +204,8 @@ void TipsyStats::finalize() {
 	}
 		
 	//get position stats
-	center = bounding_box.center();
+        if(nsph + ndark + nstar > 0)
+            center = bounding_box.center();
 	size = bounding_box.greater_corner - bounding_box.lesser_corner;
 	volume = bounding_box.volume();
 	if(volume > 0)
