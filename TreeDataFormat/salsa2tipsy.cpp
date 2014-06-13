@@ -5,6 +5,7 @@
 #include <cstdio>
 #include <string.h>
 #include <assert.h>
+#include <unistd.h>
 
 #include "tree_xdr.h"
 #include "TipsyFile.h"
@@ -188,7 +189,7 @@ void getSoft(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/softening");
+    strcat(filename, "/soft");
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -219,6 +220,12 @@ void getPhi(PartVecT &p, // reference to particle array
 
     strncpy(filename, typedir, FILELEN);
     strcat(filename, "/pot");
+    if(access(filename, F_OK) != 0) {  // no potentials; set to zero
+        for(uint64_t i = 0; i < fh.numParticles; ++i)
+            p[i].phi = 0.0;
+        return;
+    }
+    
     
     void *data = readFieldData(filename, fh, 1);
 
@@ -248,7 +255,7 @@ void getHSmooth(PartVecT &p, // reference to particle array
     FieldHeader fh;
 
     strncpy(filename, typedir, FILELEN);
-    strcat(filename, "/softening"); 	// N.B. the "hsmooth" gas field is
+    strcat(filename, "/soft"); 	// N.B. the "hsmooth" gas field is
 					// really gravitational softening
     
     void *data = readFieldData(filename, fh, 1);
@@ -442,7 +449,9 @@ int main(int argc, char** argv) {
 
 	strncpy(filename, argv[1], FILELEN);
 	strcat(filename, "/star");
-	int64_t nStar= getCount(filename);
+        int64_t nStar= 0;
+        if(access(filename, F_OK) == 0)
+            nStar= getCount(filename);
 
 	TipsyFile tf("tst", nSph, nDark, nStar);
 	
@@ -468,16 +477,18 @@ int main(int argc, char** argv) {
 	getMetalsOx(tf.gas, filename);
 	getMetalsFe(tf.gas, filename);
 
-	strncpy(filename, argv[1], FILELEN);
-	strcat(filename, "/star");
-	getPos(tf.stars, filename);
-	getMass(tf.stars, filename);
-	getVel(tf.stars, filename);
-	getSoft(tf.stars, filename);
-	getPhi(tf.stars, filename);
-	getMetalsOx(tf.stars, filename);
-	getMetalsFe(tf.stars, filename);
-	getTForm(tf.stars, filename);
+        if(nStar > 0) {
+            strncpy(filename, argv[1], FILELEN);
+            strcat(filename, "/star");
+            getPos(tf.stars, filename);
+            getMass(tf.stars, filename);
+            getVel(tf.stars, filename);
+            getSoft(tf.stars, filename);
+            getPhi(tf.stars, filename);
+            getMetalsOx(tf.stars, filename);
+            getMetalsFe(tf.stars, filename);
+            getTForm(tf.stars, filename);
+            }
 	
 	Tipsy::TipsyWriter w(argv[2], tf.h);
 	w.writeHeader();
