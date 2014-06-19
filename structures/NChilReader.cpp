@@ -6,6 +6,7 @@
 template <typename T>
 bool NChilReader<T>::loadHeader() {
     ok = false;
+    bConstField = false;
     if(!xdr_template(&xdrs, &fh)) {
         return false;
         }
@@ -13,12 +14,18 @@ bool NChilReader<T>::loadHeader() {
         return false;
     xdr_template(&xdrs, &min);
     xdr_template(&xdrs, &max);
+    if(min == max)
+        bConstField = true;
     ok = checkType<T>(fh);
     return ok;
     }
 
 template <typename T>
 bool NChilReader<T>::getNextParticle(T & p) {
+    if(bConstField) {
+        p = min;
+        return 1;
+    }
     return xdr_template(&xdrs, &p);
     }
 

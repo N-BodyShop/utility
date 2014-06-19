@@ -13,6 +13,7 @@ template <typename T>
 class NChilReader {
     FieldHeader fh;
     bool ok;
+    bool bConstField;   /// Field is just a constant: compress storage
     XDR xdrs;
     T min;
     T max;
