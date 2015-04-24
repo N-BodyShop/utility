@@ -479,7 +479,7 @@ int main(int argc, char** argv) {
             getTemp(tf.gas, filename);
             getMetalsOx(tf.gas, filename);
             getMetalsFe(tf.gas, filename);
-	}
+            }
 
         if(nStar > 0) {
             strncpy(filename, argv[1], FILELEN);
