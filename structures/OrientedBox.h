@@ -61,7 +61,9 @@ public:
 		return lesser_corner.x <= greater_corner.x && lesser_corner.y <= greater_corner.y && lesser_corner.z <= greater_corner.z;
 	}
 	
-	OrientedBox<T>& operator=(const OrientedBox<T>& b) {
+	/// Assignment operator copies the components
+	template <typename T2>
+	OrientedBox<T>& operator=(const OrientedBox<T2>& b) {
 		lesser_corner = b.lesser_corner;
 		greater_corner = b.greater_corner;
 		return *this;
