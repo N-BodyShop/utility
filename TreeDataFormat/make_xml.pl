@@ -19,6 +19,7 @@ opendir LOWERDIR, $dir or die "Couldn't open current directory: $!";
 foreach $file (@files) {
 if ($file =~ /pos/){$attrib="position";}
 elsif ($file =~ /pot/){$attrib="potential";}
+elsif ($file =~ /vel/){$attrib="velocity";}
 else {$attrib = $file;}
 print CFG "\t\t<attribute name=\"$attrib\" link=\"$dir/$file\"/>\n";
 }
