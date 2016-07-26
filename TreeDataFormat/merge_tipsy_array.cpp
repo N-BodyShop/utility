@@ -42,16 +42,21 @@ bool mergeScalarAttribute(Simulation* sim, const string& familyName, const strin
 	Simulation::iterator iter = sim->find(familyName);
 	if(iter != sim->end()) { //there are some particles of this type
 		ParticleFamily& family = iter->second;
-		sim->loadAttribute(iter->first, "uid", family.count.totalNumParticles);
-		TypedArray& arr = family.attributes["uid"]; 
-		unsigned int* uids = arr.getArray(Type2Type<unsigned int>());
-		if(!uids) {
-			cerr << "SiX format did not contain Tipsy-order uids!" << endl;
-			return false;
-		}
-		unsigned int minIndex = arr.getMinValue(Type2Type<unsigned int>());
-		for(u_int64_t i = 0; i < family.count.totalNumParticles; ++i)
+		unsigned int* uids;
+                try {
+                    sim->loadAttribute(iter->first, "uid", family.count.totalNumParticles);
+                    TypedArray& arr = family.attributes["uid"]; 
+                    uids = arr.getArray(Type2Type<unsigned int>());
+                    unsigned int minIndex = arr.getMinValue(Type2Type<unsigned int>());
+                    for(u_int64_t i = 0; i < family.count.totalNumParticles; ++i)
 			uids[i] -= minIndex;
+                }
+                catch(NameError &e) 
+                    {
+			cerr << "SiX format did not contain Tipsy-order uids!" << endl;
+			cerr << "Assume Tipsy order." << endl;
+                        uids = NULL;
+                    }
 		
 		T* values = new T[family.count.totalNumParticles];
 		if(binaryFormat) {
@@ -76,8 +81,9 @@ bool mergeScalarAttribute(Simulation* sim, const string& familyName, const strin
 		
 		
 		if(unique_values(values, values + family.count.totalNumParticles)) {	
-			reorder_array(uids, family.count.totalNumParticles, values);
-			family.addAttribute(attributeName, values);
+                    if(uids)
+                        reorder_array(uids, family.count.totalNumParticles, values);
+                    family.addAttribute(attributeName, values);
 		} else
 			delete[] values;
 		
@@ -93,17 +99,22 @@ bool mergeVectorAttribute(Simulation* sim, const string& familyName, const strin
 	Simulation::iterator iter = sim->find(familyName);
 	if(iter != sim->end()) { //there are some particles of this type
 		ParticleFamily& family = iter->second;
-		sim->loadAttribute(iter->first, "uid", family.count.totalNumParticles);
-		TypedArray& arr = family.attributes["uid"]; 
-		unsigned int* uids = arr.getArray(Type2Type<unsigned int>());
-		if(!uids) {
-			cerr << "SiX format did not contain Tipsy-order uids!" << endl;
-			return false;
-		}
-		unsigned int minIndex = arr.getMinValue(Type2Type<unsigned int>());
-		for(u_int64_t i = 0; i < family.count.totalNumParticles; ++i)
+		unsigned int* uids;
+                try {
+                    sim->loadAttribute(iter->first, "uid", family.count.totalNumParticles);
+                    TypedArray& arr = family.attributes["uid"]; 
+                    uids = arr.getArray(Type2Type<unsigned int>());
+                    unsigned int minIndex = arr.getMinValue(Type2Type<unsigned int>());
+                    for(u_int64_t i = 0; i < family.count.totalNumParticles; ++i)
 			uids[i] -= minIndex;
-		
+                }
+                catch(NameError &e) 
+                    {
+			cerr << "SiX format did not contain Tipsy-order uids!" << endl;
+			cerr << "Assume Tipsy order." << endl;
+                        uids = NULL;
+                    }
+                
 		Vector3D<T>* values = new Vector3D<T>[family.count.totalNumParticles];
 		if(binaryFormat) {
 			for(unsigned int i = 0; i < family.count.totalNumParticles; ++i) {
