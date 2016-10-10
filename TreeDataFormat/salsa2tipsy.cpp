@@ -445,7 +445,9 @@ int main(int argc, char** argv) {
 
 	strncpy(filename, argv[1], FILELEN);
 	strcat(filename, "/gas");
-	int64_t nSph = getCount(filename);
+	int64_t nSph = 0;
+        if(access(filename, F_OK) == 0)
+            nSph = getCount(filename);
 
 	strncpy(filename, argv[1], FILELEN);
 	strcat(filename, "/star");
@@ -465,19 +467,19 @@ int main(int argc, char** argv) {
 	getSoft(tf.darks, filename);
 	getPhi(tf.darks, filename);
 
-      if(nSph > 0) {
-	strncpy(filename, argv[1], FILELEN);
-	strcat(filename, "/gas");
-	getPos(tf.gas, filename);
-	getMass(tf.gas, filename);
-	getVel(tf.gas, filename);
-	getPhi(tf.gas, filename);
-	getHSmooth(tf.gas, filename);
-	getRho(tf.gas, filename);
-	getTemp(tf.gas, filename);
-	getMetalsOx(tf.gas, filename);
-	getMetalsFe(tf.gas, filename);
-	}
+        if(nSph > 0) {
+            strncpy(filename, argv[1], FILELEN);
+            strcat(filename, "/gas");
+            getPos(tf.gas, filename);
+            getMass(tf.gas, filename);
+            getVel(tf.gas, filename);
+            getPhi(tf.gas, filename);
+            getHSmooth(tf.gas, filename);
+            getRho(tf.gas, filename);
+            getTemp(tf.gas, filename);
+            getMetalsOx(tf.gas, filename);
+            getMetalsFe(tf.gas, filename);
+            }
 
         if(nStar > 0) {
             strncpy(filename, argv[1], FILELEN);
