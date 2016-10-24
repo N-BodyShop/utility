@@ -109,21 +109,21 @@ bool TipsyReader::loadHeader() {
         // file size without header
         uint64_t fsize = tipsyStream->tellg() - current;
         tipsyStream->seekg(current,tipsyStream->beg);
-        if(fsize == (h.nsph*gas_particle_t<float,float>::sizeBytes +
-                     h.ndark*dark_particle_t<float,float>::sizeBytes +
-                     h.nstar*star_particle_t<float,float>::sizeBytes)) {
+        if(fsize == (((uint64_t)h.nsph)*gas_particle_t<float,float>::sizeBytes +
+                     ((uint64_t)h.ndark)*dark_particle_t<float,float>::sizeBytes +
+                     ((uint64_t)h.nstar)*star_particle_t<float,float>::sizeBytes)) {
             bDoublePos = false;
             bDoubleVel = false;
         }
-        else if(fsize == (h.nsph*gas_particle_t<double,float>::sizeBytes +
-                     h.ndark*dark_particle_t<double,float>::sizeBytes +
-                     h.nstar*star_particle_t<double,float>::sizeBytes)) {
+        else if(fsize == (((uint64_t)h.nsph)*gas_particle_t<double,float>::sizeBytes +
+                          ((uint64_t)h.ndark)*dark_particle_t<double,float>::sizeBytes +
+                          ((uint64_t)h.nstar)*star_particle_t<double,float>::sizeBytes)) {
             bDoublePos = true;
             bDoubleVel = false;
             }
-        else if(fsize == (h.nsph*gas_particle_t<double,double>::sizeBytes +
-                     h.ndark*dark_particle_t<double,double>::sizeBytes +
-                     h.nstar*star_particle_t<double,double>::sizeBytes)) {
+        else if(fsize == (((uint64_t)h.nsph)*gas_particle_t<double,double>::sizeBytes +
+                          ((uint64_t)h.ndark)*dark_particle_t<double,double>::sizeBytes +
+                          ((uint64_t)h.nstar)*star_particle_t<double,double>::sizeBytes)) {
             bDoublePos = true;
             bDoubleVel = true;
             }
