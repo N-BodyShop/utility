@@ -239,7 +239,7 @@ int main(int argc, char** argv) {
 	xmlfile << "\t<family name=\"dark\">\n";
 	xmlfile << "\t\t<attribute name=\"iorder\" link=\"dark/iorder\"/>\n";
 	xmlfile << "\t\t<attribute name=\"mass\" link=\"dark/mass\"/>\n";
-	xmlfile << "\t\t<attribute name=\"soft\" link=\"dark/radius\"/>\n";
+	xmlfile << "\t\t<attribute name=\"soft\" link=\"dark/soft\"/>\n";
 	xmlfile << "\t\t<attribute name=\"pos\" link=\"dark/pos\"/>\n";
 	xmlfile << "\t\t<attribute name=\"vel\" link=\"dark/vel\"/>\n";
 	xmlfile << "\t\t<attribute name=\"spin\" link=\"dark/spin\"/>\n";
