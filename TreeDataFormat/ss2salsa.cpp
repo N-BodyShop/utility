@@ -97,7 +97,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
     vector<float> soft;
     soft.reserve(numParticles);
     for (int i = 0; i < numParticles; ++i)
-        soft.push_back(particles[i].radius*2.);
+        soft.push_back(particles[i].radius/2.);
 	fh.dimensions = 1;
 	fh.code = float64;
 	outfile = fopen("dark/soft", "wb");
