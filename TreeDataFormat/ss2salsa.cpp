@@ -34,7 +34,7 @@ using namespace SFC;
 int verbosity;
 
 MAKE_AGGREGATE_WRITER(mass)
-MAKE_AGGREGATE_WRITER(radius)
+//MAKE_AGGREGATE_WRITER(radius)
 //MAKE_AGGREGATE_WRITER(pos)
 MAKE_AGGREGATE_WRITER(vel)
 MAKE_AGGREGATE_WRITER(spin)
@@ -99,10 +99,12 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
     for (int i = 0; i < numParticles; ++i)
         soft.push_back(particles[i].radius/2.);
 	fh.dimensions = 1;
-	fh.code = float64;
+	fh.code = float32;
 	outfile = fopen("dark/soft", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-	writeAggregateMember_radius(&xdrs, fh, &(*particles.begin()), stats.min_radius, stats.max_radius);
+	double soft_min = stats.min_radius/2.;
+	double soft_max = stats.max_radius/2.;
+	writeField(fh, &xdrs, &(*soft.begin()), &soft_min, &soft_max);
 	xdr_destroy(&xdrs);
 	fclose(outfile);	
 	
