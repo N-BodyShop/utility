@@ -34,7 +34,7 @@ using namespace SFC;
 int verbosity;
 
 MAKE_AGGREGATE_WRITER(mass)
-MAKE_AGGREGATE_WRITER(radius)
+//MAKE_AGGREGATE_WRITER(radius)
 //MAKE_AGGREGATE_WRITER(pos)
 MAKE_AGGREGATE_WRITER(vel)
 MAKE_AGGREGATE_WRITER(spin)
@@ -65,8 +65,8 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 
 	determineBoundingBox(boundingBox, numParticles);
 	
-	//make ss subdirectory
-	if(mkdir("ss", 0755))
+	//make dark matter particle subdirectory
+	if(mkdir("dark", 0755))
 		return false;
 	
 	//write out uid, mass, radius, pos, vel, spin, color
@@ -79,7 +79,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = uint32;
-	outfile = fopen("ss/uid", "wb");
+	outfile = fopen("dark/iorder", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_org_idx(&xdrs, fh, &(*particles.begin()), stats.min_org_idx, stats.max_org_idx);
 	xdr_destroy(&xdrs);
@@ -87,17 +87,24 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 	
 	fh.dimensions = 1;
 	fh.code = float64;
-	outfile = fopen("ss/mass", "wb");
+	outfile = fopen("dark/mass", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_mass(&xdrs, fh, &(*particles.begin()), stats.min_mass, stats.max_mass);
 	xdr_destroy(&xdrs);
 	fclose(outfile);	
 
+    // SS tracks radius directly, salsa uses r = 2*eps
+    vector<float> soft;
+    soft.reserve(numParticles);
+    for (int i = 0; i < numParticles; ++i)
+        soft.push_back(particles[i].radius/2.);
 	fh.dimensions = 1;
-	fh.code = float64;
-	outfile = fopen("ss/Radius", "wb");
+	fh.code = float32;
+	outfile = fopen("dark/soft", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-	writeAggregateMember_radius(&xdrs, fh, &(*particles.begin()), stats.min_radius, stats.max_radius);
+	double soft_min = stats.min_radius/2.;
+	double soft_max = stats.max_radius/2.;
+	writeField(fh, &xdrs, &(*soft.begin()), &soft_min, &soft_max);
 	xdr_destroy(&xdrs);
 	fclose(outfile);	
 	
@@ -108,7 +115,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 		positions.push_back(particles[i].pos);
 	fh.dimensions = 3;
 	fh.code = float32;
-	outfile = fopen("ss/position", "wb");
+	outfile = fopen("dark/pos", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeField(fh, &xdrs, &(*positions.begin()), &boundingBox.lesser_corner, &boundingBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -116,7 +123,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float64;
-	outfile = fopen("ss/velocity", "wb");
+	outfile = fopen("dark/vel", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, &(*particles.begin()), stats.velocityBox.lesser_corner, stats.velocityBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -124,7 +131,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 
 	fh.dimensions = 3;
 	fh.code = float64;
-	outfile = fopen("ss/Spin", "wb");
+	outfile = fopen("dark/spin", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_vel(&xdrs, fh, &(*particles.begin()), stats.spinBox.lesser_corner, stats.spinBox.greater_corner);
 	xdr_destroy(&xdrs);
@@ -132,7 +139,7 @@ bool convertParticles(const string& filenamePrefix, SSReader& r) {
 
 	fh.dimensions = 1;
 	fh.code = uint32;
-	outfile = fopen("ss/Color", "wb");
+	outfile = fopen("dark/color", "wb");
 	xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
 	writeAggregateMember_color(&xdrs, fh, &(*particles.begin()), stats.min_color, stats.max_color);
 	xdr_destroy(&xdrs);
@@ -231,14 +238,14 @@ int main(int argc, char** argv) {
 		cout << "SS header:\n" << h << endl;
 	
 	convertParticles(basename, r);
-	xmlfile << "\t<family name=\"ss\">\n";
-	xmlfile << "\t\t<attribute name=\"uid\" link=\"ss/uid\"/>\n";
-	xmlfile << "\t\t<attribute name=\"mass\" link=\"ss/mass\"/>\n";
-	xmlfile << "\t\t<attribute name=\"Radius\" link=\"ss/Radius\"/>\n";
-	xmlfile << "\t\t<attribute name=\"position\" link=\"ss/position\"/>\n";
-	xmlfile << "\t\t<attribute name=\"velocity\" link=\"ss/velocity\"/>\n";
-	xmlfile << "\t\t<attribute name=\"Spin\" link=\"ss/Spin\"/>\n";
-	xmlfile << "\t\t<attribute name=\"Color\" link=\"ss/Color\"/>\n";
+	xmlfile << "\t<family name=\"dark\">\n";
+	xmlfile << "\t\t<attribute name=\"iorder\" link=\"dark/iorder\"/>\n";
+	xmlfile << "\t\t<attribute name=\"mass\" link=\"dark/mass\"/>\n";
+	xmlfile << "\t\t<attribute name=\"soft\" link=\"dark/soft\"/>\n";
+	xmlfile << "\t\t<attribute name=\"pos\" link=\"dark/pos\"/>\n";
+	xmlfile << "\t\t<attribute name=\"vel\" link=\"dark/vel\"/>\n";
+	xmlfile << "\t\t<attribute name=\"spin\" link=\"dark/spin\"/>\n";
+	xmlfile << "\t\t<attribute name=\"color\" link=\"dark/color\"/>\n";
 	xmlfile << "\t</family>\n";
 		
 	xmlfile << "</simulation>\n";
