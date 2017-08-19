@@ -343,6 +343,16 @@ inline Vector3D<double> makeVector(Key k){
 	return v;
 }
 
+/** Given a Key and the bounding box, generate the corresponding vector.
+ */
+inline Vector3D<double> generateVector(Key key,
+                                      const OrientedBox<double>& boundingBox){
+    Vector3D<double> v = makeVector(key);
+    v *= boundingBox.greater_corner - boundingBox.lesser_corner;
+    v += boundingBox.lesser_corner;
+    return v;
+}
+
 #else /* !BIGKEYS */
 /** Given the floating point numbers for the location, construct the key. 
  The key uses 21 of the 23 bits for the floats of the x, y, and z coordinates
@@ -409,10 +419,24 @@ inline Key generateKey(const Vector3D<float>& v, const OrientedBox<float>& bound
  */
 inline Vector3D<float> makeVector(Key k){
   unsigned int ix=0, iy=0, iz=0;
+  float x, y, z;
 #ifdef PEANO
-  if (peanoKey) {
-    peano_hilbert_key_inverse(k, 22, &ix, &iy, &iz);
-  } else {
+  switch (peanoKey) {
+  case 1:
+      peano_hilbert_key_inverse(k, 22, &ix, &iy, &iz);
+      break;
+  case 2:
+      /* Joachim's hilberts want inputs between 1 and 2 */
+      ihilbert2d(k, &x, &y, &z);
+      break;
+  case 3:
+      ihilbert3d(k, &x, &y, &z);
+      x -= 1.0;
+      y -= 1.0;
+      z -= 1.0;
+      
+      break;
+  case 0:
 #endif
 	for(int mask = (1 << 0); mask <= (1 << 20); mask <<= 1) {
 		if(k & 4)
@@ -423,14 +447,24 @@ inline Vector3D<float> makeVector(Key k){
 			iz |= mask;
 		k >>= 3;	
 	}
+        x = ((float)ix) / ((1<<21)-1);
+        y = ((float)iy) / ((1<<21)-1);
+        z = ((float)iz) / ((1<<21)-1);
 #ifdef PEANO
   }
 #endif
-  float x = ((float)ix) / ((1<<21)-1);
-  float y = ((float)iy) / ((1<<21)-1);
-  float z = ((float)iz) / ((1<<21)-1);
-	Vector3D<float> v(x, y, z);
-	return v;
+  Vector3D<float> v(x, y, z);
+  return v;
+}
+
+/** Given a Key and the bounding box, generate the corresponding vector.
+ */
+inline Vector3D<float> generateVector(Key key,
+                                      const OrientedBox<float>& boundingBox){
+    Vector3D<float> v = makeVector(key);
+    v *= boundingBox.greater_corner - boundingBox.lesser_corner;
+    v += boundingBox.lesser_corner;
+    return v;
 }
 
 #endif /* BIGKEYS */
