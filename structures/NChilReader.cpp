@@ -42,6 +42,21 @@ bool NChilWriter<T>::writeHeader() {
 }
 
 template <typename T>
+bool NChilWriter<T>::reWriteHeader() {
+	
+	if(!ok)
+	    return false;
+	xdr_destroy(&xdrs);
+        fseek(fieldStream, 0, SEEK_SET);
+        xdrstdio_create(&xdrs, fieldStream, XDR_ENCODE);
+        
+        xdr_template(&xdrs, &fh);
+        xdr_template(&xdrs, &min);
+        xdr_template(&xdrs, &max);
+	return true;
+}
+
+template <typename T>
 bool NChilWriter<T>::putNextParticle(T & p) {
     return xdr_template(&xdrs, &p);
     }

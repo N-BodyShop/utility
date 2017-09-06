@@ -65,11 +65,13 @@ class NChilWriter {
  public:
     FILE * fieldStream;
     bool writeHeader();
+    bool reWriteHeader();
 private:
 //copy constructor and equals operator are private to prevent their use
     NChilWriter(const NChilWriter& r);
     NChilWriter& operator=(const NChilWriter& r);
 public:
+ NChilWriter() : ok(false) {}
     /// Write to a file
  NChilWriter(const std::string& filename, FieldHeader parfh, T parmin,
      T parmax) : fh(parfh), ok(false), min(parmin), max(parmax) {
@@ -94,6 +96,13 @@ public:
         return fh;
 	}
     bool putNextParticle(T & p);
+    void setNParticles(u_int64_t nParticles) {
+        fh.numParticles = nParticles;
+        }
+    void setMinMax(T parmin, T parmax) {
+        min = parmin;
+        max = parmax;
+        }
     };
 
 #endif //NCHILREADER_H
