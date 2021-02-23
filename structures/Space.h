@@ -192,6 +192,14 @@ public:
 				&& -box.axis2_length <= b && b <= box.axis2_length
 				&& -box.axis3_length <= c && c <= box.axis3_length;
 	}
+	
+        // Check if point is contained by box with certain tolerence
+        template <typename T, typename T2>
+        static inline bool contains_tol(const OrientedBox<T>& b, const Vector3D<T2>& v, double tol = -1e-14){
+            return v.x - b.lesser_corner.x >= tol && b.greater_corner.x - v.x >= tol
+                    && v.y - b.lesser_corner.y >= tol && b.greater_corner.y - v.y >= tol
+                    && v.z - b.lesser_corner.z >= tol && b.greater_corner.z - v.z >= tol;
+        }
 
 	/// Do two oriented boxes intersect
 	template <typename T, typename T2>
