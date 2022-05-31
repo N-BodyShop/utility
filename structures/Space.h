@@ -231,7 +231,33 @@ public:
 			dsq += delta * delta;
 		return (dsq <= s.radius * s.radius);
 	}
-	
+
+	/// Do an oriented box and a sphere intersect? Similar to function defined above, but
+	/// the center and radius squared of the sphere are specified instead. Saves the need
+	/// for an extra sqrt operation
+	template <typename T2, typename T3, typename T4>
+	static bool intersect(const OrientedBox<T2>& b, const Vector3D<T3>& pos, const T4& rsq) {
+		T4 dsq = 0.0;
+		T4 delta;
+		if((delta = b.lesser_corner.x - pos.x) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.x - b.greater_corner.x) > 0)
+			dsq += delta * delta;
+		if(rsq < dsq)
+			return false;
+		if((delta = b.lesser_corner.y - pos.y) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.y - b.greater_corner.y) > 0)
+			dsq += delta * delta;
+		if(rsq < dsq)
+			return false;
+		if((delta = b.lesser_corner.z - pos.z) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.z - b.greater_corner.z) > 0)
+			dsq += delta * delta;
+		return (dsq <= rsq);
+	}
+
 	/// Reverse order of arguments
 	template <typename T, typename T2>
 	static bool intersect(const Sphere<T>& s, const OrientedBox<T2>& box1) {
@@ -485,6 +511,32 @@ public:
 				dsq += delta * delta;
 			return (dsq <= s.radius * s.radius);
 		}
+	}
+
+	/// Do an oriented box and a sphere intersect? Similar to function defined above, but
+	/// the center and radius squared of the sphere are specified instead. Saves the need
+	/// for an extra sqrt operation
+	template <typename T2, typename T3, typename T4>
+	inline bool intersect(const OrientedBox<T2>& b, const Vector3D<T3>& pos, const T4& rsq) const {
+		T4 dsq = 0.0;
+		T4 delta;
+		if((delta = b.lesser_corner.x - pos.x) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.x - b.greater_corner.x) > 0)
+			dsq += delta * delta;
+		if(rsq < dsq)
+			return false;
+		if((delta = b.lesser_corner.y - pos.y) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.y - b.greater_corner.y) > 0)
+			dsq += delta * delta;
+		if(rsq < dsq)
+			return false;
+		if((delta = b.lesser_corner.z - pos.z) > 0)
+			dsq += delta * delta;
+		else if((delta = pos.z - b.greater_corner.z) > 0)
+			dsq += delta * delta;
+		return (dsq <= rsq);
 	}
 	
 	/// Reverse order of arguments
