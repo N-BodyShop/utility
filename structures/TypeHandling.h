@@ -48,7 +48,10 @@ inline std::string TypeHandlingException::getText() const throw() {
 }
 
 inline const char* TypeHandlingException::what() const throw() {
-  return getText().c_str();
+    if(d=="")
+        return "Unknown TypeHandling exception";
+    else
+        return d.c_str();
 }
 
  inline TypeMismatchException::TypeMismatchException(const std::string & desc)  : TypeHandlingException(desc) {
