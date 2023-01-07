@@ -624,6 +624,7 @@ ac_includes_default="\
 
 ac_subst_vars='LTLIBOBJS
 LIBOBJS
+USER_LDFLAGS
 FLAG_BIGKEYS
 EGREP
 GREP
@@ -4274,6 +4275,19 @@ else
 fi
 
 fi
+if test "${MISSING_XDR}" = "yes" ; then
+   echo "XDR missing, attempting to use xdr with package"
+   if test -d ../xdr ; then
+   	ln -s ../xdr ./rpc
+	(cd ../xdr; make)
+   else
+	echo "Try downloading the xdr package and place it in the parent directory."
+	echo "And do a make in ../xdr"
+	exit
+   fi
+   CPPFLAGS="$CPPFLAGS -I."
+   LDFLAGS="$LDFLAGS -L../xdr"
+fi
 
 # 128 bit keys:
 # Check whether --enable-bigkeys was given.
@@ -4347,6 +4361,8 @@ fi
 done
 
 
+
+USER_LDFLAGS=$LDFLAGS
 
 
 ac_config_files="$ac_config_files Makefile"
