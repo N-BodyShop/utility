@@ -38,6 +38,19 @@ if test "${MISSING_XDR}" = "yes" -a "${HAVE_TIRPC}" = yes; then
 else
    AC_SEARCH_LIBS([xdr_float], [xdr],,[MISSING_XDR=yes])
 fi
+if test "${MISSING_XDR}" = "yes" ; then
+   echo "XDR missing, attempting to use xdr with package"
+   if test -d ../xdr ; then
+   	ln -s ../xdr ./rpc
+	(cd ../xdr; make)
+   else
+	echo "Try downloading the xdr package and place it in the parent directory."
+	echo "And do a make in ../xdr"
+	exit
+   fi
+   CPPFLAGS="$CPPFLAGS -I."
+   LDFLAGS="$LDFLAGS -L../xdr"
+fi
 
 # 128 bit keys:
 AC_ARG_ENABLE([bigkeys],
@@ -54,6 +67,7 @@ AC_CHECK_LIB([xdr], [xdr_hyper])
 AC_CHECK_FUNCS([xdr_hyper])
 
 AC_SUBST([FLAG_BIGKEYS])
+AC_SUBST([USER_LDFLAGS], $LDFLAGS)
 
 AC_CONFIG_FILES([Makefile])
 
