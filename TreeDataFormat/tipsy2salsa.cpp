@@ -25,7 +25,6 @@ using namespace Tipsy;
 using namespace TypeHandling;
 
 int verbosity;
-int bucketSize;
 
 MAKE_AGGREGATE_WRITER(mass)
 MAKE_AGGREGATE_WRITER(pos)
@@ -37,6 +36,34 @@ MAKE_AGGREGATE_WRITER(temp)
 MAKE_AGGREGATE_WRITER(hsmooth)
 MAKE_AGGREGATE_WRITER(metals)
 MAKE_AGGREGATE_WRITER(tform)
+
+// Below are two special cases: OxMassFrac and FeMassFrac will be
+// written from metals
+
+template <typename Aggregate, typename ValueType>
+bool writeAggregateMember_OxMassFrac(XDR* xdrs, FieldHeader& fh, Aggregate* array, ValueType minValue, ValueType maxValue) {
+    if(!xdr_template(xdrs, &fh) || !xdr_template(xdrs, &minValue) || !xdr_template(xdrs, &maxValue))
+        return false;
+    for(u_int64_t i = 0; i < fh.numParticles; ++i) {
+        // O and Fe ratio based on Asplund et al 2009
+        ValueType dOxMassFrac = array[i].metals*0.43;
+        if(!xdr_template(xdrs, &dOxMassFrac))
+            return false;
+    }
+    return true;
+}
+template <typename Aggregate, typename ValueType>
+bool writeAggregateMember_FeMassFrac(XDR* xdrs, FieldHeader& fh, Aggregate* array, ValueType minValue, ValueType maxValue) {
+    if(!xdr_template(xdrs, &fh) || !xdr_template(xdrs, &minValue) || !xdr_template(xdrs, &maxValue))
+        return false;
+    for(u_int64_t i = 0; i < fh.numParticles; ++i) {
+        // O and Fe ratio based on Asplund et al 2009
+        ValueType dFeMassFrac = array[i].metals*0.098;
+        if(!xdr_template(xdrs, &dFeMassFrac))
+            return false;
+    }
+    return true;
+}
 
 // For all of the following "0" means use the tipsy header for the
 // particle count.
@@ -96,7 +123,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/pos", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+    writeAggregateMember_pos(&xdrs, fh, particles, boundingBox.lesser_corner, boundingBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -104,7 +131,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/vel", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
+    writeAggregateMember_vel(&xdrs, fh, particles, velocityBox.lesser_corner, velocityBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -112,7 +139,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/GasDensity", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_rho(&xdrs, fh, particles + 1, stats.gas_min_rho, stats.gas_max_rho);
+    writeAggregateMember_rho(&xdrs, fh, particles, stats.gas_min_rho, stats.gas_max_rho);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -120,7 +147,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/temperature", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_temp(&xdrs, fh, particles + 1, stats.gas_min_temp, stats.gas_max_temp);
+    writeAggregateMember_temp(&xdrs, fh, particles, stats.gas_min_temp, stats.gas_max_temp);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -128,7 +155,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/soft", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_hsmooth(&xdrs, fh, particles + 1, stats.gas_min_hsmooth, stats.gas_max_hsmooth);
+    writeAggregateMember_hsmooth(&xdrs, fh, particles, stats.gas_min_hsmooth, stats.gas_max_hsmooth);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -136,7 +163,23 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/metals", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.gas_min_metals, stats.gas_max_metals);
+    writeAggregateMember_metals(&xdrs, fh, particles, stats.gas_min_metals, stats.gas_max_metals);
+    xdr_destroy(&xdrs);
+    fclose(outfile);	
+
+    fh.dimensions = 1;
+    fh.code = float32;
+    outfile = fopen("gas/OxMassFrac", "wb");
+    xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+    writeAggregateMember_OxMassFrac(&xdrs, fh, particles, stats.gas_min_metals, stats.gas_max_metals);
+    xdr_destroy(&xdrs);
+    fclose(outfile);	
+
+    fh.dimensions = 1;
+    fh.code = float32;
+    outfile = fopen("gas/FeMassFrac", "wb");
+    xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+    writeAggregateMember_FeMassFrac(&xdrs, fh, particles, stats.gas_min_metals, stats.gas_max_metals);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -144,7 +187,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("gas/pot", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.gas_min_phi, stats.gas_max_phi);
+    writeAggregateMember_phi(&xdrs, fh, particles, stats.gas_min_phi, stats.gas_max_phi);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -196,7 +239,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("dark/mass", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.dark_min_mass, stats.dark_max_mass);
+    writeAggregateMember_mass(&xdrs, fh, particles, stats.dark_min_mass, stats.dark_max_mass);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -204,7 +247,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("dark/pos", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+    writeAggregateMember_pos(&xdrs, fh, particles, boundingBox.lesser_corner, boundingBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -212,7 +255,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("dark/vel", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
+    writeAggregateMember_vel(&xdrs, fh, particles, velocityBox.lesser_corner, velocityBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -220,7 +263,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("dark/soft", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.dark_min_eps, stats.dark_max_eps);
+    writeAggregateMember_eps(&xdrs, fh, particles, stats.dark_min_eps, stats.dark_max_eps);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -228,7 +271,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("dark/pot", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.dark_min_phi, stats.dark_max_phi);
+    writeAggregateMember_phi(&xdrs, fh, particles, stats.dark_min_phi, stats.dark_max_phi);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -280,15 +323,15 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("star/mass", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_mass(&xdrs, fh, particles + 1, stats.star_min_mass, stats.star_max_mass);
+    writeAggregateMember_mass(&xdrs, fh, particles, stats.star_min_mass, stats.star_max_mass);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
     fh.dimensions = 3;
     fh.code = float32;
-    outfile = fopen("star/posn", "wb");
+    outfile = fopen("star/pos", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_pos(&xdrs, fh, particles + 1, boundingBox.lesser_corner, boundingBox.greater_corner);
+    writeAggregateMember_pos(&xdrs, fh, particles, boundingBox.lesser_corner, boundingBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -296,7 +339,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("star/vel", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_vel(&xdrs, fh, particles + 1, velocityBox.lesser_corner, velocityBox.greater_corner);
+    writeAggregateMember_vel(&xdrs, fh, particles, velocityBox.lesser_corner, velocityBox.greater_corner);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -304,15 +347,31 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("star/metals", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_metals(&xdrs, fh, particles + 1, stats.star_min_metals, stats.star_max_metals);
+    writeAggregateMember_metals(&xdrs, fh, particles, stats.star_min_metals, stats.star_max_metals);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
     fh.dimensions = 1;
     fh.code = float32;
-    outfile = fopen("star/formationtime", "wb");
+    outfile = fopen("star/OxMassFrac", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_tform(&xdrs, fh, particles + 1, stats.star_min_tform, stats.star_max_tform);
+    writeAggregateMember_OxMassFrac(&xdrs, fh, particles, stats.gas_min_metals, stats.gas_max_metals);
+    xdr_destroy(&xdrs);
+    fclose(outfile);	
+
+    fh.dimensions = 1;
+    fh.code = float32;
+    outfile = fopen("star/FeMassFrac", "wb");
+    xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+    writeAggregateMember_FeMassFrac(&xdrs, fh, particles, stats.gas_min_metals, stats.gas_max_metals);
+    xdr_destroy(&xdrs);
+    fclose(outfile);	
+
+    fh.dimensions = 1;
+    fh.code = float32;
+    outfile = fopen("star/timeform", "wb");
+    xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
+    writeAggregateMember_tform(&xdrs, fh, particles, stats.star_min_tform, stats.star_max_tform);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -320,7 +379,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("star/soft", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_eps(&xdrs, fh, particles + 1, stats.star_min_eps, stats.star_max_eps);
+    writeAggregateMember_eps(&xdrs, fh, particles, stats.star_min_eps, stats.star_max_eps);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -328,7 +387,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
     fh.code = float32;
     outfile = fopen("star/pot", "wb");
     xdrstdio_create(&xdrs, outfile, XDR_ENCODE);
-    writeAggregateMember_phi(&xdrs, fh, particles + 1, stats.star_min_phi, stats.star_max_phi);
+    writeAggregateMember_phi(&xdrs, fh, particles, stats.star_min_phi, stats.star_max_phi);
     xdr_destroy(&xdrs);
     fclose(outfile);	
 
@@ -410,6 +469,8 @@ int main(int argc, char** argv) {
         xmlfile << "\t\t<attribute name=\"density\" link=\"gas/GasDensity\"/>\n";
         xmlfile << "\t\t<attribute name=\"temperature\" link=\"gas/temperature\"/>\n";
         xmlfile << "\t\t<attribute name=\"metals\" link=\"gas/metals\"/>\n";
+        xmlfile << "\t\t<attribute name=\"OxMassFrac\" link=\"gas/OxMassFrac\"/>\n";
+        xmlfile << "\t\t<attribute name=\"FeMassFrac\" link=\"gas/FeMassFrac\"/>\n";
         xmlfile << "\t</family>\n";
     }
 
@@ -433,7 +494,9 @@ int main(int argc, char** argv) {
         xmlfile << "\t\t<attribute name=\"softening\" link=\"star/soft\"/>\n";
         xmlfile << "\t\t<attribute name=\"potential\" link=\"star/pot\"/>\n";
         xmlfile << "\t\t<attribute name=\"metals\" link=\"star/metals\"/>\n";
-        xmlfile << "\t\t<attribute name=\"formationtime\" link=\"star/formationtime\"/>\n";
+        xmlfile << "\t\t<attribute name=\"OxMassFrac\" link=\"star/OxMassFrac\"/>\n";
+        xmlfile << "\t\t<attribute name=\"FeMassFrac\" link=\"star/FeMassFrac\"/>\n";
+        xmlfile << "\t\t<attribute name=\"formationtime\" link=\"star/timeform\"/>\n";
         xmlfile << "\t</family>\n";
     }
 	
