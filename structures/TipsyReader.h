@@ -298,6 +298,23 @@ class TipsyWriter {
 	    ok = true;
             set_sizes();
 	}
+
+	/// Write to a buffer
+        TipsyWriter(void *buffer, size_t size, header &parh,
+                    bool pnative=false, bool _bDP = false, bool _bDV = false)
+	    : native(pnative), ok(false), h(parh), bDoublePos(_bDP),
+            bDoubleVel(_bDV) {
+            tipsyFp = fmemopen(buffer, size, "rb+");
+	    if(tipsyFp == NULL) {
+		ok = false;
+		assert(0);
+		return;
+		}
+	    if(!native)
+		xdrstdio_create(&xdrs, tipsyFp, XDR_ENCODE);
+	    ok = true;
+            set_sizes();
+	}
 	
 	~TipsyWriter() {
 	    if(tipsyFp == NULL)
