@@ -71,6 +71,55 @@ int64_t iNDark = 0;              // Input ndark for oversize tipsy file.
 int64_t iNSph = 0;               // Input nSPH for oversize tipsy file.
 int64_t iNStar = 0;              // Input nStar for oversize tipsy file.
 
+// The following xdr_template()s are copied from TipsyReader.cpp
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::gas_particle_t<TPos,TVel>* p) {
+	return (xdr_template(xdrs, &(p->mass))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
+		&& xdr_template(xdrs, &(p->rho))
+		&& xdr_template(xdrs, &(p->temp))
+		&& xdr_template(xdrs, &(p->hsmooth))
+		&& xdr_template(xdrs, &(p->metals))
+		&& xdr_template(xdrs, &(p->phi)));
+}
+
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::dark_particle_t<TPos,TVel>* p) {
+	return (xdr_template(xdrs, &(p->mass))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
+		&& xdr_template(xdrs, &(p->eps))
+		&& xdr_template(xdrs, &(p->phi)));
+}
+
+template <typename TPos, typename TVel>
+inline bool_t xdr_template(XDR* xdrs, Tipsy::star_particle_t<TPos,TVel>* p) {
+	return (xdr_template(xdrs, &(p->mass))
+		&& xdr_template(xdrs, &(p->pos))
+		&& xdr_template(xdrs, &(p->vel))
+		&& xdr_template(xdrs, &(p->metals))
+		&& xdr_template(xdrs, &(p->tform))
+		&& xdr_template(xdrs, &(p->eps))
+		&& xdr_template(xdrs, &(p->phi)));
+}
+template <typename Part>
+void readTipsyParticle(TipsyReader& r, Part *p) 
+{
+    if(r.isNative()) {
+        r.tipsyStream->read((char *)p, sizeof(*p));
+    }
+    else {
+        XDR xdrs;
+        char buf[p->sizeBytes];
+        r.tipsyStream->read(buf, p->sizeBytes);
+        xdrmem_create(&xdrs, buf, p->sizeBytes, XDR_DECODE);
+        if(!xdr_template(&xdrs, p))
+            assert(0);
+        xdr_destroy(&xdrs);
+    }
+}
+
 bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
     int64_t numParticles = r.getHeader().nsph;
     if(iNSph > 0) {
@@ -87,10 +136,7 @@ bool convertGasParticles(const string& filenamePrefix, TipsyReader& r) {
 
     //read in the gas particles from the tipsy file
     for(int64_t i = 0; i < numParticles; ++i) {
-        if(!r.getNextGasParticle(p)) {
-                cerr << "Error reading tipsy file!" << endl;
-                return false;
-        }
+        readTipsyParticle(r, &p);
         stats.contribute(p);
         velocityBox.grow(p.vel);
         particles[i] = p;
@@ -211,10 +257,7 @@ bool convertDarkParticles(const string& filenamePrefix, TipsyReader& r) {
 
     //read in the gas particles from the tipsy file
     for(int64_t i = 0; i < numParticles; ++i) {
-        if(!r.getNextDarkParticle(p)) {
-            cerr << "Error reading tipsy file!" << endl;
-            return false;
-        }
+        readTipsyParticle(r, &p);
         stats.contribute(p);
         velocityBox.grow(p.vel);
         particles[i] = p;
@@ -295,10 +338,7 @@ bool convertStarParticles(const string& filenamePrefix, TipsyReader& r) {
 
     //read in the star particles from the tipsy file
     for(int64_t i = 0; i < numParticles; ++i) {
-        if(!r.getNextStarParticle(p)) {
-            cerr << "Error reading tipsy file!" << endl;
-            return false;
-        }
+        readTipsyParticle(r, &p);
         stats.contribute(p);
         velocityBox.grow(p.vel);
         particles[i] = p;
