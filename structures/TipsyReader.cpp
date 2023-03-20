@@ -128,8 +128,10 @@ bool TipsyReader::loadHeader() {
             bDoubleVel = true;
             }
         else{
-            throw std::ios_base::failure("Bad file size");
-		return false;
+            std::cerr << "WARNING: header not consistent with file size. Proceeding assuming single precision tipsy file"
+                      << std::endl;
+            bDoublePos = false;
+            bDoubleVel = false;
         }
 	
         set_sizes();
