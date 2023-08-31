@@ -57,9 +57,28 @@ typedef int enum_t;
 #define mem_alloc(bsize)	malloc(bsize)
 #define mem_free(ptr, bsize)	free(ptr)
 
-#ifndef makedev /* ie, we haven't already included it */
-#include <sys/types.h>
+#if defined __APPLE_CC__ || defined __FreeBSD__
+# define __u_char_defined
+# define __daddr_t_defined
 #endif
+
+#ifndef __u_char_defined
+typedef __u_char u_char;
+typedef __u_short u_short;
+typedef __u_int u_int;
+typedef __u_long u_long;
+typedef __quad_t quad_t;
+typedef __u_quad_t u_quad_t;
+typedef __fsid_t fsid_t;
+# define __u_char_defined
+#endif
+#ifndef __daddr_t_defined
+typedef __daddr_t daddr_t;
+typedef __caddr_t caddr_t;
+# define __daddr_t_defined
+#endif
+
+#include <sys/types.h>
 #include <sys/time.h>
 #include <sys/param.h>
 
