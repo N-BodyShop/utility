@@ -1,6 +1,7 @@
 FLAG_BIGKEYS = @FLAG_BIGKEYS@
 CXXFLAGS += -O3 @CPPFLAGS@ $(FLAG_BIGKEYS)
 CFLAGS += -O3 @CPPFLAGS@ $(FLAG_BIGKEYS)
+LDFLAGS += @LDFLAGS@
 CXX = @CXX@
 CC = @CC@
 AR = @AR@
@@ -9,7 +10,7 @@ NAME = structures
 VERSION = 1.1
 INSTALL_LOCATION = $(HOME)/my_stuff/bin/
 LIBTARGETS = TipsyReader.o TipsyFile.o SS.o NChilReader.o hilbert.o
-EXECTARGETS = browse see_header see_treexdr random_sample tipsy2ifrit ss2ifrit
+EXECTARGETS = browse see_header see_treexdr random_sample tipsy2ifrit ss2ifrit zero_check
 LDFLAGS += -L../libs
 LDLIBS += @LIBS@
 

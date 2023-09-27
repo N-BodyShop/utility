@@ -53,7 +53,10 @@ inline std::string XDRException::getText() const throw() {
 }
 
 inline const char* XDRException::what() const throw() {
-  return getText().c_str();
+  if(d=="")
+    return "Unknown XDR exception";
+  else
+      return d.c_str();
 }
 
 inline XDRReadError::XDRReadError(std::string s, int64_t w) : oper(s),
