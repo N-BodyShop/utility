@@ -1,11 +1,11 @@
 STRUCTURES_PATH = ../structures
 CC = $(CXX)
-CXXFLAGS += -Wall -g -O3 -I$(STRUCTURES_PATH)
+CXXFLAGS += -Wall -g -O3 -I$(STRUCTURES_PATH) -I/usr/include/tirpc
 LDFLAGS += -L$(STRUCTURES_PATH)
-LDLIBS += -lTipsy
+LDLIBS += -lTipsy -ltirpc
 
 TARGETS = tipsy2tree see_header browse_field merge_tipsy_array ss2salsa \
-	sub_field minmax_field div_field
+	sub_field minmax_field div_field salsa2tipsy
 #check_tree convert_to_ascii histogram_field convert_ascii_field merge_tipsy_array
 
 all:: $(TARGETS)
@@ -23,4 +23,3 @@ merge_tipsy_array: ../SimulationHandler/SiXFormat.o merge_tipsy_array.o
 
 clean::
 	rm -f *~ *.o core.* $(TARGETS)
-	
