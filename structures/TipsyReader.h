@@ -348,6 +348,10 @@ class TipsyWriter {
 #include "pup.h"
 #include "charm++.h"
 
+PUPbytes(Tipsy::header);
+/* Having trouble using this in a parameter marshalling context in a
+   .ci file.  PUPbytes appears to work.
+
 inline void operator|(PUP::er& p, Tipsy::header& h) {
 	p | h.time;
 	p | h.nbodies;
@@ -356,6 +360,7 @@ inline void operator|(PUP::er& p, Tipsy::header& h) {
 	p | h.ndark;
 	p | h.nstar;
 }
+*/
 
 class CkOStream;
 
