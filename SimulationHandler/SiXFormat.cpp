@@ -15,6 +15,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 
+#include <mutex>
+
+std::mutex SiXXMLmutex;
+
 #include "Group.h"
 
 
@@ -64,6 +68,7 @@ bool SiXFormatReader::loadFromXMLFile(string directoryname) {
 	fclose(fp);
 	//initialize XML system
     try {
+        std::lock_guard<std::mutex> lock(SiXXMLmutex);
 		XMLPlatformUtils::Initialize();
     } catch(const XMLException& toCatch) {
 		 return false;
@@ -92,6 +97,7 @@ bool SiXFormatReader::loadFromXMLFile(string directoryname) {
 	}
 	
 	delete parser;
+        std::lock_guard<std::mutex> lock2(SiXXMLmutex);
 	XMLPlatformUtils::Terminate();
 	
 	return true;
