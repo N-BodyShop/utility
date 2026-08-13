@@ -6,6 +6,7 @@
 #include <stdio.h>
 #include <stdint.h>
 #include <assert.h>
+#include <math.h>
 
 #include "hilbert.h"
 
@@ -107,9 +108,18 @@ uint64_t hilbert3d(float x,float y,float z) {
     uint64_t s = 0;
     uint32_t m,ux,uy,uz,ut;
 
-    assert(x >= 1.0f && x < 2.0f);
-    assert(y >= 1.0f && y < 2.0f);
-    assert(z >= 1.0f && z < 2.0f);
+    const float fMax = nextafterf(2.0f, 0.0f); /* floating point
+                                                  number just less
+                                                  than 2.0 */
+    
+    if(x < 1.0f) x = 1.0f;
+    else if(x > fMax) x = fMax;
+
+    if(y < 1.0f) y = 1.0f;
+    else if(y > fMax) y = fMax;
+
+    if(z < 1.0f) z = 1.0f;
+    else if(z > fMax) z = fMax;
     
     ux = (*(uint32_t *)&x)>>2;
     uy = (*(uint32_t *)&y)>>2;
@@ -140,6 +150,11 @@ uint64_t hilbert3d(float x,float y,float z) {
 	    else {
 		ux = ~ux;
 		uy = ~uy;
+		/* trq suggested change:
+		   ut = ux;
+		   ux = ~uy;
+		   uy = ~ut;
+		*/
 		if (uz&m) {
 		    s |= 4;
 		    }
@@ -171,6 +186,12 @@ uint64_t hilbert3d(float x,float y,float z) {
 		    uy = ux;
 		    ux = ~uz;
 		    uz = ~ut;
+		    /* trq suggested change:
+		    ut = uy;
+		    uy = ~uz;
+		    uz = ~ut;
+		    */
+		       
 		    s |= 7;
 		    }
 		else {
@@ -195,10 +216,18 @@ __uint128_t hilbert3d_double(double x,double y,double z) {
     __uint128_t s = 0;
     uint64_t m,ux,uy,uz,ut;
 
-    assert(x >= 1.0 && x < 2.0);
-    assert(y >= 1.0 && y < 2.0);
-    assert(z >= 1.0 && z < 2.0);
+    const double fMax = nextafterf(2.0, 0.0); /* floating point number
+                                                 just less than 2.0 */
+    
+    if(x < 1.0) x = 1.0;
+    else if(x > fMax) x = fMax;
 
+    if(y < 1.0) y = 1.0;
+    else if(y > fMax) y = fMax;
+
+    if(z < 1.0) z = 1.0;
+    else if(z > fMax) z = fMax;
+    
     /* We can only use 42 bits.  Lose the last 10 bits. */
     ux = (*(uint64_t *)&x)>>10;
     uy = (*(uint64_t *)&y)>>10;
